@@ -35,6 +35,7 @@
 #include "KeyFrameDatabase.h"
 #include "ORBVocabulary.h"
 #include "Viewer.h"
+#include "spdlog/spdlog.h"
 
 namespace ORB_SLAM2
 {
@@ -123,6 +124,8 @@ public:
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
 
 private:
+
+    void InitLogger();
 
     // Input sensor
     eSensor mSensor;

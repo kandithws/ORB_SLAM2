@@ -33,28 +33,31 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
                const bool bUseViewer):mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false),mbActivateLocalizationMode(false),
         mbDeactivateLocalizationMode(false)
 {
+    InitLogger();
     // Output welcome message
-    cout << endl <<
+    cerr << endl <<
     "ORB-SLAM2 Copyright (C) 2014-2016 Raul Mur-Artal, University of Zaragoza." << endl <<
     "This program comes with ABSOLUTELY NO WARRANTY;" << endl  <<
     "This is free software, and you are welcome to redistribute it" << endl <<
     "under certain conditions. See LICENSE.txt." << endl << endl;
 
-    cout << "Input sensor was set to: ";
-
+    std::string sensor_str;
     if(mSensor==MONOCULAR)
-        cout << "Monocular" << endl;
+        sensor_str = "Monocular";
     else if(mSensor==STEREO)
-        cout << "Stereo" << endl;
+        sensor_str = "Stereo";
     else if(mSensor==RGBD)
-        cout << "RGB-D" << endl;
+        sensor_str = "RGB-D";
 
+
+    SPDLOG_INFO("Input sensor was set to: {0}", sensor_str);
     //Check settings file
     cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
     if(!fsSettings.isOpened())
     {
-       cerr << "Failed to open settings file at: " << strSettingsFile << endl;
-       exit(-1);
+       //cerr << "Failed to open settings file at: " << strSettingsFile << endl;
+        SPDLOG_CRITICAL("Failed to open settings file at: {0}", strSettingsFile);
+        exit(-1);
     }
 
 
@@ -65,8 +68,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
     if(!bVocLoad)
     {
-        cerr << "Wrong path to vocabulary. " << endl;
-        cerr << "Falied to open at: " << strVocFile << endl;
+        SPDLOG_CRITICAL("Wrong path to vocabulary. Failed to open file at: {0}", strVocFile);
         exit(-1);
     }
     cout << "Vocabulary loaded!" << endl << endl;
@@ -111,6 +113,24 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
+}
+
+void System::InitLogger() {
+    spdlog::set_pattern("%^[%E.%F][%l][%!:%@] %v%$");
+    /*
+     *  Multisink example to both screen and file
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    console_sink->set_level(spdlog::level::warn);
+    console_sink->set_pattern("[multi_sink_example] [%^%l%$] %v");
+
+    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/multisink.txt", true);
+    file_sink->set_level(spdlog::level::trace);
+
+    std::shared_ptr<spdlog::logger> logger =
+        std::shared_ptr<spdlog::logger>(new spdlog::logger( "multi_sink", {console_sink, file_sink}));
+    spdlog::set_default_logger(logger);
+*/
+
 }
 
 cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
