@@ -22,6 +22,8 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#define VIEWER_DISABLE_PANGOLIN
+
 #include<string>
 #include<thread>
 #include<opencv2/core/core.hpp>
@@ -36,6 +38,8 @@
 #include "ORBVocabulary.h"
 #include "Viewer.h"
 #include "spdlog/spdlog.h"
+#include "PCLViewer.h"
+
 
 namespace ORB_SLAM2
 {
