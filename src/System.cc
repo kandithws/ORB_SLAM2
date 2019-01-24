@@ -25,6 +25,7 @@
 #include <thread>
 #include <pangolin/pangolin.h>
 #include <iomanip>
+#include "utils/smart_ptr_make_macro.h"
 
 namespace ORB_SLAM2
 {
@@ -102,6 +103,9 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
         mptViewer = new thread(&Viewer::Run, mpViewer);
         mpTracker->SetViewer(mpViewer);
+        mpPCLViewer = STD_MAKE_SHARED(PCLViewer, "SLAM Viewer");
+        mpPCLViewer->setMapPtr(mpMap);
+        mpPCLViewer->run();
     }
 
     //Set pointers between threads
@@ -339,6 +343,9 @@ void System::Shutdown()
     if(mpViewer)
         pangolin::BindToContext("ORB-SLAM2: Map Viewer");
 #endif
+
+    if(mpPCLViewer)
+        mpPCLViewer->shutdown();
 }
 
 void System::SaveTrajectoryTUM(const string &filename)

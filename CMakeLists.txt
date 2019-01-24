@@ -33,7 +33,7 @@ find_package(OpenCV 3.4.4 REQUIRED)
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 # find_package(VTK 8 REQUIRED)
-find_package(PCL 1.7 REQUIRED)
+find_package(PCL 1.9 REQUIRED)
 
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})

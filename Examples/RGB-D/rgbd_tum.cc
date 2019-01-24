@@ -35,6 +35,7 @@ void LoadImages(const string &strAssociationFilename, vector<string> &vstrImageF
 
 int main(int argc, char **argv)
 {
+    std::cout << "ARGS: " << argv[0] << argv[1] << argv[3] << std::endl;
     if(argc != 5)
     {
         cerr << endl << "Usage: ./rgbd_tum path_to_vocabulary path_to_settings path_to_sequence path_to_association" << endl;
