@@ -346,6 +346,8 @@ void System::Shutdown()
 
     if(mpPCLViewer)
         mpPCLViewer->shutdown();
+
+    mpMap->ShutDown();
 }
 
 void System::SaveTrajectoryTUM(const string &filename)

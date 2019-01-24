@@ -24,53 +24,68 @@
 #include "MapPoint.h"
 #include "KeyFrame.h"
 #include <set>
-
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <condition_variable>
 #include <mutex>
+#include <thread>
+#include <spdlog/spdlog.h>
 
-
-
-namespace ORB_SLAM2
-{
+namespace ORB_SLAM2 {
 
 class MapPoint;
 class KeyFrame;
 
-class Map
-{
-public:
-    Map();
 
-    void AddKeyFrame(KeyFrame* pKF);
-    void AddMapPoint(MapPoint* pMP);
-    void EraseMapPoint(MapPoint* pMP);
-    void EraseKeyFrame(KeyFrame* pKF);
-    void SetReferenceMapPoints(const std::vector<MapPoint*> &vpMPs);
+class Map {
+    typedef pcl::PointXYZRGBA PCLPointT;
+  public:
+    Map();
+    ~Map();
+    void AddKeyFrame(KeyFrame *pKF);
+    void AddMapPoint(MapPoint *pMP);
+    void EraseMapPoint(MapPoint *pMP);
+    void EraseKeyFrame(KeyFrame *pKF);
+    void SetReferenceMapPoints(const std::vector<MapPoint *> &vpMPs);
     void InformNewBigChange();
     int GetLastBigChangeIdx();
 
-    std::vector<KeyFrame*> GetAllKeyFrames();
-    std::vector<MapPoint*> GetAllMapPoints();
-    std::vector<MapPoint*> GetReferenceMapPoints();
+    std::vector<KeyFrame *> GetAllKeyFrames();
+    std::vector<MapPoint *> GetAllMapPoints();
+    std::vector<MapPoint *> GetReferenceMapPoints();
 
     long unsigned int MapPointsInMap();
-    long unsigned  KeyFramesInMap();
+    long unsigned KeyFramesInMap();
 
     long unsigned int GetMaxKFid();
 
     void clear();
 
-    vector<KeyFrame*> mvpKeyFrameOrigins;
+    vector<KeyFrame *> mvpKeyFrameOrigins;
 
     std::mutex mMutexMapUpdate;
+    std::condition_variable mcvUpdate;
+    bool mbRenderReady = false;
+    void NotifyMapUpdated();
+
+
 
     // This avoid that two points are created simultaneously in separate threads (id conflict)
     std::mutex mMutexPointCreation;
 
-protected:
-    std::set<MapPoint*> mspMapPoints;
-    std::set<KeyFrame*> mspKeyFrames;
+    void ShutDown();
 
-    std::vector<MapPoint*> mvpReferenceMapPoints;
+  protected:
+    std::set<MapPoint *> mspMapPoints;
+    std::set<KeyFrame *> mspKeyFrames;
+
+    std::vector<MapPoint *> mvpReferenceMapPoints;
+
+
+    // PCL Related FN
+    void InitPointCloudThread();
+    void RenderPointCloudThread();
+    void RenderPointCloud();
 
     long unsigned int mnMaxKFid;
 
@@ -78,8 +93,15 @@ protected:
     int mnBigChangeIdx;
 
     std::mutex mMutexMap;
-};
 
+    // Point Cloud related attributes
+
+    bool mbIsShutdown = false;
+    std::mutex mMutexUpdateCloud;
+
+    pcl::PointCloud<PCLPointT>::Ptr mpCloudMap;
+    std::shared_ptr<std::thread> mtPointcloudRendererThread;
+};
 } //namespace ORB_SLAM
 
 #endif // MAP_H

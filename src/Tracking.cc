@@ -275,6 +275,7 @@ void Tracking::Track()
 
     // Get Map Mutex -> Map cannot be changed
     unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
+    //auto lock = Map::CreateUpdateLock(mpMap);
 
     if(mState==NOT_INITIALIZED)
     {
@@ -502,6 +503,9 @@ void Tracking::Track()
         mlFrameTimes.push_back(mlFrameTimes.back());
         mlbLost.push_back(mState==LOST);
     }
+
+    // TODO -- Maybe no need to notify
+    //mpMap->NotifyMapUpdated();
 
 }
 

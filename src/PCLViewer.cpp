@@ -11,6 +11,7 @@ namespace ORB_SLAM2 {
 PCLViewer::PCLViewer(const std::string &window_name) {
     map_cloud_ = BOOST_MAKE_SHARED(pcl::PointCloud<PointT>);
     window_name_ = window_name;
+    map_cloud_;
     //pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb_handler(map_cloud_);
     //slam_visualizer_->addPointCloud(map_cloud_, rgb_handler,"map_cloud");
     //slam_visualizer_->addPointCloud(map_cloud_,"map_cloud");
@@ -60,7 +61,6 @@ void PCLViewer::renderPointCloudMap() {
     {
         std::lock_guard<std::mutex> lock(map_mutex_);
         const std::vector<MapPoint*> &map_points = map_->GetAllMapPoints();
-        SPDLOG_INFO("Map points {}", map_points.size());
         if(map_points.empty())
             return;
 

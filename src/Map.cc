@@ -19,7 +19,7 @@
 */
 
 #include "Map.h"
-
+#include "utils/smart_ptr_make_macro.h"
 #include<mutex>
 
 namespace ORB_SLAM2
@@ -27,6 +27,7 @@ namespace ORB_SLAM2
 
 Map::Map():mnMaxKFid(0),mnBigChangeIdx(0)
 {
+    InitPointCloudThread();
 }
 
 void Map::AddKeyFrame(KeyFrame *pKF)
@@ -40,14 +41,16 @@ void Map::AddKeyFrame(KeyFrame *pKF)
 void Map::AddMapPoint(MapPoint *pMP)
 {
     unique_lock<mutex> lock(mMutexMap);
-    mspMapPoints.insert(pMP);
+    auto st = mspMapPoints.insert(pMP);
+    if(st.second){
+        // Signal Add new Pointcloud
+    }
 }
 
 void Map::EraseMapPoint(MapPoint *pMP)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspMapPoints.erase(pMP);
-
     // TODO: This only erase the pointer.
     // Delete the MapPoint
 }
@@ -128,6 +131,46 @@ void Map::clear()
     mnMaxKFid = 0;
     mvpReferenceMapPoints.clear();
     mvpKeyFrameOrigins.clear();
+}
+
+// ----------------------------- Pointcloud Related
+
+
+void Map::InitPointCloudThread() {
+    mbIsShutdown = false;
+    mpCloudMap = BOOST_MAKE_SHARED(pcl::PointCloud<PCLPointT >);
+    mtPointcloudRendererThread = std::make_shared<std::thread>(std::bind(&Map::RenderPointCloudThread, this));
+}
+
+void Map::ShutDown() {
+    if(mtPointcloudRendererThread){
+        mbIsShutdown = true;
+        NotifyMapUpdated();
+        mtPointcloudRendererThread->join();
+    }
+}
+
+Map::~Map() {
+    ShutDown();
+}
+
+void Map::RenderPointCloudThread() {
+    while (!mbIsShutdown){
+        std::unique_lock<std::mutex> lock(mMutexUpdateCloud);
+        mcvUpdate.wait(lock, [this]{ return mbRenderReady || mbIsShutdown;});
+        RenderPointCloud();
+        mbRenderReady = false;
+    }
+}
+
+void Map::RenderPointCloud() {
+
+    SPDLOG_INFO("Rendering PointCloud!!!!!!!!!!!!!!!!!");
+}
+
+void Map::NotifyMapUpdated() {
+    mbRenderReady = true;
+    mcvUpdate.notify_all();
 }
 
 } //namespace ORB_SLAM
