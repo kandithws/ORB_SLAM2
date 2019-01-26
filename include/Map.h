@@ -64,11 +64,10 @@ class Map {
     vector<KeyFrame *> mvpKeyFrameOrigins;
 
     std::mutex mMutexMapUpdate;
-    std::condition_variable mcvUpdate;
-    bool mbRenderReady = false;
+
+
+    pcl::PointCloud<PCLPointT>::Ptr GetCloudPtr();
     void NotifyMapUpdated();
-
-
 
     // This avoid that two points are created simultaneously in separate threads (id conflict)
     std::mutex mMutexPointCreation;
@@ -81,6 +80,10 @@ class Map {
 
     std::vector<MapPoint *> mvpReferenceMapPoints;
 
+    // Notify Condition variable wheter map is updated
+
+    bool mbMapUpdate = false; // Trigger RenderPointCloud
+    std::condition_variable mcvMapUpdate;
 
     // PCL Related FN
     void InitPointCloudThread();
@@ -95,12 +98,15 @@ class Map {
     std::mutex mMutexMap;
 
     // Point Cloud related attributes
-
     bool mbIsShutdown = false;
-    std::mutex mMutexUpdateCloud;
-
+    std::mutex mMutexCloud;
     pcl::PointCloud<PCLPointT>::Ptr mpCloudMap;
     std::shared_ptr<std::thread> mtPointcloudRendererThread;
+
+
+    friend class PCLViewer;
+    bool mbRenderReady = false; // for PCLViewer
+
 };
 } //namespace ORB_SLAM
 

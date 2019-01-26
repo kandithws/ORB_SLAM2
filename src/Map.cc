@@ -135,6 +135,10 @@ void Map::clear()
 
 // ----------------------------- Pointcloud Related
 
+pcl::PointCloud<Map::PCLPointT>::Ptr Map::GetCloudPtr() {
+    std::lock_guard<std::mutex> lock(mMutexCloud);
+    return mpCloudMap;
+}
 
 void Map::InitPointCloudThread() {
     mbIsShutdown = false;
@@ -156,21 +160,72 @@ Map::~Map() {
 
 void Map::RenderPointCloudThread() {
     while (!mbIsShutdown){
-        std::unique_lock<std::mutex> lock(mMutexUpdateCloud);
-        mcvUpdate.wait(lock, [this]{ return mbRenderReady || mbIsShutdown;});
-        RenderPointCloud();
-        mbRenderReady = false;
+        std::unique_lock<std::mutex> lock(mMutexMapUpdate);
+        mcvMapUpdate.wait(lock, [this]{ return mbMapUpdate || mbIsShutdown;});
+        mbMapUpdate = false;
+        lock.unlock(); //unlock update signal
+        RenderPointCloud(); //dispatch event
     }
 }
 
 void Map::RenderPointCloud() {
+    SPDLOG_DEBUG("Rendering PointCloud");
+    {
+        std::lock_guard<std::mutex> lock(mMutexCloud);
+        if(mbRenderReady)
+            return;
+    }
 
-    SPDLOG_INFO("Rendering PointCloud!!!!!!!!!!!!!!!!!");
+    pcl::PointCloud<PCLPointT>::Ptr map_cloud_ptr = BOOST_MAKE_SHARED(pcl::PointCloud<PCLPointT>);
+    {
+        const std::vector<MapPoint*> &map_points = GetAllMapPoints();
+        if(map_points.empty())
+            return;
+
+        const vector<MapPoint*> &ref_map_points = GetReferenceMapPoints();
+        std::set<MapPoint*> set_ref_map_points(ref_map_points.begin(), ref_map_points.end());
+
+        for(size_t i=0, iend=map_points.size(); i < iend; i++){
+
+            if(map_points[i]->isBad() || set_ref_map_points.count(map_points[i]))
+                continue;
+
+            cv::Mat pos = map_points[i]->GetWorldPos();
+            PCLPointT point;
+            point.x = pos.at<float>(0);
+            point.y = pos.at<float>(1);
+            point.z = pos.at<float>(2);
+            map_cloud_ptr->push_back(point);
+        }
+
+        for (std::set<MapPoint*>::iterator sit=set_ref_map_points.begin(),
+                     send=set_ref_map_points.end(); sit != send; sit++){
+
+            if((*sit)->isBad())
+                continue;
+
+            cv::Mat pos = (*sit)->GetWorldPos();
+            PCLPointT point;
+            point.x = pos.at<float>(0);
+            point.y = pos.at<float>(1);
+            point.z = pos.at<float>(2);
+            map_cloud_ptr->push_back(point);
+        }
+    }
+
+    {
+        // TODO -- CV notify spin thread to update, naive impl for now
+        std::lock_guard<std::mutex> lock(mMutexCloud);
+        mpCloudMap = map_cloud_ptr;
+        mbRenderReady = true;
+    }
+
+
 }
 
 void Map::NotifyMapUpdated() {
-    mbRenderReady = true;
-    mcvUpdate.notify_all();
+    mbMapUpdate = true;
+    mcvMapUpdate.notify_all();
 }
 
 } //namespace ORB_SLAM

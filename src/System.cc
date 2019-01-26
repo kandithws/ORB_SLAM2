@@ -103,8 +103,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
         mptViewer = new thread(&Viewer::Run, mpViewer);
         mpTracker->SetViewer(mpViewer);
-        mpPCLViewer = STD_MAKE_SHARED(PCLViewer, "SLAM Viewer");
-        mpPCLViewer->setMapPtr(mpMap);
+        mpPCLViewer = STD_MAKE_SHARED(PCLViewer, mpMap, "SLAM Viewer");
         mpPCLViewer->run();
     }
 
@@ -120,6 +119,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 }
 
 void System::InitLogger() {
+    spdlog::set_level(spdlog::level::debug);
     spdlog::set_pattern("%^[%E.%F][%l][%!:%@] %v%$");
     /*
      *  Multisink example to both screen and file
@@ -134,7 +134,6 @@ void System::InitLogger() {
         std::shared_ptr<spdlog::logger>(new spdlog::logger( "multi_sink", {console_sink, file_sink}));
     spdlog::set_default_logger(logger);
 */
-
 }
 
 cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)

@@ -23,7 +23,7 @@ class PCLViewer {
   typedef pcl::PointXYZRGBA PointT;
   //typedef pcl::PointXYZ PointT;
   public:
-    PCLViewer(const std::string &window_name = "");
+    PCLViewer(Map *pMap, const std::string &window_name = "");
     ~PCLViewer();
     void setMapPtr(Map* pMap);
     void run();
@@ -32,17 +32,9 @@ class PCLViewer {
     void renderPointCloudMap();
     // std::shared_ptr<pcl::visualization::PCLSLAMVisualizer> slam_visualizer_;
     std::shared_ptr<std::thread> spin_thread_;
-    std::shared_ptr<std::thread> render_thread_; // render could come as a signal from LocalBA + Loop Closing
-    int render_period_ms_ = 200; // 200 ms
     Map* map_;
-
-    pcl::PointCloud<PointT>::Ptr map_cloud_;
-    std::mutex map_mutex_;
-    std::mutex map_cloud_mutex_;
-    bool cloud_updated_ = false;
     std::string window_name_;
     bool is_shutdown_ = true;
-    float cloud_color_;
     void spin();
     void spinRenderer();
 

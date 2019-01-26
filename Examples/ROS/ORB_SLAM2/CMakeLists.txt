@@ -44,6 +44,8 @@ find_package(PCL 1.9 REQUIRED)
 find_package(OpenCV 3.4.4 REQUIRED)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
+
+
 include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/../../../
@@ -55,6 +57,16 @@ ${Pangolin_INCLUDE_DIRS}
 
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
+
+# somebug
+list(REMOVE_ITEM PCL_LIBRARIES
+    "vtkGUISupportQt"
+    "vtkGUISupportQtOpenGL"
+    "vtkGUISupportQtSQL"
+    "vtkGUISupportQtWebkit"
+    "vtkViewsQt"
+    "vtkRenderingQt"
+    "vtkRenderingMatplotlib")
 
 set(LIBS 
 ${OpenCV_LIBS} 
@@ -106,10 +118,3 @@ ${LIBS}
 )
 
 # Custom test modes
-rosbuild_add_executable(test_node
-  nodes/test_node.cpp
-  )
-
-target_link_libraries(test_node
-  ${LIBS}
-  )
