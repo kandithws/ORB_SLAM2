@@ -41,7 +41,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     "This program comes with ABSOLUTELY NO WARRANTY;" << endl  <<
     "This is free software, and you are welcome to redistribute it" << endl <<
     "under certain conditions. See LICENSE.txt." << endl << endl;
-
+    Config::getInstance().readConfig(strSettingsFile);
     std::string sensor_str;
     if(mSensor==MONOCULAR)
         sensor_str = "Monocular";
@@ -84,10 +84,16 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpFrameDrawer = new FrameDrawer(mpMap);
     mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
 
+    if(bUseViewer)
+    {
+        mpPCLViewer = STD_MAKE_SHARED(PCLViewer, mpMap, "SLAM Viewer");
+        mpPCLViewer->run();
+    }
+
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
-                             mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor);
+                             mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor, mpPCLViewer);
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
@@ -103,8 +109,6 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
         mptViewer = new thread(&Viewer::Run, mpViewer);
         mpTracker->SetViewer(mpViewer);
-        mpPCLViewer = STD_MAKE_SHARED(PCLViewer, mpMap, "SLAM Viewer");
-        mpPCLViewer->run();
     }
 
     //Set pointers between threads

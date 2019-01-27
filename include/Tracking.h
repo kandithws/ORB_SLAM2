@@ -37,7 +37,8 @@
 #include "Initializer.h"
 #include "MapDrawer.h"
 #include "System.h"
-
+#include "PCLViewer.h"
+#include <memory>
 #include <mutex>
 
 namespace ORB_SLAM2
@@ -56,6 +57,10 @@ class Tracking
 public:
     Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
              KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor);
+
+    Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
+             KeyFrameDatabase* pKFDB, const string &strSettingPath,
+             const int sensor, std::shared_ptr<PCLViewer> pPCLViewer);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
     cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);
@@ -214,6 +219,8 @@ protected:
     bool mbRGB;
 
     list<MapPoint*> mlpTemporalPoints;
+
+    std::shared_ptr<PCLViewer> mpPCLViewer;
 };
 
 } //namespace ORB_SLAM

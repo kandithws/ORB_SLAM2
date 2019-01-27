@@ -43,7 +43,6 @@ add_definitions(${PCL_DEFINITIONS})
 #include_directories(${CUDA_INCLUDE_DIRS})
 
 
-
 # ${Pangolin_INCLUDE_DIRS}
 include_directories(
   ${PROJECT_SOURCE_DIR}
@@ -55,10 +54,12 @@ include_directories(
 #   src/pcl_slam_visualizer/customized_pcl_visualizer/customized_interactor_style.cpp
 #  src/pcl_slam_visualizer/customized_pcl_visualizer/customized_pcl_visualizer.cpp
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
-set(UTILS_SRC_FILES src/utils/Config.cpp include/utils/Config.h)
+set(UTILS_SRC_FILES src/utils/Config.cpp
+  include/utils/Config.h
+  include/utils/time.h)
 set(PCL_EXTENDED_MODULE_SRC_FILES
-#  src/pcl_slam_visualizer/customized_pcl_visualizer/customized_interactor_style.cpp
-#  src/pcl_slam_visualizer/customized_pcl_visualizer/customized_pcl_visualizer.cpp
+  #  src/pcl_slam_visualizer/customized_pcl_visualizer/customized_interactor_style.cpp
+  #  src/pcl_slam_visualizer/customized_pcl_visualizer/customized_pcl_visualizer.cpp
   src/pcl_slam_visualizer/pcl_slam_visualizer.cpp
   src/PCLViewer.cpp)
 

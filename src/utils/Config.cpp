@@ -20,7 +20,6 @@ void Config::readConfig(std::string cfg_file) {
 }
 
 void Config::parseConfig() {
-    std::lock_guard<std::mutex> lock(fs_mutex_);
     if(fs_.isOpened()) {
         // TODO -- refactor to proper YAML node
         cam_params_.fx = (double) fs_["Camera.fx"];

@@ -18,7 +18,7 @@ struct CameraParams {
   double k2;
   double p1;
   double p2;
-  double fps = 10.0;
+  double fps = 30.0;
   bool rgb = false;
 };
 
