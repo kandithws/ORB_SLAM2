@@ -25,6 +25,7 @@
 #include <thread>
 #include <pangolin/pangolin.h>
 #include <iomanip>
+#include "utils/smart_ptr_make_macro.h"
 
 namespace ORB_SLAM2
 {
@@ -40,7 +41,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     "This program comes with ABSOLUTELY NO WARRANTY;" << endl  <<
     "This is free software, and you are welcome to redistribute it" << endl <<
     "under certain conditions. See LICENSE.txt." << endl << endl;
-
+    Config::getInstance().readConfig(strSettingsFile);
     std::string sensor_str;
     if(mSensor==MONOCULAR)
         sensor_str = "Monocular";
@@ -83,10 +84,16 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpFrameDrawer = new FrameDrawer(mpMap);
     mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
 
+    if(bUseViewer)
+    {
+        mpPCLViewer = STD_MAKE_SHARED(PCLViewer, mpMap, "SLAM Viewer");
+        mpPCLViewer->run();
+    }
+
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
-                             mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor);
+                             mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor, mpPCLViewer);
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
@@ -116,6 +123,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 }
 
 void System::InitLogger() {
+    spdlog::set_level(spdlog::level::debug);
     spdlog::set_pattern("%^[%E.%F][%l][%!:%@] %v%$");
     /*
      *  Multisink example to both screen and file
@@ -130,7 +138,6 @@ void System::InitLogger() {
         std::shared_ptr<spdlog::logger>(new spdlog::logger( "multi_sink", {console_sink, file_sink}));
     spdlog::set_default_logger(logger);
 */
-
 }
 
 cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
@@ -335,8 +342,15 @@ void System::Shutdown()
         usleep(5000);
     }
 
+#ifndef VIEWER_DISABLE_PANGOLIN
     if(mpViewer)
         pangolin::BindToContext("ORB-SLAM2: Map Viewer");
+#endif
+
+    if(mpPCLViewer)
+        mpPCLViewer->shutdown();
+
+    mpMap->ShutDown();
 }
 
 void System::SaveTrajectoryTUM(const string &filename)

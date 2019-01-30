@@ -22,6 +22,8 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#define VIEWER_DISABLE_PANGOLIN
+
 #include<string>
 #include<thread>
 #include<opencv2/core/core.hpp>
@@ -36,6 +38,8 @@
 #include "ORBVocabulary.h"
 #include "Viewer.h"
 #include "spdlog/spdlog.h"
+#include "PCLViewer.h"
+
 
 namespace ORB_SLAM2
 {
@@ -156,6 +160,8 @@ private:
 
     FrameDrawer* mpFrameDrawer;
     MapDrawer* mpMapDrawer;
+
+    std::shared_ptr<PCLViewer> mpPCLViewer;
 
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.

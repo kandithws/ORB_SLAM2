@@ -443,6 +443,7 @@ void LoopClosing::CorrectLoop()
     {
         // Get Map Mutex
         unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
+        //auto lock = Map::CreateUpdateLock(mpMap);
 
         for(vector<KeyFrame*>::iterator vit=mvpCurrentConnectedKFs.begin(), vend=mvpCurrentConnectedKFs.end(); vit!=vend; vit++)
         {
@@ -533,7 +534,7 @@ void LoopClosing::CorrectLoop()
                 }
             }
         }
-
+        mpMap->NotifyMapUpdated();
     }
 
     // Project MapPoints observed in the neighborhood of the loop keyframe
@@ -587,7 +588,6 @@ void LoopClosing::CorrectLoop()
 void LoopClosing::SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap)
 {
     ORBmatcher matcher(0.8);
-
     for(KeyFrameAndPose::const_iterator mit=CorrectedPosesMap.begin(), mend=CorrectedPosesMap.end(); mit!=mend;mit++)
     {
         KeyFrame* pKF = mit->first;
@@ -600,6 +600,7 @@ void LoopClosing::SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap)
 
         // Get Map Mutex
         unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
+        //auto lock = Map::CreateUpdateLock(mpMap);
         const int nLP = mvpLoopMapPoints.size();
         for(int i=0; i<nLP;i++)
         {
@@ -609,6 +610,7 @@ void LoopClosing::SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap)
                 pRep->Replace(mvpLoopMapPoints[i]);
             }
         }
+        mpMap->NotifyMapUpdated();
     }
 }
 
@@ -672,6 +674,7 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
 
             // Get Map Mutex
             unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
+            //auto lock = Map::CreateUpdateLock(mpMap);
 
             // Correct keyframes starting at map first keyframe
             list<KeyFrame*> lpKFtoCheck(mpMap->mvpKeyFrameOrigins.begin(),mpMap->mvpKeyFrameOrigins.end());

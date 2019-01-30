@@ -148,6 +148,20 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
 
 }
 
+
+Tracking::Tracking(System *pSys,
+                   ORBVocabulary *pVoc,
+                   FrameDrawer *pFrameDrawer,
+                   MapDrawer *pMapDrawer,
+                   Map *pMap,
+                   KeyFrameDatabase *pKFDB,
+                   const string &strSettingPath,
+                   const int sensor, std::shared_ptr<PCLViewer> pPCLViewer)
+        : Tracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB, strSettingPath, sensor)
+{
+    mpPCLViewer = pPCLViewer;
+}
+
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
 {
     mpLocalMapper=pLocalMapper;
@@ -275,6 +289,7 @@ void Tracking::Track()
 
     // Get Map Mutex -> Map cannot be changed
     unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
+    //auto lock = Map::CreateUpdateLock(mpMap);
 
     if(mState==NOT_INITIALIZED)
     {
@@ -433,6 +448,9 @@ void Tracking::Track()
 
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
+            if(mpPCLViewer)
+                mpPCLViewer->setCurrentCameraPose(mCurrentFrame.mTcw);
+
             // Clean VO matches
             for(int i=0; i<mCurrentFrame.N; i++)
             {
@@ -503,6 +521,9 @@ void Tracking::Track()
         mlbLost.push_back(mState==LOST);
     }
 
+    // TODO -- Maybe no need to notify
+    //mpMap->NotifyMapUpdated();
+
 }
 
 
@@ -555,6 +576,9 @@ void Tracking::StereoInitialization()
         mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
         mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+
+        if(mpPCLViewer)
+            mpPCLViewer->setCurrentCameraPose(mCurrentFrame.mTcw);
 
         mState=OK;
     }
@@ -730,6 +754,9 @@ void Tracking::CreateInitialMapMonocular()
     mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
     mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());
+
+    if(mpPCLViewer)
+        mpPCLViewer->setCurrentCameraPose(mCurrentFrame.mTcw);
 
     mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
