@@ -200,4 +200,38 @@ void FrameDrawer::Update(Tracking *pTracker)
     mState=static_cast<int>(pTracker->mLastProcessedState);
 }
 
+void FrameDrawer::UpdateObjectFrame(const cv::Mat& imBGR, const std::vector<int>& obj) {
+
+    if(mbObjFrameUpdated)
+        return;
+
+    {
+        std::lock_guard<std::mutex> lock(mMutexObject);
+        imBGR.copyTo(mImKFBGR);
+        // TODO -- some objects vectors copy here!
+    }
+
+    mbObjFrameUpdated = true;
+}
+
+
+cv::Mat FrameDrawer::DrawObjectFrame() {
+    cv::Mat ret;
+    {
+        std::lock_guard<std::mutex> lock(mMutexObject);
+        mImKFBGR.copyTo(ret);
+        // TODO -- some object drawing here
+    }
+
+
+    mbObjFrameUpdated = false;
+
+
+    return ret;
+}
+
+bool FrameDrawer::ObjectFrameReady() const {
+    return mbObjFrameUpdated;
+}
+
 } //namespace ORB_SLAM

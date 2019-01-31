@@ -21,6 +21,7 @@
 #include "KeyFrame.h"
 #include "Converter.h"
 #include "ORBmatcher.h"
+#include "FrameDrawer.h"
 #include<mutex>
 
 namespace ORB_SLAM2
@@ -57,7 +58,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
 }
 
 KeyFrame::KeyFrame(const cv::Mat &imColor, Frame &F, Map *pMap,
-                   KeyFrameDatabase *pKFDB, bool rgb)
+                   KeyFrameDatabase *pKFDB, FrameDrawer* pFrameDrawer, bool rgb)
         : mnFrameId(F.mnId),  mTimeStamp(F.mTimeStamp), mnGridCols(FRAME_GRID_COLS), mnGridRows(FRAME_GRID_ROWS),
           mfGridElementWidthInv(F.mfGridElementWidthInv), mfGridElementHeightInv(F.mfGridElementHeightInv),
           mnTrackReferenceForFrame(0), mnFuseTargetForKF(0), mnBALocalForKF(0), mnBAFixedForKF(0),
@@ -86,9 +87,9 @@ KeyFrame::KeyFrame(const cv::Mat &imColor, Frame &F, Map *pMap,
     SetPose(F.mTcw);
 
     // Detecting Objects
-    mptObjectDetection = std::make_shared<std::thread>(std::bind(&KeyFrame::DetectObjects,
-                                                                 this,
-                                                                 std::placeholders::_1), imColor);
+    mptObjectDetection = std::make_shared<std::thread>(
+            std::bind(&KeyFrame::DetectObjects, this, std::placeholders::_1,std::placeholders::_2)
+            , imColor, pFrameDrawer);
     mptObjectDetection->detach();
 }
 
@@ -698,7 +699,7 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
     return vDepths[(vDepths.size()-1)/q];
 }
 
-void KeyFrame::DetectObjects(const cv::Mat &imColor) {
+void KeyFrame::DetectObjects(const cv::Mat &imColor, FrameDrawer* pFrameDrawer) {
     SPDLOG_DEBUG("DetectionThread Invoked! KeyframeID={}", mnId);
     {
         std::lock_guard<std::mutex> lock(mMutexObject);
@@ -714,8 +715,8 @@ void KeyFrame::DetectObjects(const cv::Mat &imColor) {
     }
 
     // Gives Info to draw detection output
-    //if(pKFDrawer)
-    //    pKFDrawer->UpdateObjectFrame(imColor);
+    if(pFrameDrawer)
+        pFrameDrawer->UpdateObjectFrame(imColor);
 }
 
 } //namespace ORB_SLAM

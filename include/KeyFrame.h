@@ -42,12 +42,14 @@ class Map;
 class MapPoint;
 class Frame;
 class KeyFrameDatabase;
+class FrameDrawer;
 
 class KeyFrame
 {
 public:
     KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB);
-    KeyFrame(const cv::Mat &imColor, Frame &F, Map* pMap, KeyFrameDatabase* pKFDB, bool rgb=false);
+    KeyFrame(const cv::Mat &imColor, Frame &F, Map* pMap,
+             KeyFrameDatabase* pKFDB, FrameDrawer* pFrameDrawer=NULL, bool rgb=false);
 
     // Pose functions
     void SetPose(const cv::Mat &Tcw);
@@ -211,6 +213,7 @@ protected:
     // BoW
     KeyFrameDatabase* mpKeyFrameDB;
     ORBVocabulary* mpORBvocabulary;
+    FrameDrawer* mpFrameDrawer;
 
     // Grid over the image to speed up feature matching
     std::vector< std::vector <std::vector<size_t> > > mGrid;
@@ -239,7 +242,7 @@ protected:
     std::mutex mMutexFeatures;
 
     std::shared_ptr<std::thread> mptObjectDetection;
-    void DetectObjects(const cv::Mat &imColor);
+    void DetectObjects(const cv::Mat &imColor, FrameDrawer* pFrameDrawer);
     std::mutex mMutexObject;
     std::mutex mMutexbObjectReady;
     std::condition_variable mcvObjectReady;

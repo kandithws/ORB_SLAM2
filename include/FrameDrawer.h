@@ -48,6 +48,12 @@ public:
     // Draw last processed frame.
     cv::Mat DrawFrame();
 
+    // For Object Detection
+    void UpdateObjectFrame(const cv::Mat& imBGR, const std::vector<int>& obj=std::vector<int>());
+
+    bool ObjectFrameReady() const;
+    cv::Mat DrawObjectFrame();
+
 protected:
 
     void DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText);
@@ -66,6 +72,12 @@ protected:
     Map* mpMap;
 
     std::mutex mMutex;
+
+    // Info of the Object frame to be drawn
+    cv::Mat mImKFBGR;
+    std::mutex mMutexObject;
+    //std::mutex mMutexbObjectFrameUpdated;
+    bool mbObjFrameUpdated = false;
 };
 
 } //namespace ORB_SLAM
