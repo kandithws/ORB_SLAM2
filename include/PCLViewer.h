@@ -5,8 +5,6 @@
 #ifndef ORB_SLAM2_PCLVIEWER_H
 #define ORB_SLAM2_PCLVIEWER_H
 #include <pcl_slam_visualizer/pcl_slam_visualizer.h>
-//#include <pcl_slam_visualizer/customized_pcl_visualizer/customized_pcl_visualizer.h>
-//#include <pcl/visualization/pcl_visualizer.h>
 #include <include/utils/Config.h>
 #include <include/utils/time.h>
 #include <string>
@@ -25,7 +23,7 @@ class PCLViewer {
   typedef pcl::PointXYZRGBA PointT;
   //typedef pcl::PointXYZ PointT;
   public:
-    PCLViewer(Map *pMap, const std::string &window_name = "");
+    PCLViewer(std::shared_ptr<Map> pMap, const std::string &window_name = "");
     ~PCLViewer();
     void setCurrentCameraPose(const cv::Mat& pose);
     void run();
@@ -37,7 +35,7 @@ class PCLViewer {
     void getCurrentCamPose(Eigen::Affine3f& pose);
     // std::shared_ptr<pcl::visualization::PCLSLAMVisualizer> slam_visualizer_;
     std::shared_ptr<std::thread> spin_thread_;
-    Map* map_;
+    std::shared_ptr<Map> map_;
     std::string window_name_;
     bool is_shutdown_ = true;
     void spin();

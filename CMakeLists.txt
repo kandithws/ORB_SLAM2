@@ -63,6 +63,27 @@ set(PCL_EXTENDED_MODULE_SRC_FILES
   src/pcl_slam_visualizer/pcl_slam_visualizer.cpp
   src/PCLViewer.cpp)
 
+set(ORBSLAM2_HEADERS
+  include/System.h
+  include/Tracking.h
+  include/LocalMapping.h
+  include/LoopClosing.h
+  include/ORBextractor.h
+  include/ORBmatcher.h
+  include/FrameDrawer.h
+  include/Converter.h
+  include/MapPoint.h
+  include/KeyFrame.h
+  include/Map.h
+  include/MapDrawer.h
+  include/Optimizer.h
+  include/PnPsolver.h
+  include/Frame.h
+  include/KeyFrameDatabase.h
+  include/Sim3Solver.h
+  include/Initializer.h
+  include/Viewer.h)
+
 set(ORBSLAM2_SRC_FILES
   src/System.cc
   src/Tracking.cc
@@ -86,6 +107,7 @@ set(ORBSLAM2_SRC_FILES
 
 add_library(${PROJECT_NAME} SHARED
   ${ORBSLAM2_SRC_FILES}
+  ${ORBSLAM2_HEADERS}
   ${UTILS_SRC_FILES}
   ${PCL_EXTENDED_MODULE_SRC_FILES}
   )

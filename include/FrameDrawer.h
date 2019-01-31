@@ -24,11 +24,10 @@
 #include "Tracking.h"
 #include "MapPoint.h"
 #include "Map.h"
-
-#include<opencv2/core/core.hpp>
-#include<opencv2/features2d/features2d.hpp>
-
-#include<mutex>
+#include <memory>
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include <mutex>
 
 
 namespace ORB_SLAM2
@@ -40,7 +39,7 @@ class Viewer;
 class FrameDrawer
 {
 public:
-    FrameDrawer(Map* pMap);
+    FrameDrawer(std::shared_ptr<Map> pMap);
 
     // Update info from the last processed frame.
     void Update(Tracking *pTracker);
@@ -63,7 +62,7 @@ protected:
     vector<int> mvIniMatches;
     int mState;
 
-    Map* mpMap;
+    std::shared_ptr<Map> mpMap;
 
     std::mutex mMutex;
 };

@@ -106,7 +106,7 @@ static float IC_Angle(const Mat& image, Point2f pt,  const vector<int> & u_max)
 
 const float factorPI = (float)(CV_PI/180.f);
 static void computeOrbDescriptor(const KeyPoint& kpt,
-                                 const Mat& img, const Point* pattern,
+                                 const Mat& img, const std::shared_ptr<Point> pattern,
                                  uchar* desc)
 {
     float angle = (float)kpt.angle*factorPI;
@@ -446,7 +446,7 @@ ORBextractor::ORBextractor(int _nfeatures, float _scaleFactor, int _nlevels,
     mnFeaturesPerLevel[nlevels-1] = std::max(nfeatures - sumFeatures, 0);
 
     const int npoints = 512;
-    const Point* pattern0 = (const Point*)bit_pattern_31_;
+    const std::shared_ptr<Point> pattern0 = (const std::shared_ptr<Point>(bit_pattern_31_);
     std::copy(pattern0, pattern0 + npoints, std::back_inserter(pattern));
 
     //This is for orientation
@@ -546,7 +546,7 @@ vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>&
 
     list<ExtractorNode> lNodes;
 
-    vector<ExtractorNode*> vpIniNodes;
+    vector<std::shared_ptr<ExtractorNode> > vpIniNodes;
     vpIniNodes.resize(nIni);
 
     for(int i=0; i<nIni; i++)
@@ -588,7 +588,7 @@ vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>&
 
     int iteration = 0;
 
-    vector<pair<int,ExtractorNode*> > vSizeAndPointerToNode;
+    vector<pair<int,std::shared_ptr<ExtractorNode> > > vSizeAndPointerToNode;
     vSizeAndPointerToNode.reserve(lNodes.size()*4);
 
     while(!bFinish)
@@ -678,7 +678,7 @@ vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>&
 
                 prevSize = lNodes.size();
 
-                vector<pair<int,ExtractorNode*> > vPrevSizeAndPointerToNode = vSizeAndPointerToNode;
+                vector<pair<int,std::shared_ptr<ExtractorNode> > > vPrevSizeAndPointerToNode = vSizeAndPointerToNode;
                 vSizeAndPointerToNode.clear();
 
                 sort(vPrevSizeAndPointerToNode.begin(),vPrevSizeAndPointerToNode.end());
@@ -744,7 +744,7 @@ vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>&
     for(list<ExtractorNode>::iterator lit=lNodes.begin(); lit!=lNodes.end(); lit++)
     {
         vector<cv::KeyPoint> &vNodeKeys = lit->vKeys;
-        cv::KeyPoint* pKP = &vNodeKeys[0];
+        std::shared_ptr<cv::KeyPoint> pKP = &vNodeKeys[0];
         float maxResponse = pKP->response;
 
         for(size_t k=1;k<vNodeKeys.size();k++)

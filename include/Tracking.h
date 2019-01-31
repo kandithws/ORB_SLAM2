@@ -22,18 +22,17 @@
 #ifndef TRACKING_H
 #define TRACKING_H
 
-#include<opencv2/core/core.hpp>
-#include<opencv2/features2d/features2d.hpp>
-
-#include"Viewer.h"
-#include"FrameDrawer.h"
-#include"Map.h"
-#include"LocalMapping.h"
-#include"LoopClosing.h"
-#include"Frame.h"
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include "Viewer.h"
+#include "FrameDrawer.h"
+#include "Map.h"
+#include "LocalMapping.h"
+#include "LoopClosing.h"
+#include "Frame.h"
 #include "ORBVocabulary.h"
-#include"KeyFrameDatabase.h"
-#include"ORBextractor.h"
+#include "KeyFrameDatabase.h"
+#include "ORBextractor.h"
 #include "Initializer.h"
 #include "MapDrawer.h"
 #include "System.h"
@@ -55,11 +54,11 @@ class Tracking
 {  
 
 public:
-    Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
-             KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor);
+    Tracking(std::shared_ptr<System> pSys, std::shared_ptr<ORBVocabulary> pVoc, std::shared_ptr<FrameDrawer> pFrameDrawer, std::shared_ptr<MapDrawer> pMapDrawer, std::shared_ptr<Map> pMap,
+             std::shared_ptr<KeyFrameDatabase> pKFDB, const string &strSettingPath, const int sensor);
 
-    Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
-             KeyFrameDatabase* pKFDB, const string &strSettingPath,
+    Tracking(std::shared_ptr<System> pSys, std::shared_ptr<ORBVocabulary> pVoc, std::shared_ptr<FrameDrawer> pFrameDrawer, std::shared_ptr<MapDrawer> pMapDrawer, std::shared_ptr<Map> pMap,
+             std::shared_ptr<KeyFrameDatabase> pKFDB, const string &strSettingPath,
              const int sensor, std::shared_ptr<PCLViewer> pPCLViewer);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
@@ -67,9 +66,9 @@ public:
     cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp);
     cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp);
 
-    void SetLocalMapper(LocalMapping* pLocalMapper);
-    void SetLoopClosing(LoopClosing* pLoopClosing);
-    void SetViewer(Viewer* pViewer);
+    void SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper);
+    void SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing);
+    void SetViewer(std::shared_ptr<Viewer> pViewer);
 
     // Load new settings
     // The focal lenght should be similar or scale prediction will fail when projecting points
@@ -98,7 +97,7 @@ public:
     int mSensor;
 
     // Current Frame
-    Frame mCurrentFrame;
+    std::shared_ptr<Frame> mCurrentFrame;
     cv::Mat mImGray;
 
     // Initialization Variables (Monocular)
@@ -106,12 +105,12 @@ public:
     std::vector<int> mvIniMatches;
     std::vector<cv::Point2f> mvbPrevMatched;
     std::vector<cv::Point3f> mvIniP3D;
-    Frame mInitialFrame;
+    std::shared_ptr<Frame> mInitialFrame;
 
     // Lists used to recover the full camera trajectory at the end of the execution.
     // Basically we store the reference keyframe for each frame and its relative transformation
     list<cv::Mat> mlRelativeFramePoses;
-    list<KeyFrame*> mlpReferences;
+    list<std::shared_ptr<KeyFrame> > mlpReferences;
     list<double> mlFrameTimes;
     list<bool> mlbLost;
 
@@ -156,35 +155,35 @@ protected:
     bool mbVO;
 
     //Other Thread Pointers
-    LocalMapping* mpLocalMapper;
-    LoopClosing* mpLoopClosing;
+    std::shared_ptr<LocalMapping> mpLocalMapper;
+    std::shared_ptr<LoopClosing> mpLoopClosing;
 
     //ORB
-    ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
-    ORBextractor* mpIniORBextractor;
+    std::shared_ptr<ORBextractor> mpORBextractorLeft, mpORBextractorRight;
+    std::shared_ptr<ORBextractor> mpIniORBextractor;
 
     //BoW
-    ORBVocabulary* mpORBVocabulary;
-    KeyFrameDatabase* mpKeyFrameDB;
+    std::shared_ptr<ORBVocabulary> mpORBVocabulary;
+    std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
 
     // Initalization (only for monocular)
-    Initializer* mpInitializer;
+    std::shared_ptr<Initializer> mpInitializer;
 
     //Local Map
-    KeyFrame* mpReferenceKF;
-    std::vector<KeyFrame*> mvpLocalKeyFrames;
-    std::vector<MapPoint*> mvpLocalMapPoints;
+    std::shared_ptr<KeyFrame> mpReferenceKF;
+    std::vector<std::shared_ptr<KeyFrame> > mvpLocalKeyFrames;
+    std::vector<std::shared_ptr<MapPoint> > mvpLocalMapPoints;
     
     // System
-    System* mpSystem;
+    std::shared_ptr<System> mpSystem;
     
     //Drawers
-    Viewer* mpViewer;
-    FrameDrawer* mpFrameDrawer;
-    MapDrawer* mpMapDrawer;
+    std::shared_ptr<Viewer> mpViewer;
+    std::shared_ptr<FrameDrawer> mpFrameDrawer;
+    std::shared_ptr<MapDrawer> mpMapDrawer;
 
     //Map
-    Map* mpMap;
+    std::shared_ptr<Map> mpMap;
 
     //Calibration matrix
     cv::Mat mK;
@@ -207,8 +206,8 @@ protected:
     int mnMatchesInliers;
 
     //Last Frame, KeyFrame and Relocalisation Info
-    KeyFrame* mpLastKeyFrame;
-    Frame mLastFrame;
+    std::shared_ptr<KeyFrame> mpLastKeyFrame;
+    std::shared_ptr<Frame> mLastFrame;
     unsigned int mnLastKeyFrameId;
     unsigned int mnLastRelocFrameId;
 
@@ -218,7 +217,7 @@ protected:
     //Color order (true RGB, false BGR, ignored if grayscale)
     bool mbRGB;
 
-    list<MapPoint*> mlpTemporalPoints;
+    list<std::shared_ptr<MapPoint> > mlpTemporalPoints;
 
     std::shared_ptr<PCLViewer> mpPCLViewer;
 };

@@ -31,9 +31,10 @@ namespace ORB_SLAM2
 {
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
-               const bool bUseViewer):mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false),mbActivateLocalizationMode(false),
+               const bool bUseViewer):mSensor(sensor), mpViewer(static_cast<std::shared_ptr<Viewer> >(NULL)), mbReset(false),mbActivateLocalizationMode(false),
         mbDeactivateLocalizationMode(false)
 {
+    std::shared_ptr<System> self = shared_from_this();
     InitLogger();
     // Output welcome message
     cerr << endl <<
@@ -65,7 +66,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //Load ORB Vocabulary
     cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
 
-    mpVocabulary = new ORBVocabulary();
+    mpVocabulary = STD_MAKE_SHARED(ORBVocabulary);
     bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
     if(!bVocLoad)
     {
@@ -75,14 +76,14 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     cout << "Vocabulary loaded!" << endl << endl;
 
     //Create KeyFrame Database
-    mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+    mpKeyFrameDatabase = STD_MAKE_SHARED(KeyFrameDatabase, mpVocabulary);
 
     //Create the Map
-    mpMap = new Map();
+    mpMap = STD_MAKE_SHARED(Map);
 
     //Create Drawers. These are used by the Viewer
-    mpFrameDrawer = new FrameDrawer(mpMap);
-    mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
+    mpFrameDrawer = STD_MAKE_SHARED(FrameDrawer,mpMap);
+    mpMapDrawer = STD_MAKE_SHARED(MapDrawer,mpMap, strSettingsFile);
 
     if(bUseViewer)
     {
@@ -92,22 +93,24 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
-    mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
-                             mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor, mpPCLViewer);
+    mpTracker = STD_MAKE_SHARED(Tracking, self, mpVocabulary,
+                                mpFrameDrawer, mpMapDrawer, mpMap,
+                                mpKeyFrameDatabase, strSettingsFile,
+                                mSensor, mpPCLViewer);
 
     //Initialize the Local Mapping thread and launch
-    mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
-    mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run,mpLocalMapper);
+    mpLocalMapper = STD_MAKE_SHARED(LocalMapping, mpMap, mSensor==MONOCULAR);
+    mptLocalMapping = STD_MAKE_SHARED(thread, &ORB_SLAM2::LocalMapping::Run, mpLocalMapper);
 
     //Initialize the Loop Closing thread and launch
-    mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR);
-    mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
+    mpLoopCloser = STD_MAKE_SHARED(LoopClosing, mpMap, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR);
+    mptLoopClosing = STD_MAKE_SHARED(thread, &ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
 
     //Initialize the Viewer thread and launch
     if(bUseViewer)
     {
-        mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
-        mptViewer = new thread(&Viewer::Run, mpViewer);
+        mpViewer = STD_MAKE_SHARED(Viewer, self, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
+        mptViewer = STD_MAKE_SHARED(thread, &Viewer::Run, mpViewer);
         mpTracker->SetViewer(mpViewer);
     }
 
@@ -362,7 +365,7 @@ void System::SaveTrajectoryTUM(const string &filename)
         return;
     }
 
-    vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+    vector<std::shared_ptr<KeyFrame> > vpKFs = mpMap->GetAllKeyFrames();
     sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
@@ -379,16 +382,16 @@ void System::SaveTrajectoryTUM(const string &filename)
 
     // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
     // which is true when tracking failed (lbL).
-    list<ORB_SLAM2::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
-    list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
-    list<bool>::iterator lbL = mpTracker->mlbLost.begin();
-    for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(),
+    auto lRit = mpTracker->mlpReferences.begin();
+    auto lT = mpTracker->mlFrameTimes.begin();
+    auto lbL = mpTracker->mlbLost.begin();
+    for(auto lit=mpTracker->mlRelativeFramePoses.begin(),
         lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++, lbL++)
     {
         if(*lbL)
             continue;
 
-        KeyFrame* pKF = *lRit;
+        std::shared_ptr<KeyFrame> pKF = *lRit;
 
         cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
 
@@ -418,7 +421,7 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
 {
     cout << endl << "Saving keyframe trajectory to " << filename << " ..." << endl;
 
-    vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+    vector<std::shared_ptr<KeyFrame> > vpKFs = mpMap->GetAllKeyFrames();
     sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
@@ -431,7 +434,7 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
 
     for(size_t i=0; i<vpKFs.size(); i++)
     {
-        KeyFrame* pKF = vpKFs[i];
+        std::shared_ptr<KeyFrame> pKF = vpKFs[i];
 
        // pKF->SetPose(pKF->GetPose()*Two);
 
@@ -459,7 +462,7 @@ void System::SaveTrajectoryKITTI(const string &filename)
         return;
     }
 
-    vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+    vector<std::shared_ptr<KeyFrame> > vpKFs = mpMap->GetAllKeyFrames();
     sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
@@ -476,11 +479,11 @@ void System::SaveTrajectoryKITTI(const string &filename)
 
     // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
     // which is true when tracking failed (lbL).
-    list<ORB_SLAM2::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
-    list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
-    for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(), lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++)
+    auto lRit = mpTracker->mlpReferences.begin();
+    auto lT = mpTracker->mlFrameTimes.begin();
+    for(auto lit=mpTracker->mlRelativeFramePoses.begin(), lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++)
     {
-        ORB_SLAM2::KeyFrame* pKF = *lRit;
+        std::shared_ptr<ORB_SLAM2::KeyFrame> pKF = *lRit;
 
         cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
 
@@ -511,7 +514,7 @@ int System::GetTrackingState()
     return mTrackingState;
 }
 
-vector<MapPoint*> System::GetTrackedMapPoints()
+vector<std::shared_ptr<MapPoint> > System::GetTrackedMapPoints()
 {
     unique_lock<mutex> lock(mMutexState);
     return mTrackedMapPoints;

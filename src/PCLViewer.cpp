@@ -9,7 +9,7 @@
 #include <opencv2/core/eigen.hpp>
 
 namespace ORB_SLAM2 {
-PCLViewer::PCLViewer(Map *pMap, const std::string &window_name) {
+PCLViewer::PCLViewer(std::shared_ptr<Map> pMap, const std::string &window_name) {
     map_ = pMap;
     window_name_ = window_name;
     tracking_render_period_ = 1.0 / Config::getInstance().cameraParams().fps;

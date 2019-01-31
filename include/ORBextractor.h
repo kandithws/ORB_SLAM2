@@ -23,6 +23,7 @@
 
 #include <vector>
 #include <list>
+#include <memory>
 #include <opencv/cv.h>
 
 
