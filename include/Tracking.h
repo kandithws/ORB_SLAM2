@@ -100,6 +100,8 @@ public:
     // Current Frame
     Frame mCurrentFrame;
     cv::Mat mImGray;
+    cv::Mat mImColor;
+    cv::Mat mImColorRight;
 
     // Initialization Variables (Monocular)
     std::vector<int> mvIniLastMatches;
@@ -217,6 +219,7 @@ protected:
 
     //Color order (true RGB, false BGR, ignored if grayscale)
     bool mbRGB;
+    bool mbUseObject = true;
 
     list<MapPoint*> mlpTemporalPoints;
 

@@ -30,6 +30,9 @@
 #include "KeyFrameDatabase.h"
 
 #include <mutex>
+#include <memory>
+#include <condition_variable>
+#include <thread>
 
 
 namespace ORB_SLAM2
@@ -44,6 +47,7 @@ class KeyFrame
 {
 public:
     KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB);
+    KeyFrame(const cv::Mat &imColor, Frame &F, Map* pMap, KeyFrameDatabase* pKFDB, bool rgb=false);
 
     // Pose functions
     void SetPose(const cv::Mat &Tcw);
@@ -115,6 +119,8 @@ public:
     static bool lId(KeyFrame* pKF1, KeyFrame* pKF2){
         return pKF1->mnId<pKF2->mnId;
     }
+
+    bool WaitObjectsReady(int timeout); // TODO
 
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
@@ -231,6 +237,13 @@ protected:
     std::mutex mMutexPose;
     std::mutex mMutexConnections;
     std::mutex mMutexFeatures;
+
+    std::shared_ptr<std::thread> mptObjectDetection;
+    void DetectObjects(const cv::Mat &imColor);
+    std::mutex mMutexObject;
+    std::mutex mMutexbObjectReady;
+    std::condition_variable mcvObjectReady;
+    bool mbObjectReady = false;
 };
 
 } //namespace ORB_SLAM

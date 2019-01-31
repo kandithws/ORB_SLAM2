@@ -180,33 +180,35 @@ void Tracking::SetViewer(Viewer *pViewer)
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp)
 {
-    mImGray = imRectLeft;
-    cv::Mat imGrayRight = imRectRight;
+    // TODO -- 2 rgb images for stereo vision
+    mImColor = imRectLeft;
+    mImColorRight = imRectRight;
+    cv::Mat imGrayRight;
 
-    if(mImGray.channels()==3)
+    if(mImColor.channels()==3)
     {
         if(mbRGB)
         {
-            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
-            cvtColor(imGrayRight,imGrayRight,CV_RGB2GRAY);
+            cvtColor(mImColor,mImGray,CV_RGB2GRAY);
+            cvtColor(mImColorRight,imGrayRight,CV_RGB2GRAY);
         }
         else
         {
-            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
-            cvtColor(imGrayRight,imGrayRight,CV_BGR2GRAY);
+            cvtColor(mImColor,mImGray,CV_BGR2GRAY);
+            cvtColor(mImColorRight,imGrayRight,CV_BGR2GRAY);
         }
     }
-    else if(mImGray.channels()==4)
+    else if(mImColor.channels()==4)
     {
         if(mbRGB)
         {
-            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
-            cvtColor(imGrayRight,imGrayRight,CV_RGBA2GRAY);
+            cvtColor(mImColor,mImGray,CV_RGBA2GRAY);
+            cvtColor(mImColorRight,imGrayRight,CV_RGBA2GRAY);
         }
         else
         {
-            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
-            cvtColor(imGrayRight,imGrayRight,CV_BGRA2GRAY);
+            cvtColor(mImColor,mImGray,CV_BGRA2GRAY);
+            cvtColor(mImColorRight,imGrayRight,CV_BGRA2GRAY);
         }
     }
 
@@ -220,22 +222,24 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
 
 cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp)
 {
-    mImGray = imRGB;
+    mImColor = imRGB;
     cv::Mat imDepth = imD;
 
-    if(mImGray.channels()==3)
+    assert(mImColor.channels() >= 3);
+
+    if(mImColor.channels()==3)
     {
         if(mbRGB)
-            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
+            cvtColor(mImColor,mImGray,CV_RGB2GRAY);
         else
-            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
+            cvtColor(mImColor,mImGray,CV_BGR2GRAY);
     }
-    else if(mImGray.channels()==4)
+    else if(mImColor.channels()==4)
     {
         if(mbRGB)
-            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
+            cvtColor(mImColor,mImGray,CV_RGBA2GRAY);
         else
-            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
+            cvtColor(mImColor,mImGray,CV_BGRA2GRAY);
     }
 
     if((fabs(mDepthMapFactor-1.0f)>1e-5) || imDepth.type()!=CV_32F)
@@ -251,21 +255,21 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const d
 
 cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
 {
-    mImGray = im;
-
-    if(mImGray.channels()==3)
+    //mImGray = im;
+    mImColor = im;
+    if(mImColor.channels()==3)
     {
         if(mbRGB)
-            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
+            cvtColor(mImColor,mImGray,CV_RGB2GRAY);
         else
-            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
+            cvtColor(mImColor,mImGray,CV_BGR2GRAY);
     }
-    else if(mImGray.channels()==4)
+    else if(mImColor.channels()==4)
     {
         if(mbRGB)
-            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
+            cvtColor(mImColor,mImGray,CV_RGBA2GRAY);
         else
-            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
+            cvtColor(mImColor,mImGray,CV_BGRA2GRAY);
     }
 
     if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
@@ -1092,7 +1096,17 @@ void Tracking::CreateNewKeyFrame()
     if(!mpLocalMapper->SetNotStop(true))
         return;
 
-    KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+    KeyFrame* pKF;
+    if (mbUseObject){
+        if((mSensor!=System::MONOCULAR) || (mSensor!=System::RGBD))
+            pKF = new KeyFrame(mImColor,mCurrentFrame,mpMap,mpKeyFrameDB);
+        else
+            pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB); // TODO: Stereo Vision support
+    }
+    else{
+        pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+    }
+
 
     mpReferenceKF = pKF;
     mCurrentFrame.mpReferenceKF = pKF;
