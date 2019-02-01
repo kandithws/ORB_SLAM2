@@ -38,6 +38,7 @@
 #include "MapDrawer.h"
 #include "System.h"
 #include "PCLViewer.h"
+#include "dnn/BaseObjectDetector.h"
 #include <memory>
 #include <mutex>
 
@@ -60,7 +61,7 @@ public:
 
     Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
              KeyFrameDatabase* pKFDB, const string &strSettingPath,
-             const int sensor, std::shared_ptr<PCLViewer> pPCLViewer);
+             const int sensor, const std::shared_ptr<PCLViewer>& pPCLViewer);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
     cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);

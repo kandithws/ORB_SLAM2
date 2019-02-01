@@ -156,7 +156,7 @@ Tracking::Tracking(System *pSys,
                    Map *pMap,
                    KeyFrameDatabase *pKFDB,
                    const string &strSettingPath,
-                   const int sensor, std::shared_ptr<PCLViewer> pPCLViewer)
+                   const int sensor, const std::shared_ptr<PCLViewer>& pPCLViewer)
         : Tracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB, strSettingPath, sensor)
 {
     mpPCLViewer = pPCLViewer;

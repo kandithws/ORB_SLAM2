@@ -63,6 +63,12 @@ set(PCL_EXTENDED_MODULE_SRC_FILES
   src/pcl_slam_visualizer/pcl_slam_visualizer.cpp
   src/PCLViewer.cpp)
 
+set(DNN_SRC_FILES
+  include/dnn/BaseObjectDetector.h
+  include/dnn/CVObjectDetector.h
+  src/dnn/BaseObjectDetector.cpp
+  src/dnn/CVObjectDetector.cpp)
+
 set(ORBSLAM2_SRC_FILES
   src/System.cc
   src/Tracking.cc
@@ -88,6 +94,7 @@ add_library(${PROJECT_NAME} SHARED
   ${ORBSLAM2_SRC_FILES}
   ${UTILS_SRC_FILES}
   ${PCL_EXTENDED_MODULE_SRC_FILES}
+  ${DNN_SRC_FILES}
   )
 
 #  ${Pangolin_LIBRARIES}

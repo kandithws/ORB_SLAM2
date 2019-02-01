@@ -24,9 +24,9 @@
 
 #define VIEWER_DISABLE_PANGOLIN
 
-#include<string>
-#include<thread>
-#include<opencv2/core/core.hpp>
+#include <string>
+#include <thread>
+#include <opencv2/core/core.hpp>
 
 #include "Tracking.h"
 #include "FrameDrawer.h"
@@ -39,6 +39,7 @@
 #include "Viewer.h"
 #include "spdlog/spdlog.h"
 #include "PCLViewer.h"
+#include "dnn/CVObjectDetector.h"
 
 
 namespace ORB_SLAM2
@@ -160,6 +161,8 @@ private:
 
     FrameDrawer* mpFrameDrawer;
     MapDrawer* mpMapDrawer;
+
+    // Additional pointers
 
     std::shared_ptr<PCLViewer> mpPCLViewer;
 
