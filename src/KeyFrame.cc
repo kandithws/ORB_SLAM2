@@ -248,6 +248,8 @@ void KeyFrame::AddMapPoint(MapPoint *pMP, const size_t &idx)
 {
     unique_lock<mutex> lock(mMutexFeatures);
     mvpMapPoints[idx]=pMP;
+    // TODO -- add color to pMp using mvKeys[idx] to grab color from BGR image
+    // Note: make an assumption that the latest KF observes the best color or do some average!
 }
 
 void KeyFrame::EraseMapPointMatch(const size_t &idx)

@@ -38,7 +38,7 @@ class KeyFrame;
 
 
 class Map {
-    typedef pcl::PointXYZRGBA PCLPointT;
+    typedef pcl::PointXYZRGBL PCLPointT;
   public:
     Map();
     ~Map();

@@ -22,7 +22,7 @@ namespace ORB_SLAM2 {
  *  TODO: Implement PCLViewer as a Queueing basis
  */
 class PCLViewer {
-  typedef pcl::PointXYZRGBA PointT;
+  typedef Map::PCLPointT PointT;
   //typedef pcl::PointXYZ PointT;
   public:
     PCLViewer(Map *pMap, const std::string &window_name = "");
