@@ -58,38 +58,17 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
 }
 
 KeyFrame::KeyFrame(const cv::Mat &imColor, Frame &F, Map *pMap,
-                   KeyFrameDatabase *pKFDB, FrameDrawer* pFrameDrawer, bool rgb)
-        : mnFrameId(F.mnId),  mTimeStamp(F.mTimeStamp), mnGridCols(FRAME_GRID_COLS), mnGridRows(FRAME_GRID_ROWS),
-          mfGridElementWidthInv(F.mfGridElementWidthInv), mfGridElementHeightInv(F.mfGridElementHeightInv),
-          mnTrackReferenceForFrame(0), mnFuseTargetForKF(0), mnBALocalForKF(0), mnBAFixedForKF(0),
-          mnLoopQuery(0), mnLoopWords(0), mnRelocQuery(0), mnRelocWords(0), mnBAGlobalForKF(0),
-          fx(F.fx), fy(F.fy), cx(F.cx), cy(F.cy), invfx(F.invfx), invfy(F.invfy),
-          mbf(F.mbf), mb(F.mb), mThDepth(F.mThDepth), N(F.N), mvKeys(F.mvKeys), mvKeysUn(F.mvKeysUn),
-          mvuRight(F.mvuRight), mvDepth(F.mvDepth), mDescriptors(F.mDescriptors.clone()),
-          mBowVec(F.mBowVec), mFeatVec(F.mFeatVec), mnScaleLevels(F.mnScaleLevels), mfScaleFactor(F.mfScaleFactor),
-          mfLogScaleFactor(F.mfLogScaleFactor), mvScaleFactors(F.mvScaleFactors), mvLevelSigma2(F.mvLevelSigma2),
-          mvInvLevelSigma2(F.mvInvLevelSigma2), mnMinX(F.mnMinX), mnMinY(F.mnMinY), mnMaxX(F.mnMaxX),
-          mnMaxY(F.mnMaxY), mK(F.mK), mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB),
-          mpORBvocabulary(F.mpORBvocabulary), mbFirstConnection(true), mpParent(NULL), mbNotErase(false),
-          mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap)
-
+                   KeyFrameDatabase *pKFDB, const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
+                   FrameDrawer* pFrameDrawer, bool rgb)
+        : KeyFrame(F, pMap, pKFDB)
 {
-    mnId=nNextId++;
-
-    mGrid.resize(mnGridCols);
-    for(int i=0; i<mnGridCols;i++)
-    {
-        mGrid[i].resize(mnGridRows);
-        for(int j=0; j<mnGridRows; j++)
-            mGrid[i][j] = F.mGrid[i][j];
-    }
-
-    SetPose(F.mTcw);
-
     // Detecting Objects
     mptObjectDetection = std::make_shared<std::thread>(
-            std::bind(&KeyFrame::DetectObjects, this, std::placeholders::_1,std::placeholders::_2)
-            , imColor, pFrameDrawer);
+            std::bind(&KeyFrame::DetectObjects, this,
+                      std::placeholders::_1,
+                      std::placeholders::_2,
+                      std::placeholders::_3)
+            , imColor, pObjectDetector, pFrameDrawer);
     mptObjectDetection->detach();
 }
 
@@ -249,6 +228,8 @@ void KeyFrame::AddMapPoint(MapPoint *pMP, const size_t &idx)
     unique_lock<mutex> lock(mMutexFeatures);
     mvpMapPoints[idx]=pMP;
     // TODO -- add color to pMp using mvKeys[idx] to grab color from BGR image
+    // TODO -- or could apply this process at Frame before passing thorough keyframe to optimize memory
+    //      -- Then store as std::vector<uint32_t> mvKeysColor[idx]
     // Note: make an assumption that the latest KF observes the best color or do some average!
 }
 
@@ -701,12 +682,16 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
     return vDepths[(vDepths.size()-1)/q];
 }
 
-void KeyFrame::DetectObjects(const cv::Mat &imColor, FrameDrawer* pFrameDrawer) {
+void KeyFrame::DetectObjects(const cv::Mat &imColor,
+                             const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
+                             FrameDrawer* pFrameDrawer) {
     SPDLOG_DEBUG("DetectionThread Invoked! KeyframeID={}", mnId);
     {
         std::lock_guard<std::mutex> lock(mMutexObject);
         // Object Detection here
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        //std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        pObjectDetector->detectObject(imColor, mvObjectPrediction);
     }
     SPDLOG_DEBUG("DetectionThread End! KeyframeID={}", mnId);
 
@@ -717,8 +702,9 @@ void KeyFrame::DetectObjects(const cv::Mat &imColor, FrameDrawer* pFrameDrawer) 
     }
 
     // Gives Info to draw detection output
+    // TODO -- should we store imColor? in keyframe (this would waste performance)
     if(pFrameDrawer)
-        pFrameDrawer->UpdateObjectFrame(imColor);
+        pFrameDrawer->UpdateObjectFrame(imColor, this);
 }
 
 } //namespace ORB_SLAM

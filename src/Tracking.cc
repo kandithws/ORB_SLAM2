@@ -156,9 +156,12 @@ Tracking::Tracking(System *pSys,
                    Map *pMap,
                    KeyFrameDatabase *pKFDB,
                    const string &strSettingPath,
-                   const int sensor, const std::shared_ptr<PCLViewer>& pPCLViewer)
+                   const int sensor,
+                   const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
+                   const std::shared_ptr<PCLViewer>& pPCLViewer)
         : Tracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB, strSettingPath, sensor)
 {
+    mpObjectDetector = pObjectDetector;
     mpPCLViewer = pPCLViewer;
 }
 
@@ -1099,7 +1102,7 @@ void Tracking::CreateNewKeyFrame()
     KeyFrame* pKF;
     if (mbUseObject){
         if((mSensor!=System::MONOCULAR) || (mSensor!=System::RGBD))
-            pKF = new KeyFrame(mImColor,mCurrentFrame,mpMap,mpKeyFrameDB, mpFrameDrawer);
+            pKF = new KeyFrame(mImColor,mCurrentFrame,mpMap,mpKeyFrameDB, mpObjectDetector, mpFrameDrawer);
         else
             pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB); // TODO: Stereo Vision support
     }

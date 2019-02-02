@@ -23,7 +23,7 @@ class CVObjectDetector : public BaseObjectDetector {
     /*
      * @param rgb: true if input channel if rgb else, bgr
      * */
-    void detectObject(cv::Mat& img, std::vector<PredictedObject>& preds, bool rgb=false);
+    void detectObject(const cv::Mat& img, std::vector<PredictedObject>& preds, bool rgb=false);
     void setApplyNMS(bool st = true) { _apply_nms = st; }
     void setConfidenceThreshold(double val) { _conf_th = val; }
     void setNMSThreshold(double val) { _nms_th = val; }
@@ -38,7 +38,7 @@ class CVObjectDetector : public BaseObjectDetector {
      * */
     virtual std::string setupModel(std::shared_ptr<cv::dnn::Net>& model) { return std::string(); }
     //virtual void postProcess(cv::Mat& img, std::vector<cv::Mat>& outs, std::vector<PredictedObject>& preds);
-    virtual void postProcess(cv::Mat& img, std::vector<cv::Mat>& raw_outs, std::vector<int>& class_ids,
+    virtual void postProcess(const cv::Mat& img, std::vector<cv::Mat>& raw_outs, std::vector<int>& class_ids,
                              std::vector<float>& confidences,
                              std::vector<cv::Rect>& boxes);
     void applyNMSBoxes(std::vector<PredictedObject>& preds, std::vector<int>& class_ids,
@@ -50,15 +50,15 @@ class CVObjectDetector : public BaseObjectDetector {
     bool _apply_nms= false;
 
   private:
-    void postProcessRegionOutLayer(cv::Mat& img, std::vector<cv::Mat>& raw_outs, std::vector<int>& class_ids,
+    void postProcessRegionOutLayer(const cv::Mat& img, std::vector<cv::Mat>& raw_outs, std::vector<int>& class_ids,
                                     std::vector<float>& confidences,
                                     std::vector<cv::Rect>& boxes);
 
-    void postProcessDetectionOutLayer(cv::Mat& img, std::vector<cv::Mat>& raw_outs, std::vector<int>& class_ids,
+    void postProcessDetectionOutLayer(const cv::Mat& img, std::vector<cv::Mat>& raw_outs, std::vector<int>& class_ids,
                                    std::vector<float>& confidences,
                                    std::vector<cv::Rect>& boxes);
 
-    void postProcessDetectionOutRCNN(cv::Mat& img, std::vector<cv::Mat>& raw_outs, std::vector<int>& class_ids,
+    void postProcessDetectionOutRCNN(const cv::Mat& img, std::vector<cv::Mat>& raw_outs, std::vector<int>& class_ids,
                                       std::vector<float>& confidences,
                                       std::vector<cv::Rect>& boxes);
 

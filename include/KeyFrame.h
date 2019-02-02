@@ -28,6 +28,7 @@
 #include "ORBextractor.h"
 #include "Frame.h"
 #include "KeyFrameDatabase.h"
+#include "dnn/BaseObjectDetector.h"
 
 #include <mutex>
 #include <memory>
@@ -49,7 +50,9 @@ class KeyFrame
 public:
     KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB);
     KeyFrame(const cv::Mat &imColor, Frame &F, Map* pMap,
-             KeyFrameDatabase* pKFDB, FrameDrawer* pFrameDrawer=NULL, bool rgb=false);
+             KeyFrameDatabase* pKFDB,
+             const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
+             FrameDrawer* pFrameDrawer=NULL, bool rgb=false);
 
     // Pose functions
     void SetPose(const cv::Mat &Tcw);
@@ -174,6 +177,8 @@ public:
     const std::vector<float> mvDepth; // negative value for monocular points
     const cv::Mat mDescriptors;
 
+    std::vector<PredictedObject> mvObjectPrediction;
+
     //BoW
     DBoW2::BowVector mBowVec;
     DBoW2::FeatureVector mFeatVec;
@@ -242,7 +247,13 @@ protected:
     std::mutex mMutexFeatures;
 
     std::shared_ptr<std::thread> mptObjectDetection;
-    void DetectObjects(const cv::Mat &imColor, FrameDrawer* pFrameDrawer);
+    void DetectObjects(const cv::Mat &imColor,
+                       const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
+                       FrameDrawer* pFrameDrawer);
+
+
+
+
     std::mutex mMutexObject;
     std::mutex mMutexbObjectReady;
     std::condition_variable mcvObjectReady;

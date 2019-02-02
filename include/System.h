@@ -132,6 +132,8 @@ private:
 
     void InitLogger();
 
+    std::shared_ptr<BaseObjectDetector> BuildObjectDetector(std::string type="CV");
+
     // Input sensor
     eSensor mSensor;
 
@@ -165,6 +167,7 @@ private:
     // Additional pointers
 
     std::shared_ptr<PCLViewer> mpPCLViewer;
+    std::shared_ptr<BaseObjectDetector> mpObjectDetector;
 
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.

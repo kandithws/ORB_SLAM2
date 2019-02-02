@@ -25,8 +25,10 @@
 #include "MapPoint.h"
 #include "Map.h"
 
-#include<opencv2/core/core.hpp>
-#include<opencv2/features2d/features2d.hpp>
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include "dnn/BaseObjectDetector.h"
 
 #include<mutex>
 
@@ -36,6 +38,7 @@ namespace ORB_SLAM2
 
 class Tracking;
 class Viewer;
+//class Keyframe;
 
 class FrameDrawer
 {
@@ -49,7 +52,7 @@ public:
     cv::Mat DrawFrame();
 
     // For Object Detection
-    void UpdateObjectFrame(const cv::Mat& imBGR, const std::vector<int>& obj=std::vector<int>());
+    void UpdateObjectFrame(const cv::Mat& imBGR, KeyFrame* pKeyframe);
 
     bool ObjectFrameReady() const;
     cv::Mat DrawObjectFrame();
@@ -75,6 +78,7 @@ protected:
 
     // Info of the Object frame to be drawn
     cv::Mat mImKFBGR;
+    std::vector<PredictedObject> mvPredictedObjects;
     std::mutex mMutexObject;
     //std::mutex mMutexbObjectFrameUpdated;
     bool mbObjFrameUpdated = false;

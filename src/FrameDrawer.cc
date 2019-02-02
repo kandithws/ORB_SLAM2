@@ -20,7 +20,6 @@
 
 #include "FrameDrawer.h"
 #include "Tracking.h"
-
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -200,7 +199,7 @@ void FrameDrawer::Update(Tracking *pTracker)
     mState=static_cast<int>(pTracker->mLastProcessedState);
 }
 
-void FrameDrawer::UpdateObjectFrame(const cv::Mat& imBGR, const std::vector<int>& obj) {
+void FrameDrawer::UpdateObjectFrame(const cv::Mat& imBGR, KeyFrame* pKeyFrame) {
 
     if(mbObjFrameUpdated)
         return;
@@ -208,7 +207,12 @@ void FrameDrawer::UpdateObjectFrame(const cv::Mat& imBGR, const std::vector<int>
     {
         std::lock_guard<std::mutex> lock(mMutexObject);
         imBGR.copyTo(mImKFBGR);
-        // TODO -- some objects vectors copy here!
+        mvPredictedObjects.resize(pKeyFrame->mvObjectPrediction.size());
+        if(!mvPredictedObjects.empty()){
+            mvPredictedObjects.insert(mvPredictedObjects.begin(),
+                                      pKeyFrame->mvObjectPrediction.begin(),
+                                      pKeyFrame->mvObjectPrediction.end());
+        }
     }
 
     mbObjFrameUpdated = true;
@@ -219,7 +223,8 @@ cv::Mat FrameDrawer::DrawObjectFrame() {
     cv::Mat ret;
     {
         std::lock_guard<std::mutex> lock(mMutexObject);
-        mImKFBGR.copyTo(ret);
+        //mImKFBGR.copyTo(ret);
+        ret = mImKFBGR;
         // TODO -- some object drawing here
     }
 

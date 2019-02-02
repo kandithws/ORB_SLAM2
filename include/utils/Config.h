@@ -22,6 +22,16 @@ struct CameraParams {
   bool rgb = false;
 };
 
+struct ObjectDetectorParams {
+  std::vector<std::string> label_map;
+  std::string config_path;
+  std::string model_path;
+  double conf_th = 0.5;
+  bool apply_nms = true;
+  double nms_th = 0.4;
+  int input_size = 416;
+};
+
 class Config {
   public:
     static Config& getInstance(){
@@ -35,6 +45,7 @@ class Config {
     // TODO -- format to constant getters
     // make variable public for simplicity
     const CameraParams& cameraParams() { ORB_SLAM2_CONFIG_RET_MACRO(cam_params_) }
+    const ObjectDetectorParams& ObjectDetectionParams() { ORB_SLAM2_CONFIG_RET_MACRO(obj_detection_params_) }
 
   protected:
     Config() = default;
@@ -44,6 +55,7 @@ class Config {
     bool is_read_ = false;
     virtual ~Config() = default;
     CameraParams cam_params_;
+    ObjectDetectorParams obj_detection_params_;
     void parseConfig();
 };
 }

@@ -18,7 +18,7 @@ void CVObjectDetector::setInputSize(int input_width, int input_height) {
     _input_width = input_width;
     _input_height = input_height < 0 ? input_width : input_height;
 }
-void CVObjectDetector::detectObject(cv::Mat &img, std::vector<PredictedObject> &preds, bool rgb) {
+void CVObjectDetector::detectObject(const cv::Mat &img, std::vector<PredictedObject> &preds, bool rgb) {
     // required RGB input
     cv::Size inp_size(_input_width > 0 ? _input_width : img.cols,
                       _input_height > 0 ? _input_height : img.rows);
@@ -44,8 +44,9 @@ void CVObjectDetector::detectObject(cv::Mat &img, std::vector<PredictedObject> &
     if (_apply_nms)
         applyNMSBoxes(preds, class_ids, confidences, boxes);
     else {
-        for (int i = 0; i < class_ids.size(); i++) {
-            preds.push_back(PredictedObject(class_ids[i], confidences[i], boxes[i]));
+        preds.resize(class_ids.size());
+        for (size_t i = 0; i < class_ids.size(); i++) {
+            preds[i] = PredictedObject(class_ids[i], confidences[i], boxes[i]);
         }
     }
 
@@ -65,7 +66,7 @@ void CVObjectDetector::applyNMSBoxes(std::vector<PredictedObject> &preds, std::v
 
 }
 
-void CVObjectDetector::postProcess(cv::Mat &img, std::vector<cv::Mat> &raw_outs, std::vector<int> &class_ids,
+void CVObjectDetector::postProcess(const cv::Mat &img, std::vector<cv::Mat> &raw_outs, std::vector<int> &class_ids,
                                    std::vector<float> &confidences,
                                    std::vector<cv::Rect> &boxes) {
 
@@ -83,7 +84,7 @@ void CVObjectDetector::postProcess(cv::Mat &img, std::vector<cv::Mat> &raw_outs,
 
 }
 
-void CVObjectDetector::postProcessRegionOutLayer(cv::Mat &img,
+void CVObjectDetector::postProcessRegionOutLayer(const cv::Mat &img,
                                                  std::vector<cv::Mat> &raw_outs,
                                                  std::vector<int> &class_ids,
                                                  std::vector<float> &confidences,
@@ -117,7 +118,7 @@ void CVObjectDetector::postProcessRegionOutLayer(cv::Mat &img,
     }
 }
 
-void CVObjectDetector::postProcessDetectionOutLayer(cv::Mat &img,
+void CVObjectDetector::postProcessDetectionOutLayer(const cv::Mat &img,
                                                     std::vector<cv::Mat> &raw_outs,
                                                     std::vector<int> &class_ids,
                                                     std::vector<float> &confidences,
@@ -143,7 +144,7 @@ void CVObjectDetector::postProcessDetectionOutLayer(cv::Mat &img,
     }
 }
 
-void CVObjectDetector::postProcessDetectionOutRCNN(cv::Mat &img,
+void CVObjectDetector::postProcessDetectionOutRCNN(const cv::Mat &img,
                                                    std::vector<cv::Mat> &raw_outs,
                                                    std::vector<int> &class_ids,
                                                    std::vector<float> &confidences,
