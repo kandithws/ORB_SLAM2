@@ -416,6 +416,18 @@ int MapPoint::PredictScale(const float &currentDist, Frame* pF)
     return nScale;
 }
 
+MapPoint::PointT MapPoint::GetPCLPoint() {
+    cv::Mat pos = GetWorldPos();
+    PointT point;
+    point.x = pos.at<float>(0);
+    point.y = pos.at<float>(1);
+    point.z = pos.at<float>(2);
+    point.rgb = *reinterpret_cast<float*>(&mRGB);
+    return point;
+}
 
+void MapPoint::SetPointColor(uint32_t rgb) {
+    mRGB = rgb;
+}
 
 } //namespace ORB_SLAM

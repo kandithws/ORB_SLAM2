@@ -41,7 +41,11 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     "This program comes with ABSOLUTELY NO WARRANTY;" << endl  <<
     "This is free software, and you are welcome to redistribute it" << endl <<
     "under certain conditions. See LICENSE.txt." << endl << endl;
+
+    // Read global configuration
     Config::getInstance().readConfig(strSettingsFile);
+
+
     std::string sensor_str;
     if(mSensor==MONOCULAR)
         sensor_str = "Monocular";
@@ -80,8 +84,15 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //Create the Map
     mpMap = new Map();
 
+    // Init Object Detector
+    // TODO -- Implement proper object detector factory
+    mpObjectDetector = BuildObjectDetector("CV");
+
     //Create Drawers. These are used by the Viewer
     mpFrameDrawer = new FrameDrawer(mpMap);
+    auto lbmap = mpObjectDetector->getLabelMap();
+    SPDLOG_INFO("Label map size {}", lbmap.size());
+    mpFrameDrawer->SetLabelMap(mpObjectDetector->getLabelMap());
     mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
 
     if(bUseViewer)
@@ -93,7 +104,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
-                             mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor, mpPCLViewer);
+                             mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor,
+                             mpObjectDetector, mpPCLViewer);
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
@@ -122,6 +134,10 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 }
 
+System::~System() {
+    Shutdown(true);
+}
+
 void System::InitLogger() {
     spdlog::set_level(spdlog::level::debug);
     spdlog::set_pattern("%^[%E.%F][%l][%!:%@] %v%$");
@@ -138,6 +154,32 @@ void System::InitLogger() {
         std::shared_ptr<spdlog::logger>(new spdlog::logger( "multi_sink", {console_sink, file_sink}));
     spdlog::set_default_logger(logger);
 */
+}
+
+std::shared_ptr<BaseObjectDetector> System::BuildObjectDetector(string type) {
+    std::shared_ptr<BaseObjectDetector> pBaseDetector;
+    ObjectDetectorParams objectDetectorParam = Config::getInstance().ObjectDetectionParams();
+    if(type == "CV"){
+        std::shared_ptr<CVObjectDetector> pObjDetector
+                = std::make_shared<CVObjectDetector>(
+                        objectDetectorParam.model_path,
+                        objectDetectorParam.config_path,
+                        CV_DNN_FRAMEWORK_DARKNET
+                );
+        pObjDetector->setInputSize(objectDetectorParam.input_size);
+        pObjDetector->setLabelMap(objectDetectorParam.label_map);
+        pObjDetector->setConfidenceThreshold(objectDetectorParam.conf_th);
+        pObjDetector->setApplyNMS(objectDetectorParam.apply_nms);
+        pObjDetector->setNMSThreshold(objectDetectorParam.nms_th);
+
+        pBaseDetector = std::static_pointer_cast<BaseObjectDetector>(pObjDetector);
+    }
+    else {
+        SPDLOG_CRITICAL("Detector Type {} is not implemented!", type);
+        exit(-1);
+    }
+
+    return pBaseDetector;
 }
 
 cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
@@ -325,32 +367,31 @@ void System::Reset()
     mbReset = true;
 }
 
-void System::Shutdown()
+void System::Shutdown(bool bShutDownViewer)
 {
     mpLocalMapper->RequestFinish();
     mpLoopCloser->RequestFinish();
-    if(mpViewer)
-    {
-        mpViewer->RequestFinish();
-        while(!mpViewer->isFinished())
-            usleep(5000);
-    }
 
     // Wait until all thread have effectively stopped
     while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
     {
         usleep(5000);
     }
-
-#ifndef VIEWER_DISABLE_PANGOLIN
-    if(mpViewer)
-        pangolin::BindToContext("ORB-SLAM2: Map Viewer");
-#endif
-
-    if(mpPCLViewer)
-        mpPCLViewer->shutdown();
-
     mpMap->ShutDown();
+    if(bShutDownViewer){
+        if(mpViewer) {
+            mpViewer->RequestFinish();
+            while(!mpViewer->isFinished())
+                usleep(5000);
+        }
+#ifndef VIEWER_DISABLE_PANGOLIN
+        if(mpViewer)
+            pangolin::BindToContext("ORB-SLAM2: Map Viewer");
+#endif
+        if(mpPCLViewer)
+            mpPCLViewer->shutdown();
+    }
+
 }
 
 void System::SaveTrajectoryTUM(const string &filename)

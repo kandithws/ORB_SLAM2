@@ -28,8 +28,12 @@
 #include "ORBextractor.h"
 #include "Frame.h"
 #include "KeyFrameDatabase.h"
+#include "dnn/BaseObjectDetector.h"
 
 #include <mutex>
+#include <memory>
+#include <condition_variable>
+#include <thread>
 
 
 namespace ORB_SLAM2
@@ -39,11 +43,13 @@ class Map;
 class MapPoint;
 class Frame;
 class KeyFrameDatabase;
+class FrameDrawer;
 
 class KeyFrame
 {
 public:
     KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB);
+    KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB, const cv::Mat& imColor, bool rgb=false);
 
     // Pose functions
     void SetPose(const cv::Mat &Tcw);
@@ -116,6 +122,7 @@ public:
         return pKF1->mnId<pKF2->mnId;
     }
 
+    bool WaitObjectsReady(int timeout); // TODO
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
@@ -165,6 +172,9 @@ public:
     const std::vector<float> mvuRight; // negative value for monocular points
     const std::vector<float> mvDepth; // negative value for monocular points
     const cv::Mat mDescriptors;
+    std::vector<uint32_t> mvKeysUnColor;
+
+    std::vector<PredictedObject> mvObjectPrediction;
 
     //BoW
     DBoW2::BowVector mBowVec;
@@ -188,7 +198,10 @@ public:
     const int mnMaxY;
     const cv::Mat mK;
 
-
+    std::mutex mMutexObject;
+    std::mutex mMutexbObjectReady;
+    std::condition_variable mcvObjectReady;
+    bool mbObjectReady = false;
     // The following variables need to be accessed trough a mutex to be thread safe.
 protected:
 
@@ -205,6 +218,7 @@ protected:
     // BoW
     KeyFrameDatabase* mpKeyFrameDB;
     ORBVocabulary* mpORBvocabulary;
+    FrameDrawer* mpFrameDrawer;
 
     // Grid over the image to speed up feature matching
     std::vector< std::vector <std::vector<size_t> > > mGrid;

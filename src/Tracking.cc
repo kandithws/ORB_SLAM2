@@ -146,6 +146,10 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
             mDepthMapFactor = 1.0f/mDepthMapFactor;
     }
 
+    if (mbUseObject){
+        mtCleanDetectionThread = std::make_shared<std::thread>(std::bind(&Tracking::CleanDetectionThread, this));
+    }
+
 }
 
 
@@ -156,10 +160,21 @@ Tracking::Tracking(System *pSys,
                    Map *pMap,
                    KeyFrameDatabase *pKFDB,
                    const string &strSettingPath,
-                   const int sensor, std::shared_ptr<PCLViewer> pPCLViewer)
+                   const int sensor,
+                   const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
+                   const std::shared_ptr<PCLViewer>& pPCLViewer)
         : Tracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB, strSettingPath, sensor)
 {
+    mpObjectDetector = pObjectDetector;
     mpPCLViewer = pPCLViewer;
+}
+
+Tracking::~Tracking(){
+    if(mtCleanDetectionThread){
+        mcvDetectionThreads.notify_all();
+        if(mtCleanDetectionThread->joinable())
+            mtCleanDetectionThread->join();
+    }
 }
 
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
@@ -180,33 +195,35 @@ void Tracking::SetViewer(Viewer *pViewer)
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp)
 {
-    mImGray = imRectLeft;
-    cv::Mat imGrayRight = imRectRight;
+    // TODO -- 2 rgb images for stereo vision
+    mImColor = imRectLeft;
+    mImColorRight = imRectRight;
+    cv::Mat imGrayRight;
 
-    if(mImGray.channels()==3)
+    if(mImColor.channels()==3)
     {
         if(mbRGB)
         {
-            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
-            cvtColor(imGrayRight,imGrayRight,CV_RGB2GRAY);
+            cvtColor(mImColor,mImGray,CV_RGB2GRAY);
+            cvtColor(mImColorRight,imGrayRight,CV_RGB2GRAY);
         }
         else
         {
-            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
-            cvtColor(imGrayRight,imGrayRight,CV_BGR2GRAY);
+            cvtColor(mImColor,mImGray,CV_BGR2GRAY);
+            cvtColor(mImColorRight,imGrayRight,CV_BGR2GRAY);
         }
     }
-    else if(mImGray.channels()==4)
+    else if(mImColor.channels()==4)
     {
         if(mbRGB)
         {
-            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
-            cvtColor(imGrayRight,imGrayRight,CV_RGBA2GRAY);
+            cvtColor(mImColor,mImGray,CV_RGBA2GRAY);
+            cvtColor(mImColorRight,imGrayRight,CV_RGBA2GRAY);
         }
         else
         {
-            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
-            cvtColor(imGrayRight,imGrayRight,CV_BGRA2GRAY);
+            cvtColor(mImColor,mImGray,CV_BGRA2GRAY);
+            cvtColor(mImColorRight,imGrayRight,CV_BGRA2GRAY);
         }
     }
 
@@ -220,22 +237,24 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
 
 cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp)
 {
-    mImGray = imRGB;
+    mImColor = imRGB;
     cv::Mat imDepth = imD;
 
-    if(mImGray.channels()==3)
+    assert(mImColor.channels() >= 3);
+
+    if(mImColor.channels()==3)
     {
         if(mbRGB)
-            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
+            cvtColor(mImColor,mImGray,CV_RGB2GRAY);
         else
-            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
+            cvtColor(mImColor,mImGray,CV_BGR2GRAY);
     }
-    else if(mImGray.channels()==4)
+    else if(mImColor.channels()==4)
     {
         if(mbRGB)
-            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
+            cvtColor(mImColor,mImGray,CV_RGBA2GRAY);
         else
-            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
+            cvtColor(mImColor,mImGray,CV_BGRA2GRAY);
     }
 
     if((fabs(mDepthMapFactor-1.0f)>1e-5) || imDepth.type()!=CV_32F)
@@ -251,21 +270,21 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const d
 
 cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
 {
-    mImGray = im;
-
-    if(mImGray.channels()==3)
+    //mImGray = im;
+    mImColor = im;
+    if(mImColor.channels()==3)
     {
         if(mbRGB)
-            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
+            cvtColor(mImColor,mImGray,CV_RGB2GRAY);
         else
-            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
+            cvtColor(mImColor,mImGray,CV_BGR2GRAY);
     }
-    else if(mImGray.channels()==4)
+    else if(mImColor.channels()==4)
     {
         if(mbRGB)
-            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
+            cvtColor(mImColor,mImGray,CV_RGBA2GRAY);
         else
-            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
+            cvtColor(mImColor,mImGray,CV_BGRA2GRAY);
     }
 
     if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
@@ -535,7 +554,7 @@ void Tracking::StereoInitialization()
         mCurrentFrame.SetPose(cv::Mat::eye(4,4,CV_32F));
 
         // Create KeyFrame
-        KeyFrame* pKFini = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+        KeyFrame* pKFini = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB, mImColor);
 
         // Insert KeyFrame in the map
         mpMap->AddKeyFrame(pKFini);
@@ -1092,7 +1111,22 @@ void Tracking::CreateNewKeyFrame()
     if(!mpLocalMapper->SetNotStop(true))
         return;
 
-    KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+    KeyFrame* pKF;
+    if (mbUseObject){
+        if((mSensor!=System::MONOCULAR) || (mSensor!=System::RGBD))
+            pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB, mImColor);
+        else
+            pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB); // TODO: Stereo Vision support
+
+        QueueDetectionThread(pKF);
+    }
+    else{
+        pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+    }
+
+    // TODO -- Add Keypoint Color Rendering (or perform as a Thread)
+    // AddColorToKeyPoints(pKF);
+
 
     mpReferenceKF = pKF;
     mCurrentFrame.mpReferenceKF = pKF;
@@ -1574,6 +1608,12 @@ void Tracking::Reset()
 
     if(mpViewer)
         mpViewer->Release();
+
+    if(mtCleanDetectionThread){
+        mcvDetectionThreads.notify_all();
+        if(mtCleanDetectionThread->joinable())
+            mtCleanDetectionThread->join();
+    }
 }
 
 void Tracking::ChangeCalibration(const string &strSettingPath)
@@ -1612,6 +1652,47 @@ void Tracking::ChangeCalibration(const string &strSettingPath)
 void Tracking::InformOnlyTracking(const bool &flag)
 {
     mbOnlyTracking = flag;
+}
+
+void Tracking::DetectObjectInKeyFrame(KeyFrame *pKeyFrame) {
+    SPDLOG_DEBUG("DetectionThread Invoked! KeyframeID={}", pKeyFrame->mnId);
+
+    {
+        std::lock_guard<std::mutex> lock(pKeyFrame->mMutexObject);
+        mpObjectDetector->detectObject(mImColor,pKeyFrame->mvObjectPrediction, false);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(pKeyFrame->mMutexbObjectReady);
+        pKeyFrame->mbObjectReady = true;
+    }
+
+    pKeyFrame->mcvObjectReady.notify_all(); // in case others is waiting
+
+    if(mpFrameDrawer)
+        mpFrameDrawer->UpdateObjectFrame(mImColor, pKeyFrame);
+
+    mcvDetectionThreads.notify_all();
+    SPDLOG_DEBUG("Detect {} Objects in KeyframeID={}", pKeyFrame->mvObjectPrediction.size(), pKeyFrame->mnId);
+}
+
+void Tracking::QueueDetectionThread(KeyFrame *pKeyframe) {
+    std::lock_guard<std::mutex> lock(mMutexDetectionThreads);
+    std::shared_ptr<std::thread> t = std::make_shared<std::thread>(
+            std::bind(&Tracking::DetectObjectInKeyFrame,
+                      this, std::placeholders::_1),
+            pKeyframe);
+    //t->detach();
+    mqDetectionThreads.push(t);
+}
+
+void Tracking::CleanDetectionThread() {
+    std::unique_lock<std::mutex> lock(mMutexDetectionThreads);
+    mcvDetectionThreads.wait(lock);
+    auto t = mqDetectionThreads.front();
+    mqDetectionThreads.pop();
+    if (t->joinable())
+        t->join();
 }
 
 

@@ -74,11 +74,12 @@ void PCLViewer::spin() {
     PointT origin;
     slam_visualizer->addText3D("world", origin, 0.05);
     slam_visualizer->addCoordinateSystem(0.25, "current_pose");
-    slam_visualizer->addPointCloud(map_->GetCloudPtr(), "map_cloud");
+    pcl::visualization::PointCloudColorHandlerRGBField<PointT> init_rgb_handler(map_->GetCloudPtr());
+    slam_visualizer->addPointCloud<PointT>(map_->GetCloudPtr(), init_rgb_handler, "map_cloud");
     slam_visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY,1,"map_cloud");
     slam_visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "map_cloud");
     // Force white color for now, will use other fields to store meta data
-    slam_visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR,1,1,1, "map_cloud");
+    //slam_visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR,1,1,1, "map_cloud");
     auto last_tracking_render_time = utils::time::time_now();
     while(!slam_visualizer->wasStopped() && !is_shutdown_){
 
@@ -86,7 +87,8 @@ void PCLViewer::spin() {
 
         if(map_->mbRenderReady){
             std::lock_guard<std::mutex> lock(map_->mMutexCloud);
-            slam_visualizer->updatePointCloud(map_->mpCloudMap, "map_cloud");
+            pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb_handler(map_->mpCloudMap);
+            slam_visualizer->updatePointCloud<PointT>(map_->mpCloudMap, rgb_handler, "map_cloud");
             map_->mbRenderReady = false;
         }
 
@@ -99,7 +101,7 @@ void PCLViewer::spin() {
         }
         // TODO -- Add camera actor pose update!
         // TODO -- Add 3D Bounding Boxes object update
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
 

@@ -21,6 +21,7 @@
 #include "KeyFrame.h"
 #include "Converter.h"
 #include "ORBmatcher.h"
+#include "FrameDrawer.h"
 #include<mutex>
 
 namespace ORB_SLAM2
@@ -54,6 +55,28 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     }
 
     SetPose(F.mTcw);    
+}
+
+KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, const cv::Mat &imColor, bool rgb) :
+    KeyFrame(F, pMap, pKFDB)
+{
+    // Extracting Keypoints color
+    mvKeysUnColor.resize(mvKeysUn.size());
+    for (size_t i=0; i < mvKeysUnColor.size(); i++){
+        cv::Vec3b vRGB = imColor.at<cv::Vec3b>(mvKeysUn[i].pt);
+        uint32_t rgb_val;
+        if(rgb){
+            rgb_val = (static_cast<uint32_t >(vRGB.val[0]) << 16
+                    | static_cast<uint32_t >(vRGB.val[1]) << 8
+                    | static_cast<uint32_t >(vRGB.val[2]) );
+        }
+        else{
+            rgb_val = (static_cast<uint32_t >(vRGB.val[2]) << 16
+                    | static_cast<uint32_t >(vRGB.val[1]) << 8
+                    | static_cast<uint32_t >(vRGB.val[0]) );
+        }
+        mvKeysUnColor[i] = rgb_val;
+    }
 }
 
 void KeyFrame::ComputeBoW()
@@ -210,6 +233,8 @@ int KeyFrame::GetWeight(KeyFrame *pKF)
 void KeyFrame::AddMapPoint(MapPoint *pMP, const size_t &idx)
 {
     unique_lock<mutex> lock(mMutexFeatures);
+    if(mvKeysUnColor.size() > 0)
+        pMP->SetPointColor(mvKeysUnColor[idx]);
     mvpMapPoints[idx]=pMP;
 }
 

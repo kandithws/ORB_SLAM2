@@ -38,6 +38,7 @@
 #include "MapDrawer.h"
 #include "System.h"
 #include "PCLViewer.h"
+#include "dnn/BaseObjectDetector.h"
 #include <memory>
 #include <mutex>
 
@@ -60,7 +61,9 @@ public:
 
     Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
              KeyFrameDatabase* pKFDB, const string &strSettingPath,
-             const int sensor, std::shared_ptr<PCLViewer> pPCLViewer);
+             const int sensor,
+             const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
+             const std::shared_ptr<PCLViewer>& pPCLViewer);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
     cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);
@@ -78,6 +81,8 @@ public:
 
     // Use this function if you have deactivated local mapping and you only want to localize the camera.
     void InformOnlyTracking(const bool &flag);
+
+    ~Tracking();
 
 
 public:
@@ -100,6 +105,8 @@ public:
     // Current Frame
     Frame mCurrentFrame;
     cv::Mat mImGray;
+    cv::Mat mImColor;
+    cv::Mat mImColorRight;
 
     // Initialization Variables (Monocular)
     std::vector<int> mvIniLastMatches;
@@ -149,6 +156,10 @@ protected:
     bool NeedNewKeyFrame();
     void CreateNewKeyFrame();
 
+    // ObjectDetection Related;
+    void DetectObjectInKeyFrame(KeyFrame* pKeyFrame);
+    void AddColorToKeyPoints(KeyFrame* pKeyFrame);
+
     // In case of performing only localization, this flag is true when there are no matches to
     // points in the map. Still tracking will continue if there are enough matches with temporal points.
     // In that case we are doing visual odometry. The system will try to do relocalization to recover
@@ -182,6 +193,9 @@ protected:
     Viewer* mpViewer;
     FrameDrawer* mpFrameDrawer;
     MapDrawer* mpMapDrawer;
+
+    //Object
+    std::shared_ptr<BaseObjectDetector> mpObjectDetector;
 
     //Map
     Map* mpMap;
@@ -217,10 +231,18 @@ protected:
 
     //Color order (true RGB, false BGR, ignored if grayscale)
     bool mbRGB;
+    bool mbUseObject = true;
 
     list<MapPoint*> mlpTemporalPoints;
 
     std::shared_ptr<PCLViewer> mpPCLViewer;
+
+    void CleanDetectionThread();
+    void QueueDetectionThread(KeyFrame* pKeyframe);
+    std::shared_ptr<std::thread> mtCleanDetectionThread;
+    std::queue<std::shared_ptr<std::thread> > mqDetectionThreads;
+    std::condition_variable mcvDetectionThreads;
+    std::mutex mMutexDetectionThreads;
 };
 
 } //namespace ORB_SLAM

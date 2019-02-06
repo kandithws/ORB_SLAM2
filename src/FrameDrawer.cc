@@ -20,7 +20,6 @@
 
 #include "FrameDrawer.h"
 #include "Tracking.h"
-
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -198,6 +197,44 @@ void FrameDrawer::Update(Tracking *pTracker)
         }
     }
     mState=static_cast<int>(pTracker->mLastProcessedState);
+}
+
+void FrameDrawer::UpdateObjectFrame(const cv::Mat& imBGR, KeyFrame* pKeyFrame) {
+
+    if(mbObjFrameUpdated)
+        return;
+
+    {
+        std::lock_guard<std::mutex> lock(mMutexObject);
+        imBGR.copyTo(mImKFBGR);
+        {
+            std::lock_guard<std::mutex> kfObjectLock(pKeyFrame->mMutexObject);
+            mvPredictedObjects = pKeyFrame->mvObjectPrediction;
+        }
+    }
+    mbObjFrameUpdated = true;
+}
+
+
+cv::Mat FrameDrawer::DrawObjectFrame() {
+    cv::Mat ret;
+    {
+        std::lock_guard<std::mutex> lock(mMutexObject);
+        mImKFBGR.copyTo(ret);
+        BaseObjectDetector::drawPredictionBoxes(mvObjectLabelMap,ret, mvPredictedObjects);
+    }
+
+    mbObjFrameUpdated = false;
+    return ret;
+}
+
+bool FrameDrawer::ObjectFrameReady() const {
+    return mbObjFrameUpdated;
+}
+
+void FrameDrawer::SetLabelMap(const std::vector<std::string>& vLabelMap) {
+    mvObjectLabelMap.clear();
+    mvObjectLabelMap = vLabelMap;
 }
 
 } //namespace ORB_SLAM

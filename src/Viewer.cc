@@ -89,7 +89,7 @@ void Viewer::Run()
     Twc.SetIdentity();
 #endif
     cv::namedWindow("ORB-SLAM2: Current Frame");
-
+    cv::namedWindow("Detection Output");
     bool bFollow = true;
     bool bLocalizationMode = false;
 
@@ -138,6 +138,11 @@ void Viewer::Run()
 #endif
         cv::Mat im = mpFrameDrawer->DrawFrame();
         cv::imshow("ORB-SLAM2: Current Frame",im);
+
+        if(mpFrameDrawer->ObjectFrameReady()){
+            cv::Mat imObj = mpFrameDrawer->DrawObjectFrame();
+            cv::imshow("Detection Output", imObj);
+        }
         cv::waitKey(mT);
 #ifndef VIEWER_DISABLE_PANGOLIN
         if(menuReset)

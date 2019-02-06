@@ -24,9 +24,9 @@
 
 #define VIEWER_DISABLE_PANGOLIN
 
-#include<string>
-#include<thread>
-#include<opencv2/core/core.hpp>
+#include <string>
+#include <thread>
+#include <opencv2/core/core.hpp>
 
 #include "Tracking.h"
 #include "FrameDrawer.h"
@@ -39,6 +39,7 @@
 #include "Viewer.h"
 #include "spdlog/spdlog.h"
 #include "PCLViewer.h"
+#include "dnn/CVObjectDetector.h"
 
 
 namespace ORB_SLAM2
@@ -65,7 +66,7 @@ public:
 
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
     System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true);
-
+    ~System();
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
@@ -97,7 +98,7 @@ public:
     // All threads will be requested to finish.
     // It waits until all threads have finished.
     // This function must be called before saving the trajectory.
-    void Shutdown();
+    void Shutdown(bool bShutDownViewer=false);
 
     // Save camera trajectory in the TUM RGB-D dataset format.
     // Only for stereo and RGB-D. This method does not work for monocular.
@@ -131,6 +132,8 @@ private:
 
     void InitLogger();
 
+    std::shared_ptr<BaseObjectDetector> BuildObjectDetector(std::string type="CV");
+
     // Input sensor
     eSensor mSensor;
 
@@ -161,7 +164,10 @@ private:
     FrameDrawer* mpFrameDrawer;
     MapDrawer* mpMapDrawer;
 
+    // Additional pointers
+
     std::shared_ptr<PCLViewer> mpPCLViewer;
+    std::shared_ptr<BaseObjectDetector> mpObjectDetector;
 
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.
