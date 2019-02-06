@@ -57,7 +57,7 @@ void PredictedObject::generateBoundingBox() {
     _bbox = std::shared_ptr<cv::Rect2f>(new cv::Rect2f(cv::Point2f(x_min, y_min), cv::Point2f(x_max, y_max)));
 }
 
-void BaseObjectDetector::parseLabelMap(std::string path, char delim) {
+std::vector<std::string> BaseObjectDetector::parseLabelMap(std::string path, char delim) {
     std::vector<std::string> label_map;
     std::ifstream file(path);
 
@@ -77,7 +77,7 @@ void BaseObjectDetector::parseLabelMap(std::string path, char delim) {
         std::cout << "Couldn't open file " << path << std::endl;
     }
 
-    setLabelMap(label_map);
+    return label_map;
 }
 
 void BaseObjectDetector::drawPredictionBoxes(cv::Mat &img, std::vector<PredictedObject> &preds) {
@@ -92,6 +92,29 @@ void BaseObjectDetector::drawPredictionBoxes(cv::Mat &img, std::vector<Predicted
         if (_label_map.size() > 0) {
             CV_Assert(pred._label < (int) _label_map.size());
             label = _label_map[pred._label] + ": " + label;
+        } else {
+            label = "class" + std::to_string(pred._label) + ": " + label;
+        }
+
+        int baseLine;
+        cv::Size labelSize = cv::getTextSize(label, CV_FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
+        top = std::max(top, labelSize.height);
+        cv::putText(img, label, cv::Point(left, top), CV_FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0));
+    }
+}
+
+void BaseObjectDetector::drawPredictionBoxes(const std::vector<std::string>& label_map, cv::Mat &img, std::vector<PredictedObject> &preds) {
+    for (auto &pred : preds) {
+        int top = (int) pred.box().tl().y;
+        int left = (int) pred.box().tl().x;
+        cv::rectangle(img, pred.box().tl(), pred.box().br(), cv::Scalar(0, 255, 0));
+
+        char conf_str[10];
+        sprintf(conf_str, "%.2f", pred._confidence);
+        std::string label(conf_str);
+        if (label_map.size() > 0) {
+            CV_Assert(pred._label < (int) label_map.size());
+            label = label_map[pred._label] + ": " + label;
         } else {
             label = "class" + std::to_string(pred._label) + ": " + label;
         }

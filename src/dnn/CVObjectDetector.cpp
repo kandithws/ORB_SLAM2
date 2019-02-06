@@ -8,16 +8,20 @@ namespace ORB_SLAM2 {
 
 CVObjectDetector::CVObjectDetector(std::string weights, std::string config, std::string framework)
     : BaseObjectDetector() {
+    std::lock_guard<std::mutex> lock(_model_mutex);
     _model = std::make_shared<cv::dnn::Net>();
+    SPDLOG_INFO("Loading DNN model:{}, config: {}", weights, config);
     *_model = cv::dnn::readNet(weights, config, framework);
     _model->setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
     _model->setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+    _outnames = _model->getUnconnectedOutLayersNames();
 }
 
 void CVObjectDetector::setInputSize(int input_width, int input_height) {
     _input_width = input_width;
     _input_height = input_height < 0 ? input_width : input_height;
 }
+
 void CVObjectDetector::detectObject(const cv::Mat &img, std::vector<PredictedObject> &preds, bool rgb) {
     // required RGB input
     cv::Size inp_size(_input_width > 0 ? _input_width : img.cols,
@@ -26,8 +30,17 @@ void CVObjectDetector::detectObject(const cv::Mat &img, std::vector<PredictedObj
                                           inp_size,
                                           cv::Scalar(0, 0, 0), !rgb); // require rgb
 
-    _model->setInput(blob);
-    static std::vector<cv::String> outnames = _model->getUnconnectedOutLayersNames();
+    std::vector<cv::Mat> outs;
+    std::vector<int> class_ids;
+    std::vector<float> confidences;
+    std::vector<cv::Rect> boxes;
+
+    {
+        std::lock_guard<std::mutex> lock(_model_mutex);
+        _model->setInput(blob);
+        _model->forward(outs, _outnames);
+        postProcess(img, outs, class_ids, confidences, boxes);
+    }
 // TODO
 //  if (_model->getLayer(0)->outputNameToIndex("im_info") != -1) { // Faster-RCNN or R-FCN
 //    cv::Mat resized_img;
@@ -35,12 +48,7 @@ void CVObjectDetector::detectObject(const cv::Mat &img, std::vector<PredictedObj
 //    cv::Mat imInfo = (cv::Mat_< float>(1, 3) << inp_size.height, inp_size.width, 1.6f);
 //    _model->setInput(imInfo, "im_info");
 //  }
-    std::vector<cv::Mat> outs;
-    _model->forward(outs, outnames);
-    std::vector<int> class_ids;
-    std::vector<float> confidences;
-    std::vector<cv::Rect> boxes;
-    postProcess(img, outs, class_ids, confidences, boxes);
+
     if (_apply_nms)
         applyNMSBoxes(preds, class_ids, confidences, boxes);
     else {

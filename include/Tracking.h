@@ -82,6 +82,8 @@ public:
     // Use this function if you have deactivated local mapping and you only want to localize the camera.
     void InformOnlyTracking(const bool &flag);
 
+    ~Tracking();
+
 
 public:
 
@@ -153,6 +155,10 @@ protected:
 
     bool NeedNewKeyFrame();
     void CreateNewKeyFrame();
+
+    // ObjectDetection Related;
+    void DetectObjectInKeyFrame(KeyFrame* pKeyFrame);
+    void AddColorToKeyPoints(KeyFrame* pKeyFrame);
 
     // In case of performing only localization, this flag is true when there are no matches to
     // points in the map. Still tracking will continue if there are enough matches with temporal points.
@@ -230,6 +236,13 @@ protected:
     list<MapPoint*> mlpTemporalPoints;
 
     std::shared_ptr<PCLViewer> mpPCLViewer;
+
+    void CleanDetectionThread();
+    void QueueDetectionThread(KeyFrame* pKeyframe);
+    std::shared_ptr<std::thread> mtCleanDetectionThread;
+    std::queue<std::shared_ptr<std::thread> > mqDetectionThreads;
+    std::condition_variable mcvDetectionThreads;
+    std::mutex mMutexDetectionThreads;
 };
 
 } //namespace ORB_SLAM

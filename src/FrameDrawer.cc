@@ -207,14 +207,11 @@ void FrameDrawer::UpdateObjectFrame(const cv::Mat& imBGR, KeyFrame* pKeyFrame) {
     {
         std::lock_guard<std::mutex> lock(mMutexObject);
         imBGR.copyTo(mImKFBGR);
-        mvPredictedObjects.resize(pKeyFrame->mvObjectPrediction.size());
-        if(!mvPredictedObjects.empty()){
-            mvPredictedObjects.insert(mvPredictedObjects.begin(),
-                                      pKeyFrame->mvObjectPrediction.begin(),
-                                      pKeyFrame->mvObjectPrediction.end());
+        {
+            std::lock_guard<std::mutex> kfObjectLock(pKeyFrame->mMutexObject);
+            mvPredictedObjects = pKeyFrame->mvObjectPrediction;
         }
     }
-
     mbObjFrameUpdated = true;
 }
 
@@ -223,20 +220,21 @@ cv::Mat FrameDrawer::DrawObjectFrame() {
     cv::Mat ret;
     {
         std::lock_guard<std::mutex> lock(mMutexObject);
-        //mImKFBGR.copyTo(ret);
-        ret = mImKFBGR;
-        // TODO -- some object drawing here
+        mImKFBGR.copyTo(ret);
+        BaseObjectDetector::drawPredictionBoxes(mvObjectLabelMap,ret, mvPredictedObjects);
     }
 
-
     mbObjFrameUpdated = false;
-
-
     return ret;
 }
 
 bool FrameDrawer::ObjectFrameReady() const {
     return mbObjFrameUpdated;
+}
+
+void FrameDrawer::SetLabelMap(const std::vector<std::string>& vLabelMap) {
+    mvObjectLabelMap.clear();
+    mvObjectLabelMap = vLabelMap;
 }
 
 } //namespace ORB_SLAM

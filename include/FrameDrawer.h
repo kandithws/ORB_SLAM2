@@ -52,15 +52,15 @@ public:
     cv::Mat DrawFrame();
 
     // For Object Detection
+    void SetLabelMap(const std::vector<std::string>& vLabelMap);
     void UpdateObjectFrame(const cv::Mat& imBGR, KeyFrame* pKeyframe);
-
     bool ObjectFrameReady() const;
     cv::Mat DrawObjectFrame();
+
 
 protected:
 
     void DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText);
-
     // Info of the frame to be drawn
     cv::Mat mIm;
     int N;
@@ -80,6 +80,7 @@ protected:
     cv::Mat mImKFBGR;
     std::vector<PredictedObject> mvPredictedObjects;
     std::mutex mMutexObject;
+    std::vector<std::string> mvObjectLabelMap;
     //std::mutex mMutexbObjectFrameUpdated;
     bool mbObjFrameUpdated = false;
 };

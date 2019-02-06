@@ -35,7 +35,8 @@ class BaseObjectDetector {
     std::vector<std::string> const & getLabelMap() const { return _label_map;}
     virtual void detectObject(const cv::Mat& img, std::vector<PredictedObject>& preds, bool rgb=false) = 0;
     void drawPredictionBoxes(cv::Mat& img, std::vector<PredictedObject>& preds);// box
-    void parseLabelMap(std::string path, char delim='\n');
+    static void drawPredictionBoxes(const std::vector<std::string>& label_map, cv::Mat& img, std::vector<PredictedObject>& preds);
+    static std::vector<std::string> parseLabelMap(std::string path, char delim='\n'); // TODO--move to static method
     //void drawPredictions(cv::Mat& img, std::vector<PredictedObject>& preds, bool draw_boxes=false);
 
   protected:

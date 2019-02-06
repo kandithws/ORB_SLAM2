@@ -90,6 +90,9 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     //Create Drawers. These are used by the Viewer
     mpFrameDrawer = new FrameDrawer(mpMap);
+    auto lbmap = mpObjectDetector->getLabelMap();
+    SPDLOG_INFO("Label map size {}", lbmap.size());
+    mpFrameDrawer->SetLabelMap(mpObjectDetector->getLabelMap());
     mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
 
     if(bUseViewer)

@@ -57,21 +57,6 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     SetPose(F.mTcw);    
 }
 
-KeyFrame::KeyFrame(const cv::Mat &imColor, Frame &F, Map *pMap,
-                   KeyFrameDatabase *pKFDB, const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
-                   FrameDrawer* pFrameDrawer, bool rgb)
-        : KeyFrame(F, pMap, pKFDB)
-{
-    // Detecting Objects
-    mptObjectDetection = std::make_shared<std::thread>(
-            std::bind(&KeyFrame::DetectObjects, this,
-                      std::placeholders::_1,
-                      std::placeholders::_2,
-                      std::placeholders::_3)
-            , imColor, pObjectDetector, pFrameDrawer);
-    mptObjectDetection->detach();
-}
-
 void KeyFrame::ComputeBoW()
 {
     if(mBowVec.empty() || mFeatVec.empty())
@@ -680,31 +665,6 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
     sort(vDepths.begin(),vDepths.end());
 
     return vDepths[(vDepths.size()-1)/q];
-}
-
-void KeyFrame::DetectObjects(const cv::Mat &imColor,
-                             const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
-                             FrameDrawer* pFrameDrawer) {
-    SPDLOG_DEBUG("DetectionThread Invoked! KeyframeID={}", mnId);
-    {
-        std::lock_guard<std::mutex> lock(mMutexObject);
-        // Object Detection here
-        //std::this_thread::sleep_for(std::chrono::seconds(1));
-
-        pObjectDetector->detectObject(imColor, mvObjectPrediction);
-    }
-    SPDLOG_DEBUG("DetectionThread End! KeyframeID={}", mnId);
-
-    {
-        std::lock_guard<std::mutex> lock(mMutexbObjectReady);
-        mbObjectReady = true;
-        mcvObjectReady.notify_all(); // in case others is waiting
-    }
-
-    // Gives Info to draw detection output
-    // TODO -- should we store imColor? in keyframe (this would waste performance)
-    if(pFrameDrawer)
-        pFrameDrawer->UpdateObjectFrame(imColor, this);
 }
 
 } //namespace ORB_SLAM

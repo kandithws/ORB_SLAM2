@@ -9,12 +9,17 @@
 #include "BaseObjectDetector.h"
 #include <opencv2/dnn/dnn.hpp>
 #include <opencv2/opencv.hpp>
+#include <spdlog/spdlog.h>
 
 #define CV_DNN_FRAMEWORK_CAFFE "Caffe"
 #define CV_DNN_FRAMEWORK_TENSORFLOW "Tensorflow"
 #define CV_DNN_FRAMEWORK_DARKNET "Darknet"
 
 namespace ORB_SLAM2{
+/*
+ *  OpenCV DNN doesn't support Multithreading
+ *  http://answers.opencv.org/question/205222/is-dnn-supports-threading/
+ * */
 
 class CVObjectDetector : public BaseObjectDetector {
   public:
@@ -48,6 +53,8 @@ class CVObjectDetector : public BaseObjectDetector {
     double _nms_th = 0.4;
     double _conf_th = 0.5;
     bool _apply_nms= false;
+    std::vector<cv::String> _outnames;
+    std::mutex _model_mutex;
 
   private:
     void postProcessRegionOutLayer(const cv::Mat& img, std::vector<cv::Mat>& raw_outs, std::vector<int>& class_ids,

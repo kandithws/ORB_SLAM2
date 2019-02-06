@@ -49,10 +49,6 @@ class KeyFrame
 {
 public:
     KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB);
-    KeyFrame(const cv::Mat &imColor, Frame &F, Map* pMap,
-             KeyFrameDatabase* pKFDB,
-             const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
-             FrameDrawer* pFrameDrawer=NULL, bool rgb=false);
 
     // Pose functions
     void SetPose(const cv::Mat &Tcw);
@@ -201,7 +197,10 @@ public:
     const int mnMaxY;
     const cv::Mat mK;
 
-
+    std::mutex mMutexObject;
+    std::mutex mMutexbObjectReady;
+    std::condition_variable mcvObjectReady;
+    bool mbObjectReady = false;
     // The following variables need to be accessed trough a mutex to be thread safe.
 protected:
 
@@ -245,19 +244,6 @@ protected:
     std::mutex mMutexPose;
     std::mutex mMutexConnections;
     std::mutex mMutexFeatures;
-
-    std::shared_ptr<std::thread> mptObjectDetection;
-    void DetectObjects(const cv::Mat &imColor,
-                       const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
-                       FrameDrawer* pFrameDrawer);
-
-
-
-
-    std::mutex mMutexObject;
-    std::mutex mMutexbObjectReady;
-    std::condition_variable mcvObjectReady;
-    bool mbObjectReady = false;
 };
 
 } //namespace ORB_SLAM

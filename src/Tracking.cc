@@ -146,6 +146,10 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
             mDepthMapFactor = 1.0f/mDepthMapFactor;
     }
 
+    if (mbUseObject){
+        mtCleanDetectionThread = std::make_shared<std::thread>(std::bind(&Tracking::CleanDetectionThread, this));
+    }
+
 }
 
 
@@ -163,6 +167,14 @@ Tracking::Tracking(System *pSys,
 {
     mpObjectDetector = pObjectDetector;
     mpPCLViewer = pPCLViewer;
+}
+
+Tracking::~Tracking(){
+    if(mtCleanDetectionThread){
+        mcvDetectionThreads.notify_all();
+        if(mtCleanDetectionThread->joinable())
+            mtCleanDetectionThread->join();
+    }
 }
 
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
@@ -1102,13 +1114,18 @@ void Tracking::CreateNewKeyFrame()
     KeyFrame* pKF;
     if (mbUseObject){
         if((mSensor!=System::MONOCULAR) || (mSensor!=System::RGBD))
-            pKF = new KeyFrame(mImColor,mCurrentFrame,mpMap,mpKeyFrameDB, mpObjectDetector, mpFrameDrawer);
+            pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
         else
             pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB); // TODO: Stereo Vision support
+
+        QueueDetectionThread(pKF);
     }
     else{
         pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
     }
+
+    // TODO -- Add Keypoint Color Rendering (or perform as a Thread)
+    // AddColorToKeyPoints(pKF);
 
 
     mpReferenceKF = pKF;
@@ -1591,6 +1608,12 @@ void Tracking::Reset()
 
     if(mpViewer)
         mpViewer->Release();
+
+    if(mtCleanDetectionThread){
+        mcvDetectionThreads.notify_all();
+        if(mtCleanDetectionThread->joinable())
+            mtCleanDetectionThread->join();
+    }
 }
 
 void Tracking::ChangeCalibration(const string &strSettingPath)
@@ -1629,6 +1652,47 @@ void Tracking::ChangeCalibration(const string &strSettingPath)
 void Tracking::InformOnlyTracking(const bool &flag)
 {
     mbOnlyTracking = flag;
+}
+
+void Tracking::DetectObjectInKeyFrame(KeyFrame *pKeyFrame) {
+    SPDLOG_DEBUG("DetectionThread Invoked! KeyframeID={}", pKeyFrame->mnId);
+
+    {
+        std::lock_guard<std::mutex> lock(pKeyFrame->mMutexObject);
+        mpObjectDetector->detectObject(mImColor,pKeyFrame->mvObjectPrediction, false);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(pKeyFrame->mMutexbObjectReady);
+        pKeyFrame->mbObjectReady = true;
+    }
+
+    pKeyFrame->mcvObjectReady.notify_all(); // in case others is waiting
+
+    if(mpFrameDrawer)
+        mpFrameDrawer->UpdateObjectFrame(mImColor, pKeyFrame);
+
+    mcvDetectionThreads.notify_all();
+    SPDLOG_DEBUG("Detect {} Objects in KeyframeID={}", pKeyFrame->mvObjectPrediction.size(), pKeyFrame->mnId);
+}
+
+void Tracking::QueueDetectionThread(KeyFrame *pKeyframe) {
+    std::lock_guard<std::mutex> lock(mMutexDetectionThreads);
+    std::shared_ptr<std::thread> t = std::make_shared<std::thread>(
+            std::bind(&Tracking::DetectObjectInKeyFrame,
+                      this, std::placeholders::_1),
+            pKeyframe);
+    //t->detach();
+    mqDetectionThreads.push(t);
+}
+
+void Tracking::CleanDetectionThread() {
+    std::unique_lock<std::mutex> lock(mMutexDetectionThreads);
+    mcvDetectionThreads.wait(lock);
+    auto t = mqDetectionThreads.front();
+    mqDetectionThreads.pop();
+    if (t->joinable())
+        t->join();
 }
 
 
