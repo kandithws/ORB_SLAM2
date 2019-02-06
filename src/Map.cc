@@ -184,19 +184,12 @@ void Map::RenderPointCloud() {
 
         const vector<MapPoint*> &ref_map_points = GetReferenceMapPoints();
         std::set<MapPoint*> set_ref_map_points(ref_map_points.begin(), ref_map_points.end());
-        uint32_t rgb = 0x00FF0F0F; // TODO -- Get this from map point
         for(size_t i=0, iend=map_points.size(); i < iend; i++){
 
             if(map_points[i]->isBad() || set_ref_map_points.count(map_points[i]))
                 continue;
 
-            cv::Mat pos = map_points[i]->GetWorldPos();
-            PCLPointT point;
-            point.x = pos.at<float>(0);
-            point.y = pos.at<float>(1);
-            point.z = pos.at<float>(2);
-            point.rgb = *reinterpret_cast<float*>(&rgb);
-            map_cloud_ptr->push_back(point);
+            map_cloud_ptr->push_back(map_points[i]->GetPCLPoint());
         }
 
         for (std::set<MapPoint*>::iterator sit=set_ref_map_points.begin(),
@@ -205,13 +198,7 @@ void Map::RenderPointCloud() {
             if((*sit)->isBad())
                 continue;
 
-            cv::Mat pos = (*sit)->GetWorldPos();
-            PCLPointT point;
-            point.x = pos.at<float>(0);
-            point.y = pos.at<float>(1);
-            point.z = pos.at<float>(2);
-            point.rgb = *reinterpret_cast<float*>(&rgb);
-            map_cloud_ptr->push_back(point);
+            map_cloud_ptr->push_back((*sit)->GetPCLPoint());
         }
     }
 

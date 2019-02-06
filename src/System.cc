@@ -134,6 +134,10 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 }
 
+System::~System() {
+    Shutdown(true);
+}
+
 void System::InitLogger() {
     spdlog::set_level(spdlog::level::debug);
     spdlog::set_pattern("%^[%E.%F][%l][%!:%@] %v%$");
@@ -363,32 +367,31 @@ void System::Reset()
     mbReset = true;
 }
 
-void System::Shutdown()
+void System::Shutdown(bool bShutDownViewer)
 {
     mpLocalMapper->RequestFinish();
     mpLoopCloser->RequestFinish();
-    if(mpViewer)
-    {
-        mpViewer->RequestFinish();
-        while(!mpViewer->isFinished())
-            usleep(5000);
-    }
 
     // Wait until all thread have effectively stopped
     while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
     {
         usleep(5000);
     }
-
-#ifndef VIEWER_DISABLE_PANGOLIN
-    if(mpViewer)
-        pangolin::BindToContext("ORB-SLAM2: Map Viewer");
-#endif
-
-    if(mpPCLViewer)
-        mpPCLViewer->shutdown();
-
     mpMap->ShutDown();
+    if(bShutDownViewer){
+        if(mpViewer) {
+            mpViewer->RequestFinish();
+            while(!mpViewer->isFinished())
+                usleep(5000);
+        }
+#ifndef VIEWER_DISABLE_PANGOLIN
+        if(mpViewer)
+            pangolin::BindToContext("ORB-SLAM2: Map Viewer");
+#endif
+        if(mpPCLViewer)
+            mpPCLViewer->shutdown();
+    }
+
 }
 
 void System::SaveTrajectoryTUM(const string &filename)

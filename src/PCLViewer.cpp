@@ -101,7 +101,7 @@ void PCLViewer::spin() {
         }
         // TODO -- Add camera actor pose update!
         // TODO -- Add 3D Bounding Boxes object update
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
 

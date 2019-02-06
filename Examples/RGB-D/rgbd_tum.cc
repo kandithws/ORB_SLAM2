@@ -19,19 +19,21 @@
 */
 
 
-#include<iostream>
-#include<algorithm>
-#include<fstream>
-#include<chrono>
+#include <iostream>
+#include <algorithm>
+#include <fstream>
+#include <chrono>
 
-#include<opencv2/core/core.hpp>
-
-#include<System.h>
+#include <opencv2/core/core.hpp>
+#include <csignal>
+#include <System.h>
 
 using namespace std;
 
+
 void LoadImages(const string &strAssociationFilename, vector<string> &vstrImageFilenamesRGB,
                 vector<string> &vstrImageFilenamesD, vector<double> &vTimestamps);
+
 
 int main(int argc, char **argv)
 {
@@ -119,6 +121,7 @@ int main(int argc, char **argv)
             usleep((T-ttrack)*1e6);
     }
 
+    cout << "Done!" << endl;
     // Stop all threads
     SLAM.Shutdown();
 
@@ -135,7 +138,14 @@ int main(int argc, char **argv)
 
     // Save camera trajectory
     SLAM.SaveTrajectoryTUM("CameraTrajectory.txt");
-    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");   
+    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
+    cout << "Done!" << endl;
+
+    while (1){
+        sleep(1);
+    }
+
+    SLAM.Shutdown(true);
 
     return 0;
 }
