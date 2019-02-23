@@ -42,6 +42,7 @@ void Map::AddMapPoint(MapPoint *pMP)
 {
     unique_lock<mutex> lock(mMutexMap);
     auto st = mspMapPoints.insert(pMP);
+    mmapMapPoints[pMP->mnId] = pMP;
     if(st.second){
         // Signal Add new Pointcloud
     }
@@ -51,6 +52,7 @@ void Map::EraseMapPoint(MapPoint *pMP)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspMapPoints.erase(pMP);
+    mmapMapPoints[pMP->mnId] = static_cast<MapPoint*>(NULL);
     // TODO: This only erase the pointer.
     // Delete the MapPoint
 }

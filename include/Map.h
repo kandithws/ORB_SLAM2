@@ -36,7 +36,6 @@ namespace ORB_SLAM2 {
 class MapPoint;
 class KeyFrame;
 
-
 class Map {
   public:
     typedef pcl::PointXYZRGBL PCLPointT;
@@ -77,6 +76,7 @@ class Map {
   protected:
     std::set<MapPoint *> mspMapPoints;
     std::set<KeyFrame *> mspKeyFrames;
+    std::unordered_map<long unsigned int, MapPoint *> mmapMapPoints; // TODO -- find_by_id (inverse of mspMapPoints)
 
     std::vector<MapPoint *> mvpReferenceMapPoints;
 

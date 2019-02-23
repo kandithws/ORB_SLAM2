@@ -69,6 +69,12 @@ set(DNN_SRC_FILES
   src/dnn/BaseObjectDetector.cpp
   src/dnn/CVObjectDetector.cpp)
 
+
+set(OBJECT_INIT_SRC_FILES
+  include/object_initializer/BaseObjectInitializer.h
+  include/object_initializer/PointCloudObjectInitializer.h
+  )
+
 set(ORBSLAM2_SRC_FILES
   src/System.cc
   src/Tracking.cc
@@ -95,6 +101,7 @@ add_library(${PROJECT_NAME} SHARED
   ${UTILS_SRC_FILES}
   ${PCL_EXTENDED_MODULE_SRC_FILES}
   ${DNN_SRC_FILES}
+  ${OBJECT_INIT_SRC_FILES}
   )
 
 #  ${Pangolin_LIBRARIES}
