@@ -39,9 +39,10 @@ find_package(PCL 1.9 REQUIRED)
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 # Temporary fix for CUDA dep, need to remove CUDA from OpenCV + PANGOLIN + PCL later
-#find_package(CUDA REQUIRED)
-#include_directories(${CUDA_INCLUDE_DIRS})
-
+find_package(CUDA)
+if (CUDA_FOUND)
+ include_directories(${CUDA_INCLUDE_DIRS})
+endif()
 
 # ${Pangolin_INCLUDE_DIRS}
 include_directories(
