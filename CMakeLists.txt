@@ -57,7 +57,7 @@ include_directories(
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 set(UTILS_SRC_FILES src/utils/Config.cpp
   include/utils/Config.h
-  include/utils/time.h include/utils/PCLConverter.h)
+  include/utils/time.h include/utils/PCLConverter.h src/utils/PCLConverter.cpp)
 set(PCL_EXTENDED_MODULE_SRC_FILES
   #  src/pcl_slam_visualizer/customized_pcl_visualizer/customized_interactor_style.cpp
   #  src/pcl_slam_visualizer/customized_pcl_visualizer/customized_pcl_visualizer.cpp

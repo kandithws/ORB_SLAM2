@@ -233,8 +233,8 @@ int KeyFrame::GetWeight(KeyFrame *pKF)
 void KeyFrame::AddMapPoint(MapPoint *pMP, const size_t &idx)
 {
     unique_lock<mutex> lock(mMutexFeatures);
-    if(mvKeysUnColor.size() > 0)
-        pMP->SetPointColor(mvKeysUnColor[idx]);
+    //if(mvKeysUnColor.size() > 0)
+    //    pMP->SetPointColor(mvKeysUnColor[idx]);
     mvpMapPoints[idx]=pMP;
 }
 
@@ -664,16 +664,19 @@ std::vector<MapPoint*> KeyFrame::GetMapPointsInBoundingBox(const cv::Rect2f &bb)
     for (auto &idx : vIndices){
         MapPoint* pMP = mvpMapPoints[idx];
         if(pMP){
-            if (!pMP->isBad())
-                vMapPoint.push_back(pMP);
-            else
-                count++;
+            // Should include all points even they are bad for keyframes for object data
+            vMapPoint.push_back(pMP);
+
+            //if (!pMP->isBad())
+            //    vMapPoint.push_back(pMP);
+            //else
+            //    count++;
         }
         else{
          count++;
         }
-
     }
+
 
     SPDLOG_DEBUG("TOTAL UNUSED COUNTS: {}", count);
     return vMapPoint;

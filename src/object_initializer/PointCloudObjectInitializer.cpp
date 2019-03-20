@@ -4,6 +4,7 @@
 
 #include <object_initializer/PointCloudObjectInitializer.h>
 
+#include "utils/PCLConverter.h"
 
 namespace ORB_SLAM2 {
 PointCloudObjectInitializer::PointCloudObjectInitializer() {
@@ -33,9 +34,18 @@ void PointCloudObjectInitializer::InitializeObjects(ORB_SLAM2::KeyFrame *pKeyfra
     for (auto &pred : vPredictedObjects){
         // if the keyframe does not have object then continue
         auto vObjMapPoints = pKeyframe->GetMapPointsInBoundingBox(pred.box());
-        SPDLOG_DEBUG("Obj {}: Total Point {}", i++, vObjMapPoints.size());
+        SPDLOG_DEBUG("Obj {}: Total Point {}", i, vObjMapPoints.size());
 
+        for (auto &pMP : vObjMapPoints){
+            pMP->SetPointColor(0x00FF0000);
+        }
+
+#ifdef ORB_SLAM2_POINTCLOUDOBJECTINITIALIZER_DEBUG
         // -  Get pcl::PointCloud
+       // auto cloudObject = PCLConverter::toPointCloud(vObjMapPoints);
+        //std::string outname = "/home/kandithws/debug_clouds/kf_" + std::to_string(pKeyframe->mnId) + "_obj_" + std::to_string(i) + ".pcd";
+        //mCloudDebugWriter.write(outname, *cloudObject);
+#endif
 
         // -  PreProcessing, i.e. select only a maingroup of pointcloud (no need other processing)
         //
@@ -52,7 +62,7 @@ void PointCloudObjectInitializer::InitializeObjects(ORB_SLAM2::KeyFrame *pKeyfra
             // If Object Poses are fused, Culling map points
         }
         */
-
+        i++;
     }
 }
 
