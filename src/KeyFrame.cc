@@ -246,6 +246,7 @@ void KeyFrame::EraseMapPointMatch(const size_t &idx)
 
 void KeyFrame::EraseMapPointMatch(MapPoint* pMP)
 {
+    unique_lock<mutex> lock(mMutexFeatures);
     int idx = pMP->GetIndexInKeyFrame(this);
     if(idx>=0)
         mvpMapPoints[idx]=static_cast<MapPoint*>(NULL);
@@ -254,6 +255,7 @@ void KeyFrame::EraseMapPointMatch(MapPoint* pMP)
 
 void KeyFrame::ReplaceMapPointMatch(const size_t &idx, MapPoint* pMP)
 {
+    unique_lock<mutex> lock(mMutexFeatures);
     mvpMapPoints[idx]=pMP;
 }
 
@@ -650,7 +652,6 @@ std::vector<MapPoint*> KeyFrame::GetMapPointsInBoundingBox(const cv::Rect2f &bb)
     const auto br = bb.br();
 
     unique_lock<std::mutex> lock(mMutexFeatures);
-
     for (size_t i=0, iend=mvKeysUn.size(); i < iend; i++){
         const auto pt = mvKeysUn[i].pt;
         if( ((tl.x <= pt.x) && (br.x >= pt.x)) && ((tl.y <= pt.y) && (br.y >= pt.y)) ){ // is in bounding box
@@ -658,12 +659,23 @@ std::vector<MapPoint*> KeyFrame::GetMapPointsInBoundingBox(const cv::Rect2f &bb)
         }
     }
 
-    for (const auto idx : vIndices){
+    SPDLOG_DEBUG("Detected points {} ", vIndices.size());
+    int count = 0;
+    for (auto &idx : vIndices){
         MapPoint* pMP = mvpMapPoints[idx];
-        if (!pMP->isBad())
-            vMapPoint.push_back(pMP);
+        if(pMP){
+            if (!pMP->isBad())
+                vMapPoint.push_back(pMP);
+            else
+                count++;
+        }
+        else{
+         count++;
+        }
+
     }
 
+    SPDLOG_DEBUG("TOTAL UNUSED COUNTS: {}", count);
     return vMapPoint;
 }
 

@@ -11,6 +11,7 @@ PointCloudObjectInitializer::PointCloudObjectInitializer() {
 }
 
 void PointCloudObjectInitializer::InitializeObjects(ORB_SLAM2::KeyFrame *pKeyframe, ORB_SLAM2::Map *pMap) {
+
     auto vPredictedObjects = pKeyframe->GetObjectPredictions();
     // Retrieve neighbor keyframes in covisibility graph
     int nn = 10;

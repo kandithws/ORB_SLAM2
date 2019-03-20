@@ -788,9 +788,15 @@ void LocalMapping::InitializeCurrentKeyFrameObjects() {
     // Requirements
     // 1. Init all predicted object t
     // 2. Add object to the keyframe
-    SPDLOG_DEBUG("INIT objects");
+
+
+    if (mpCurrentKeyFrame->mnId == 0) // Skipping initial keyframe
+        return;
+
+    SPDLOG_DEBUG("INIT objects for KF {}", mpCurrentKeyFrame->mnId);
+
     while(!mpCurrentKeyFrame->IsObjectsReady()){
-        usleep(1000);
+        usleep(100);
         // TODO: Use Queue
     }
 
