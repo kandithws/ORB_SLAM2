@@ -70,6 +70,7 @@ class Map {
 
     // This avoid that two points are created simultaneously in separate threads (id conflict)
     std::mutex mMutexPointCreation;
+    std::mutex mMutexObjectCreation;
 
     void ShutDown();
 

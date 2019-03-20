@@ -207,10 +207,7 @@ void FrameDrawer::UpdateObjectFrame(const cv::Mat& imBGR, KeyFrame* pKeyFrame) {
     {
         std::lock_guard<std::mutex> lock(mMutexObject);
         imBGR.copyTo(mImKFBGR);
-        {
-            std::lock_guard<std::mutex> kfObjectLock(pKeyFrame->mMutexObject);
-            mvPredictedObjects = pKeyFrame->mvObjectPrediction;
-        }
+        mvPredictedObjects = pKeyFrame->GetObjectPredictions();
     }
     mbObjFrameUpdated = true;
 }

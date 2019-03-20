@@ -29,6 +29,7 @@
 #include "Frame.h"
 #include "KeyFrameDatabase.h"
 #include "dnn/BaseObjectDetector.h"
+#include "MapObject.h"
 
 #include <mutex>
 #include <memory>
@@ -44,6 +45,7 @@ class MapPoint;
 class Frame;
 class KeyFrameDatabase;
 class FrameDrawer;
+class MapObject;
 
 class KeyFrame
 {
@@ -95,9 +97,12 @@ public:
     std::vector<MapPoint*> GetMapPointMatches();
     int TrackedMapPoints(const int &minObs);
     MapPoint* GetMapPoint(const size_t &idx);
+    std::vector<MapPoint*> GetMapPointsFromIndices(const std::vector<size_t>& vIdxs);
 
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r) const;
+    std::vector<MapPoint*> GetMapPointsInBoundingBox(const cv::Rect2f& bb);
+
     cv::Mat UnprojectStereo(int i);
 
     // Image
@@ -122,7 +127,9 @@ public:
         return pKF1->mnId<pKF2->mnId;
     }
 
-    bool WaitObjectsReady(int timeout); // TODO
+    bool IsObjectsReady();
+
+    std::vector<PredictedObject> GetObjectPredictions();
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
@@ -172,9 +179,12 @@ public:
     const std::vector<float> mvuRight; // negative value for monocular points
     const std::vector<float> mvDepth; // negative value for monocular points
     const cv::Mat mDescriptors;
-    std::vector<uint32_t> mvKeysUnColor;
 
+    // TODO : Migrate this to protected
+    std::vector<uint32_t> mvKeysUnColor;
     std::vector<PredictedObject> mvObjectPrediction;
+
+    std::vector<MapObject> mvObject;
 
     //BoW
     DBoW2::BowVector mBowVec;
@@ -245,6 +255,10 @@ protected:
     std::mutex mMutexPose;
     std::mutex mMutexConnections;
     std::mutex mMutexFeatures;
+
+    // Object Stuff
+
+
 };
 
 } //namespace ORB_SLAM

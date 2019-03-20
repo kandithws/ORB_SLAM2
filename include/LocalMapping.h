@@ -26,8 +26,9 @@
 #include "LoopClosing.h"
 #include "Tracking.h"
 #include "KeyFrameDatabase.h"
-
+#include <spdlog/spdlog.h>
 #include <mutex>
+#include <object_initializer/PointCloudObjectInitializer.h>
 
 
 namespace ORB_SLAM2
@@ -74,6 +75,11 @@ public:
 
 protected:
 
+    // Object Stuffs
+    void CleanUpInitializeObjectQueue();
+    void InitializeCurrentKeyFrameObjects();
+    void ObjectCulling();
+    // --------------------------------
     bool CheckNewKeyFrames();
     void ProcessNewKeyFrame();
     void CreateNewMapPoints();
@@ -121,6 +127,13 @@ protected:
 
     bool mbAcceptKeyFrames;
     std::mutex mMutexAccept;
+
+    // Object Stuff
+    bool mbUseObject = true;
+    std::shared_ptr<PointCloudObjectInitializer> mpObjInitializer;
+    std::mutex mMutexLocalBA;
+
+
 };
 
 } //namespace ORB_SLAM

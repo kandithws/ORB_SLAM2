@@ -32,6 +32,8 @@ LocalMapping::LocalMapping(Map *pMap, const float bMonocular):
     mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
     mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true)
 {
+    if(mbUseObject)
+        mpObjInitializer = std::make_shared<PointCloudObjectInitializer>();
 }
 
 void LocalMapping::SetLoopCloser(LoopClosing* pLoopCloser)
@@ -54,6 +56,9 @@ void LocalMapping::Run()
         // Tracking will see that Local Mapping is busy
         SetAcceptKeyFrames(false);
 
+        if(mbUseObject)
+            CleanUpInitializeObjectQueue();
+
         // Check if there are keyframes in the queue
         if(CheckNewKeyFrames())
         {
@@ -72,19 +77,32 @@ void LocalMapping::Run()
                 SearchInNeighbors();
             }
 
+
+            // Initialize Object stuff when mappoints are stable
+            if(mbUseObject)
+                InitializeCurrentKeyFrameObjects();
+
             mbAbortBA = false;
 
             if(!CheckNewKeyFrames() && !stopRequested())
             {
-                // Local BA
-                if(mpMap->KeyFramesInMap()>2)
-                    Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
 
+                // Local BA
+                if(mpMap->KeyFramesInMap()>2){
+                    if (mbUseObject)
+                        Optimizer::LocalBundleAdjustmentWithObjects(mpCurrentKeyFrame,&mbAbortBA, mpMap);
+                    else
+                        Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
+                }
                 // Check redundant local Keyframes
                 KeyFrameCulling();
+
+                if (mbUseObject)
+                    ObjectCulling();
             }
 
             mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
+            // TODO: Insert Object to mpLoopCloser
         }
         else if(Stop())
         {
@@ -755,6 +773,36 @@ bool LocalMapping::isFinished()
 {
     unique_lock<mutex> lock(mMutexFinish);
     return mbFinished;
+}
+
+// Objects method
+
+void LocalMapping::CleanUpInitializeObjectQueue() {
+    // TODO: Implement this after InitializeCurrentKeyFrameObjects()
+    // -- if there are some keyframes in a pending queue and those are not bad (has not been culled):
+    // (Do we need to check if it is still in LocalBA windows ??)
+    //         initialize all objects in a queue
+}
+
+void LocalMapping::InitializeCurrentKeyFrameObjects() {
+    // Requirements
+    // 1. Init all predicted object t
+    // 2. Add object to the keyframe
+    SPDLOG_DEBUG("INIT objects");
+    while(!mpCurrentKeyFrame->IsObjectsReady()){
+        usleep(1000);
+        // TODO: Use Queue
+    }
+
+    mpObjInitializer->InitializeObjects(mpCurrentKeyFrame, mpMap);
+
+    // StateFlow * Assume that initialize process is fast, (unlike prediction)
+    // -- If current keyframe has finished object prediction, Initialize objects (now=wait until finished)
+    // -- else store current frame pointer in a queue and continue
+}
+
+void LocalMapping::ObjectCulling() {
+    // TODO: Copy Logic from MapPoint Culling
 }
 
 } //namespace ORB_SLAM

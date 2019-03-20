@@ -45,7 +45,7 @@ class MapPoint {
     cv::Mat GetWorldPos();
 
     cv::Mat GetNormal();
-    KeyFrame *GetReferenceKeyFrame();
+    KeyFrame *GetReferenceKeyFrame(); // For loop closure
 
     std::map<KeyFrame *, size_t> GetObservations();
     int Observations();
@@ -121,6 +121,7 @@ class MapPoint {
 
     // Keyframes observing the point and associated index in keyframe
     std::map<KeyFrame *, size_t> mObservations;
+
 
     // Mean viewing direction
     cv::Mat mNormalVector;

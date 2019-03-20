@@ -311,6 +311,16 @@ MapPoint* KeyFrame::GetMapPoint(const size_t &idx)
     return mvpMapPoints[idx];
 }
 
+std::vector<MapPoint*> KeyFrame::GetMapPointsFromIndices(const std::vector<size_t> &vIdxs) {
+    unique_lock<mutex> lock(mMutexFeatures);
+    std::vector<MapPoint*> vMp;
+    vMp.reserve(vIdxs.size());
+    for(auto &idx : vIdxs){
+        vMp.push_back(mvpMapPoints[idx]);
+    }
+    return vMp;
+}
+
 void KeyFrame::UpdateConnections()
 {
     map<KeyFrame*,int> KFcounter;
@@ -632,6 +642,31 @@ vector<size_t> KeyFrame::GetFeaturesInArea(const float &x, const float &y, const
     return vIndices;
 }
 
+std::vector<MapPoint*> KeyFrame::GetMapPointsInBoundingBox(const cv::Rect2f &bb) {
+    std::vector<MapPoint*> vMapPoint;
+    std::vector<size_t> vIndices;
+    vIndices.reserve(N);
+    const auto tl = bb.tl();
+    const auto br = bb.br();
+
+    unique_lock<std::mutex> lock(mMutexFeatures);
+
+    for (size_t i=0, iend=mvKeysUn.size(); i < iend; i++){
+        const auto pt = mvKeysUn[i].pt;
+        if( ((tl.x <= pt.x) && (br.x >= pt.x)) && ((tl.y <= pt.y) && (br.y >= pt.y)) ){ // is in bounding box
+            vIndices.push_back(i);
+        }
+    }
+
+    for (const auto idx : vIndices){
+        MapPoint* pMP = mvpMapPoints[idx];
+        if (!pMP->isBad())
+            vMapPoint.push_back(pMP);
+    }
+
+    return vMapPoint;
+}
+
 bool KeyFrame::IsInImage(const float &x, const float &y) const
 {
     return (x>=mnMinX && x<mnMaxX && y>=mnMinY && y<mnMaxY);
@@ -687,4 +722,13 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
     return vDepths[(vDepths.size()-1)/q];
 }
 
+bool KeyFrame::IsObjectsReady() {
+    std::lock_guard<std::mutex> lock(mMutexbObjectReady);
+    return mbObjectReady;
+}
+
+std::vector<PredictedObject> KeyFrame::GetObjectPredictions() {
+    std::lock_guard<std::mutex> lock(mMutexObject);
+    return mvObjectPrediction;
+}
 } //namespace ORB_SLAM
