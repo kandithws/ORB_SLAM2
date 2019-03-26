@@ -188,7 +188,7 @@ void Map::RenderPointCloud() {
         std::set<MapPoint*> set_ref_map_points(ref_map_points.begin(), ref_map_points.end());
         for(size_t i=0, iend=map_points.size(); i < iend; i++){
 
-            if(map_points[i]->isBad() || set_ref_map_points.count(map_points[i]))
+            if(map_points[i]->isBad() || set_ref_map_points.count(map_points[i])) // if map point is bad or it is a ref
                 continue;
 
             map_cloud_ptr->push_back(map_points[i]->GetPCLPoint());

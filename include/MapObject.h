@@ -8,6 +8,7 @@
 #include"KeyFrame.h"
 #include "Map.h"
 #include "dnn/BaseObjectDetector.h"
+#include "Cuboid.h"
 
 namespace ORB_SLAM2 {
 // TODO: Mimic pattern from MapPoint
@@ -17,19 +18,19 @@ class Map;
 
 class MapObject {
   public:
-    MapObject(const cv::Mat &Cuboid, KeyFrame *pRefKF, Map *pMap); // Get "3D BB" from Object Initializer
+    MapObject(const Cuboid& cuboid, KeyFrame *pRefKF, Map *pMap); // Get "3D BB" from Object Initializer
 
-    void SetWorldCuboid(const cv::Mat &Cuboid);
-    cv::Mat GetWorldCuboid();
+    void SetCuboid(const Cuboid& cuboid);
+    Cuboid GetCuboid();
 
-    void AddObservation(KeyFrame *pKF, size_t idx);
-    void EraseObservation(KeyFrame *pKF);
-
-    void AddMapPoint(MapPoint *pMp);
-    void EraseMapPoint(MapPoint *pMp);
-
-    int GetIndexInKeyFrame(KeyFrame *pKF);
-    bool IsInKeyFrame(KeyFrame *pKF);
+//    void AddObservation(KeyFrame *pKF, size_t idx);
+//    void EraseObservation(KeyFrame *pKF);
+//
+//    void AddMapPoint(MapPoint *pMp);
+//    void EraseMapPoint(MapPoint *pMp);
+//
+//    int GetIndexInKeyFrame(KeyFrame *pKF);
+//    bool IsInKeyFrame(KeyFrame *pKF);
 
     // Add debug pointcloud -- save object pcd
 
@@ -45,7 +46,8 @@ class MapObject {
     // Bad flag (we do not currently erase MapObject from memory)
     bool mbBad;
 
-    cv::Mat mCuboid; // x, y, z, r, p, y, w, h, l : 3D BB
+    std::mutex mMutexCuboid;
+    Cuboid mCuboid;
 
     // Keyframes observing the object and associated index in keyframe
     std::map<KeyFrame *, size_t> mObservations;
@@ -55,9 +57,6 @@ class MapObject {
 
     KeyFrame* mpRefKeyframe;
     Map *mpMap;
-
-    std::mutex mMutexCuboid;
-
 };
 }
 

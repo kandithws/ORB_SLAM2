@@ -22,6 +22,7 @@
 #include "LoopClosing.h"
 #include "ORBmatcher.h"
 #include "Optimizer.h"
+#include "utils/time.h"
 
 #include<mutex>
 
@@ -788,16 +789,20 @@ void LocalMapping::InitializeCurrentKeyFrameObjects() {
     // Requirements
     // 1. Init all predicted object t
     // 2. Add object to the keyframe
-
-
     if (mpCurrentKeyFrame->mnId == 0) // Skipping initial keyframe
         return;
 
     SPDLOG_DEBUG("INIT objects for KF {}", mpCurrentKeyFrame->mnId);
+    auto start_time = utils::time::time_now();
 
     while(!mpCurrentKeyFrame->IsObjectsReady()){
-        usleep(100);
-        // TODO: Use Queue
+        usleep(1000);
+        if (utils::time::time_diff_from_now_second(start_time) > mfObjectInitTimeOut){
+            SPDLOG_DEBUG("Put KF in processing Queue {}", mpCurrentKeyFrame->mnId);
+            // TODO: Push to pending Queue
+            break;
+        }
+
     }
 
     mpObjInitializer->InitializeObjects(mpCurrentKeyFrame, mpMap);

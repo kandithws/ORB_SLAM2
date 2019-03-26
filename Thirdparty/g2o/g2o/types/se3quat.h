@@ -173,7 +173,32 @@ namespace g2o {
         _t=Vector3d(v[0], v[1], v[2]);
       }
 
+      // From new g2o
+      // copied from my quat to euler
+      void quat_to_euler_zyx_infuc(const Eigen::Quaterniond q, double& roll, double& pitch, double& yaw) const
+      {
+        const double qw = q.w();
+        const double qx = q.x();
+        const double qy = q.y();
+        const double qz = q.z();
 
+        roll = atan2(2*(qw*qx+qy*qz), 1-2*(qx*qx+qy*qy));
+        pitch = asin(2*(qw*qy-qz*qx));
+        yaw = atan2(2*(qw*qz+qx*qy), 1-2*(qy*qy+qz*qz));
+      }
+
+      inline Vector6d toXYZPRYVector() const{
+        double yaw, pitch, roll;
+        quat_to_euler_zyx_infuc(_r, roll, pitch, yaw);
+        Vector6d v;
+        v[0]=_t(0);
+        v[1]=_t(1);
+        v[2]=_t(2);
+        v[3]=roll;
+        v[4]=pitch;
+        v[5]=yaw;
+        return v;
+      }
 
       Vector6d log() const {
         Vector6d res;

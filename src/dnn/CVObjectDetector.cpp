@@ -48,15 +48,16 @@ void CVObjectDetector::detectObject(const cv::Mat &img, std::vector<PredictedObj
 //    cv::Mat imInfo = (cv::Mat_< float>(1, 3) << inp_size.height, inp_size.width, 1.6f);
 //    _model->setInput(imInfo, "im_info");
 //  }
+    applyNMSBoxes(preds, class_ids, confidences, boxes);
 
-    if (_apply_nms)
-        applyNMSBoxes(preds, class_ids, confidences, boxes);
-    else {
-        preds.resize(class_ids.size());
-        for (size_t i = 0; i < class_ids.size(); i++) {
-            preds[i] = PredictedObject(class_ids[i], confidences[i], boxes[i]);
-        }
-    }
+//    if (_apply_nms)
+//        applyNMSBoxes(preds, class_ids, confidences, boxes);
+//    else {
+//        preds.resize(class_ids.size());
+//        for (size_t i = 0; i < class_ids.size(); i++) {
+//            preds[i] = PredictedObject(class_ids[i], confidences[i], boxes[i]);
+//        }
+//    }
 
 }
 

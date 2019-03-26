@@ -77,7 +77,7 @@ void PCLViewer::spin() {
     pcl::visualization::PointCloudColorHandlerRGBField<PointT> init_rgb_handler(map_->GetCloudPtr());
     slam_visualizer->addPointCloud<PointT>(map_->GetCloudPtr(), init_rgb_handler, "map_cloud");
     slam_visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY,1,"map_cloud");
-    slam_visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "map_cloud");
+    slam_visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "map_cloud");
     // Force white color for now, will use other fields to store meta data
     //slam_visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR,1,1,1, "map_cloud");
     auto last_tracking_render_time = utils::time::time_now();

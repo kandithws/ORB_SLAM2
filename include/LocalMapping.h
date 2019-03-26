@@ -133,6 +133,8 @@ protected:
     std::shared_ptr<PointCloudObjectInitializer> mpObjInitializer;
     std::mutex mMutexLocalBA;
 
+    float mfObjectInitTimeOut = 2.5f;
+
 
 };
 

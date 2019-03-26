@@ -57,7 +57,10 @@ include_directories(
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 set(UTILS_SRC_FILES src/utils/Config.cpp
   include/utils/Config.h
-  include/utils/time.h include/utils/PCLConverter.h src/utils/PCLConverter.cpp)
+  include/utils/time.h include/utils/PCLConverter.h
+        src/utils/PCLConverter.cpp
+        include/utils/matrix_utils.h
+        src/utils/matrix_utils.cpp)
 set(PCL_EXTENDED_MODULE_SRC_FILES
   #  src/pcl_slam_visualizer/customized_pcl_visualizer/customized_interactor_style.cpp
   #  src/pcl_slam_visualizer/customized_pcl_visualizer/customized_pcl_visualizer.cpp
@@ -95,7 +98,7 @@ set(ORBSLAM2_SRC_FILES
   src/KeyFrameDatabase.cc
   src/Sim3Solver.cc
   src/Initializer.cc
-  src/Viewer.cc include/MapObject.h src/MapObject.cpp)
+  src/Viewer.cc include/MapObject.h src/MapObject.cpp include/Cuboid.h src/Cuboid.cpp)
 
 add_library(${PROJECT_NAME} SHARED
   ${ORBSLAM2_SRC_FILES}
