@@ -13,6 +13,7 @@
 #include <memory>
 #include <thread>
 #include "Map.h"
+#include "MapObject.h"
 
 #define DEFAULT_CLOUD_COLOR 0x0FFF
 #define DEFAULT_CLOUD_COLOR_RED 0x0F00
@@ -34,7 +35,13 @@ class PCLViewer {
     cv::Mat current_cam_pose_;
     std::mutex current_cam_pose_mutex_;
     double tracking_render_period_ = 1.0/10.0;
+    double object_render_period_ = 1.0;
     void getCurrentCamPose(Eigen::Affine3f& pose);
+    void getObjectCubeData(MapObject* pObj,
+            Eigen::Vector3f& t,
+            Eigen::Quaternionf& q,
+            Eigen::Vector3f& scale,
+            Eigen::Affine3f& tf);
     // std::shared_ptr<pcl::visualization::PCLSLAMVisualizer> slam_visualizer_;
     std::shared_ptr<std::thread> spin_thread_;
     Map* map_;

@@ -42,17 +42,22 @@ void Map::AddMapPoint(MapPoint *pMP)
 {
     unique_lock<mutex> lock(mMutexMap);
     auto st = mspMapPoints.insert(pMP);
-    mmapMapPoints[pMP->mnId] = pMP;
+    // mmapMapPoints[pMP->mnId] = pMP;
     if(st.second){
         // Signal Add new Pointcloud
     }
+}
+
+void Map::AddMapObject(MapObject *pMO) {
+    unique_lock<mutex> lock(mMutexMap);
+    mspMapObjects.insert(pMO);
 }
 
 void Map::EraseMapPoint(MapPoint *pMP)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspMapPoints.erase(pMP);
-    mmapMapPoints[pMP->mnId] = static_cast<MapPoint*>(NULL);
+    // mmapMapPoints[pMP->mnId] = static_cast<MapPoint*>(NULL);
     // TODO: This only erase the pointer.
     // Delete the MapPoint
 }
@@ -64,6 +69,11 @@ void Map::EraseKeyFrame(KeyFrame *pKF)
 
     // TODO: This only erase the pointer.
     // Delete the MapPoint
+}
+
+void Map::EraseMapObject(MapObject *pMO) {
+    unique_lock<mutex> lock(mMutexMap);
+    mspMapObjects.erase(pMO);
 }
 
 void Map::SetReferenceMapPoints(const vector<MapPoint *> &vpMPs)
@@ -94,6 +104,11 @@ vector<MapPoint*> Map::GetAllMapPoints()
 {
     unique_lock<mutex> lock(mMutexMap);
     return vector<MapPoint*>(mspMapPoints.begin(),mspMapPoints.end());
+}
+
+vector<MapObject *> Map::GetAllMapObjects(){
+    unique_lock<mutex> lock(mMutexMap);
+    return vector<MapObject* >(mspMapObjects.begin(),mspMapObjects.end());
 }
 
 long unsigned int Map::MapPointsInMap()

@@ -18,13 +18,19 @@ class Map;
 
 class MapObject {
   public:
-    MapObject(const Cuboid& cuboid, KeyFrame *pRefKF, Map *pMap); // Get "3D BB" from Object Initializer
+    MapObject(Cuboid& cuboid, int label, KeyFrame *pRefKF, Map *pMap); // Get "3D BB" from Object Initializer
 
-    void SetCuboid(const Cuboid& cuboid);
-    Cuboid GetCuboid();
+    void SetCuboid(Cuboid& cuboid);
+    void GetCuboid(Cuboid& cuboid); // due to eigen
 
-//    void AddObservation(KeyFrame *pKF, size_t idx);
-//    void EraseObservation(KeyFrame *pKF);
+    void AddObservation(KeyFrame *pKF, size_t idx);
+    void EraseObservation(KeyFrame *pKF);
+
+    std::map<KeyFrame *, size_t> GetObservations();
+    int Observations();
+
+    int GetIndexInKeyFrame(KeyFrame *pKF);
+    bool IsInKeyFrame(KeyFrame *pKF);
 //
 //    void AddMapPoint(MapPoint *pMp);
 //    void EraseMapPoint(MapPoint *pMp);
@@ -42,15 +48,19 @@ class MapObject {
 
     static std::mutex mGlobalMutex;
 
+    const int mLabel;
+
   protected:
     // Bad flag (we do not currently erase MapObject from memory)
     bool mbBad;
 
     std::mutex mMutexCuboid;
-    Cuboid mCuboid;
+    Cuboid* mCuboid; // Due to eigen operator alignment
 
     // Keyframes observing the object and associated index in keyframe
+    std::mutex mMutexObservations;
     std::map<KeyFrame *, size_t> mObservations;
+    int nObs = 0;
 
     // Object has_many map points, map point belongs to one object at a time
     std::set<MapPoint *> mspMapPoints;

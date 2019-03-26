@@ -6,12 +6,13 @@
 #include <random>
 
 
+
 typedef pcl::PointXYZRGBL PointT;
 
 namespace ORB_SLAM2 {
 PointCloudObjectInitializer::PointCloudObjectInitializer() {
     // TODO : Config this
-    mCloudSORFilter.setMeanK(8);
+    mCloudSORFilter.setMeanK(7);
     mCloudSORFilter.setStddevMulThresh(0.8);
 }
 
@@ -68,21 +69,20 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
 
 
     for(vector<KeyFrame*>::const_iterator vit_kf=vpNeighKFs.begin(), vend_kf=vpNeighKFs.end(); vit_kf!=vend_kf; vit_kf++){
-        if ( (*vit_kf)->mvObject.size() == 0)
+        if ( (*vit_kf)->mvpMapObjects.size() == 0)
                 continue;
-
             // TODO: Object Association
-
     }
 
-    int i = 0;
+
     SPDLOG_DEBUG("----Init Object for KF:  {} -----", pKeyframe->mnId);
-    for (auto &pred : vPredictedObjects){
+    for (size_t i=0; i < vPredictedObjects.size(); i++){
+        auto &pred = vPredictedObjects[i];
         // if the keyframe does not have object then continue
         auto vObjMapPoints = pKeyframe->GetMapPointsInBoundingBox(pred.box());
         SPDLOG_DEBUG("Obj {}: Total Point {}", i, vObjMapPoints.size());
 
-        if (vObjMapPoints.size() < 8){
+        if (vObjMapPoints.size() < 10){
             continue; // Too few points for calculation, TODO: Set as parameters
         }
 
@@ -134,11 +134,17 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
 
             pMP->SetPointColor(0x0000FF00); // For Debuging
         }
-        // Create new MapObject
+        // Create new MapObject -- pattern from LocalMapping.cc MapPoint!
+        MapObject* pMO = new MapObject(cuboid, pred._label, pKeyframe, pMap);
+        if (pMO){
+            pMO->AddObservation(pKeyframe, i);
+            pKeyframe->AddMapObject(pMO, i);
+            pMap->AddMapObject(pMO);
+        }
+        else{
+            SPDLOG_WARN("NOT CREATED!");
+        }
 
-        // Insert to Map & addObservations (KF)
-
-        i++;
     }
 }
 

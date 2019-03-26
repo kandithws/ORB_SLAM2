@@ -746,4 +746,9 @@ std::vector<PredictedObject> KeyFrame::GetObjectPredictions() {
     std::lock_guard<std::mutex> lock(mMutexObject);
     return mvObjectPrediction;
 }
+
+void KeyFrame::AddMapObject(ORB_SLAM2::MapObject *pMO, const size_t &idx) {
+    std::lock_guard<std::mutex> lock(mMutexObject);
+    mvpMapObjects[idx]=pMO;
+}
 } //namespace ORB_SLAM

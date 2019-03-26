@@ -99,6 +99,9 @@ public:
     MapPoint* GetMapPoint(const size_t &idx);
     std::vector<MapPoint*> GetMapPointsFromIndices(const std::vector<size_t>& vIdxs);
 
+    // Object observation functions
+    void AddMapObject(MapObject* pMO, const size_t &idx); //idx of Predicted
+
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r) const;
     std::vector<MapPoint*> GetMapPointsInBoundingBox(const cv::Rect2f& bb);
@@ -183,8 +186,7 @@ public:
     // TODO : Migrate this to protected
     std::vector<uint32_t> mvKeysUnColor;
     std::vector<PredictedObject> mvObjectPrediction;
-
-    std::vector<MapObject> mvObject;
+    std::vector<MapObject*> mvpMapObjects;
 
     //BoW
     DBoW2::BowVector mBowVec;
@@ -228,7 +230,6 @@ protected:
     // BoW
     KeyFrameDatabase* mpKeyFrameDB;
     ORBVocabulary* mpORBvocabulary;
-    FrameDrawer* mpFrameDrawer;
 
     // Grid over the image to speed up feature matching
     std::vector< std::vector <std::vector<size_t> > > mGrid;

@@ -61,6 +61,25 @@ void PCLViewer::getCurrentCamPose(Eigen::Affine3f& pose) {
     }
 }
 
+void PCLViewer::getObjectCubeData(MapObject *pObj, Eigen::Vector3f &t, Eigen::Quaternionf &q,
+                                  Eigen::Vector3f &scale, Eigen::Affine3f &tf) {
+    SPDLOG_INFO("Test0");
+    if(!pObj)
+        SPDLOG_WARN("POINTER NULL");
+
+    Cuboid cuboid; pObj->GetCuboid(cuboid);
+    SPDLOG_INFO("Test1");
+    t = cuboid.mPose.translation().cast<float>();
+    q = cuboid.mPose.rotation().cast<float>();
+    scale = cuboid.mScale.cast<float>();
+    SPDLOG_INFO("Test2");
+    Eigen::Matrix4f tf_mat(Eigen::Matrix4f::Identity());
+    tf_mat.block<3,3>(0,0) = q.toRotationMatrix();
+    tf_mat.block<3,1>(0,3) = t;
+    tf.matrix() = tf_mat;
+    SPDLOG_INFO("Test3");
+}
+
 
 void PCLViewer::spin() {
     SPDLOG_DEBUG("START PCLViewer SPIN THREAD");
@@ -81,6 +100,8 @@ void PCLViewer::spin() {
     // Force white color for now, will use other fields to store meta data
     //slam_visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR,1,1,1, "map_cloud");
     auto last_tracking_render_time = utils::time::time_now();
+    auto last_object_render_time = utils::time::time_now();
+    unsigned long int last_object_id = 0;
     while(!slam_visualizer->wasStopped() && !is_shutdown_){
 
         slam_visualizer->spinOnce(10);
@@ -99,7 +120,51 @@ void PCLViewer::spin() {
             //SPDLOG_DEBUG("Render Pose {}, {}, {}", pose.translation().x(), pose.translation().y(), pose.translation().z());
             last_tracking_render_time = utils::time::time_now();
         }
-        // TODO -- Add camera actor pose update!
+
+        if (utils::time::time_diff_from_now_second(last_object_render_time) > object_render_period_){
+            std::vector<MapObject* > objects = map_->GetAllMapObjects();
+
+            for (MapObject* pObj : objects){
+                Eigen::Vector3f t; Eigen::Quaternionf q;
+                Eigen::Vector3f scale; Eigen::Affine3f tf;
+                SPDLOG_INFO("HELLO WORLD!");
+                getObjectCubeData(pObj, t, q, scale, tf);
+                SPDLOG_INFO("HELLO WORLD1");
+                std::string cube_label_str = "obj_cube" + std::to_string(pObj->mnId);
+                std::string tf_label_str = "obj_tf" + std::to_string(pObj->mnId);
+
+                if(slam_visualizer->updateCube(t, q, scale(0), scale(1), scale(2), cube_label_str)){
+                    SPDLOG_INFO("HELLO WORLD5");
+                    slam_visualizer->updateCoordinateSystemPose(tf_label_str, tf);
+                }
+                else{
+
+                    slam_visualizer->addCube(t,q, scale(0), scale(1), scale(2), cube_label_str);
+                    SPDLOG_INFO("HELLO WORLD2");
+                    slam_visualizer->setShapeRenderingProperties(
+                            pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
+                            pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME,
+                            cube_label_str);
+                    slam_visualizer->setShapeRenderingProperties(
+                            pcl::visualization::PCL_VISUALIZER_COLOR,
+                            0.0,
+                            1.0,
+                            0.0,
+                            cube_label_str);
+                    SPDLOG_INFO("HELLO WORLD3");
+                    slam_visualizer->addCoordinateSystem(0.15, tf, tf_label_str);
+                    SPDLOG_INFO("HELLO WORLD4");
+                }
+
+
+                //if(slam_visualizer->updateCube()){
+                    //slam_visualizer->addCube();
+                //}
+
+            }
+            last_object_render_time = utils::time::time_now();
+        }
+
         // TODO -- Add 3D Bounding Boxes object update
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }

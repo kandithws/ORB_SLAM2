@@ -23,6 +23,7 @@
 
 #include "MapPoint.h"
 #include "KeyFrame.h"
+#include "MapObject.h"
 #include <set>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -35,6 +36,7 @@ namespace ORB_SLAM2 {
 
 class MapPoint;
 class KeyFrame;
+class MapObject;
 
 class Map {
   public:
@@ -43,14 +45,17 @@ class Map {
     ~Map();
     void AddKeyFrame(KeyFrame *pKF);
     void AddMapPoint(MapPoint *pMP);
+    void AddMapObject(MapObject *pMO);
     void EraseMapPoint(MapPoint *pMP);
     void EraseKeyFrame(KeyFrame *pKF);
+    void EraseMapObject(MapObject *pMO);
     void SetReferenceMapPoints(const std::vector<MapPoint *> &vpMPs);
     void InformNewBigChange();
     int GetLastBigChangeIdx();
 
     std::vector<KeyFrame *> GetAllKeyFrames();
     std::vector<MapPoint *> GetAllMapPoints();
+    std::vector<MapObject *> GetAllMapObjects();
     std::vector<MapPoint *> GetReferenceMapPoints();
 
     long unsigned int MapPointsInMap();
@@ -77,7 +82,7 @@ class Map {
   protected:
     std::set<MapPoint *> mspMapPoints;
     std::set<KeyFrame *> mspKeyFrames;
-    std::unordered_map<long unsigned int, MapPoint *> mmapMapPoints; // TODO -- find_by_id (inverse of mspMapPoints)
+    std::set<MapObject *>mspMapObjects;
 
     std::vector<MapPoint *> mvpReferenceMapPoints;
 
