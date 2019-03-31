@@ -131,14 +131,7 @@ void PCLViewer::spin() {
                 getObjectCubeData(pObj, t, q, scale, tf);
                 SPDLOG_INFO("HELLO WORLD1");
                 std::string cube_label_str = "obj_cube" + std::to_string(pObj->mnId);
-                std::string tf_label_str = "obj_tf" + std::to_string(pObj->mnId);
-
-                if(slam_visualizer->updateCube(t, q, scale(0), scale(1), scale(2), cube_label_str)){
-                    SPDLOG_INFO("HELLO WORLD5");
-                    slam_visualizer->updateCoordinateSystemPose(tf_label_str, tf);
-                }
-                else{
-
+                if(!slam_visualizer->updateCube(t, q, scale(0), scale(1), scale(2), cube_label_str)){
                     slam_visualizer->addCube(t,q, scale(0), scale(1), scale(2), cube_label_str);
                     SPDLOG_INFO("HELLO WORLD2");
                     slam_visualizer->setShapeRenderingProperties(
@@ -151,16 +144,7 @@ void PCLViewer::spin() {
                             1.0,
                             0.0,
                             cube_label_str);
-                    SPDLOG_INFO("HELLO WORLD3");
-                    slam_visualizer->addCoordinateSystem(0.15, tf, tf_label_str);
-                    SPDLOG_INFO("HELLO WORLD4");
                 }
-
-
-                //if(slam_visualizer->updateCube()){
-                    //slam_visualizer->addCube();
-                //}
-
             }
             last_object_render_time = utils::time::time_now();
         }

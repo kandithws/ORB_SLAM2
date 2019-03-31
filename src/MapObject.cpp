@@ -27,17 +27,9 @@ void MapObject::SetCuboid(Cuboid &cuboid) {
 }
 
 void MapObject::GetCuboid(Cuboid &cuboid) {
-    SPDLOG_INFO("Getting for id {}", mnId);
     lock_guard<mutex> lock(mMutexCuboid);
-    SPDLOG_INFO("Locking for id {}", mnId);
-    std::cout << mCuboid->mScale << std::endl;
-    std::cout << "----------trans---------" << std::endl;
-    std::cout << mCuboid->mPose.translation() << std::endl;
-
     cuboid.mScale = mCuboid->mScale;
     cuboid.mPose = mCuboid->mPose;
-    SPDLOG_INFO("Ending for id {}", mnId);
-    //return mCuboid;
 }
 
 void MapObject::AddObservation(KeyFrame* pKF, size_t idx)

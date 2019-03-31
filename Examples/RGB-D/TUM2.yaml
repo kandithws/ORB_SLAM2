@@ -3,8 +3,8 @@
 # Object Detection parameters
 #--------------------------------------------------
 object_detection:
-  model_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3-tiny.weights
-  config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3-tiny.cfg
+  model_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.weights
+  config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.cfg
   label_map_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/coco.names
   input_size: 416
   min_confidence: 0.6
