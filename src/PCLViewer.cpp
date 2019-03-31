@@ -12,7 +12,7 @@ namespace ORB_SLAM2 {
 PCLViewer::PCLViewer(Map *pMap, const std::string &window_name) {
     map_ = pMap;
     window_name_ = window_name;
-    tracking_render_period_ = 1.0 / Config::getInstance().cameraParams().fps;
+    tracking_render_period_ = 1.0 / Config::getInstance().CameraParams().fps;
 
 }
 
@@ -127,13 +127,10 @@ void PCLViewer::spin() {
             for (MapObject* pObj : objects){
                 Eigen::Vector3f t; Eigen::Quaternionf q;
                 Eigen::Vector3f scale; Eigen::Affine3f tf;
-                SPDLOG_INFO("HELLO WORLD!");
                 getObjectCubeData(pObj, t, q, scale, tf);
-                SPDLOG_INFO("HELLO WORLD1");
                 std::string cube_label_str = "obj_cube" + std::to_string(pObj->mnId);
                 if(!slam_visualizer->updateCube(t, q, scale(0), scale(1), scale(2), cube_label_str)){
                     slam_visualizer->addCube(t,q, scale(0), scale(1), scale(2), cube_label_str);
-                    SPDLOG_INFO("HELLO WORLD2");
                     slam_visualizer->setShapeRenderingProperties(
                             pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
                             pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME,
@@ -148,8 +145,6 @@ void PCLViewer::spin() {
             }
             last_object_render_time = utils::time::time_now();
         }
-
-        // TODO -- Add 3D Bounding Boxes object update
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }

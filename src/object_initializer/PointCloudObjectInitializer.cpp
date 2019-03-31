@@ -4,7 +4,7 @@
 
 #include <object_initializer/PointCloudObjectInitializer.h>
 #include <random>
-
+#include "utils/Config.h"
 
 
 typedef pcl::PointXYZRGBL PointT;
@@ -12,8 +12,8 @@ typedef pcl::PointXYZRGBL PointT;
 namespace ORB_SLAM2 {
 PointCloudObjectInitializer::PointCloudObjectInitializer() {
     // TODO : Config this
-    mCloudSORFilter.setMeanK(7);
-    mCloudSORFilter.setStddevMulThresh(0.8);
+    mCloudSORFilter.setMeanK(Config::getInstance().ObjectInitializerParams().mean_k);
+    mCloudSORFilter.setStddevMulThresh(Config::getInstance().ObjectInitializerParams().std_dev_mul_th);
 }
 
 Cuboid PointCloudObjectInitializer::CuboidFromPointCloud(pcl::PointCloud<PointT>::Ptr cloud) {

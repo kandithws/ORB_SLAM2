@@ -157,7 +157,7 @@ protected:
     void CreateNewKeyFrame();
 
     // ObjectDetection Related;
-    void DetectObjectInKeyFrame(KeyFrame* pKeyFrame);
+    void DetectObjectInKeyFrame(KeyFrame* pKeyFrame, const cv::Mat& ImColor);
     void AddColorToKeyPoints(KeyFrame* pKeyFrame);
 
     // In case of performing only localization, this flag is true when there are no matches to
@@ -238,7 +238,7 @@ protected:
     std::shared_ptr<PCLViewer> mpPCLViewer;
 
     void CleanDetectionThread();
-    void QueueDetectionThread(KeyFrame* pKeyframe);
+    void QueueDetectionThread(KeyFrame* pKeyframe, const cv::Mat& ImColor);
     std::shared_ptr<std::thread> mtCleanDetectionThread;
     std::queue<std::shared_ptr<std::thread> > mqDetectionThreads;
     std::condition_variable mcvDetectionThreads;

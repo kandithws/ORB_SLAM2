@@ -158,7 +158,7 @@ void System::InitLogger() {
 
 std::shared_ptr<BaseObjectDetector> System::BuildObjectDetector(string type) {
     std::shared_ptr<BaseObjectDetector> pBaseDetector;
-    ObjectDetectorParams objectDetectorParam = Config::getInstance().ObjectDetectionParams();
+    auto objectDetectorParam = Config::getInstance().ObjectDetectionParams();
     if(type == "CV"){
         std::shared_ptr<CVObjectDetector> pObjDetector
                 = std::make_shared<CVObjectDetector>(
@@ -168,9 +168,9 @@ std::shared_ptr<BaseObjectDetector> System::BuildObjectDetector(string type) {
                 );
         pObjDetector->setInputSize(objectDetectorParam.input_size);
         pObjDetector->setLabelMap(objectDetectorParam.label_map);
-        pObjDetector->setConfidenceThreshold(objectDetectorParam.conf_th);
+        pObjDetector->setConfidenceThreshold(objectDetectorParam.min_confidence);
         pObjDetector->setApplyNMS(objectDetectorParam.apply_nms);
-        pObjDetector->setNMSThreshold(objectDetectorParam.nms_th);
+        pObjDetector->setNMSThreshold(objectDetectorParam.nms_threshold);
 
         pBaseDetector = std::static_pointer_cast<BaseObjectDetector>(pObjDetector);
     }

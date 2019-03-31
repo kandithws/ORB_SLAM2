@@ -1118,7 +1118,9 @@ void Tracking::CreateNewKeyFrame()
         else
             pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB); // TODO: Stereo Vision support
 
-        QueueDetectionThread(pKF);
+        // Make a copy of current imcolor;
+        cv::Mat ImColor = mImColor.clone();
+        QueueDetectionThread(pKF,  ImColor);
     }
     else{
         pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
@@ -1126,7 +1128,6 @@ void Tracking::CreateNewKeyFrame()
 
     // TODO -- Add Keypoint Color Rendering (or perform as a Thread)
     // AddColorToKeyPoints(pKF);
-
 
     mpReferenceKF = pKF;
     mCurrentFrame.mpReferenceKF = pKF;
@@ -1654,12 +1655,12 @@ void Tracking::InformOnlyTracking(const bool &flag)
     mbOnlyTracking = flag;
 }
 
-void Tracking::DetectObjectInKeyFrame(KeyFrame *pKeyFrame) {
+void Tracking::DetectObjectInKeyFrame(KeyFrame *pKeyFrame, const cv::Mat& ImColor) {
     SPDLOG_DEBUG("DetectionThread Invoked! KeyframeID={}", pKeyFrame->mnId);
 
     {
         std::lock_guard<std::mutex> lock(pKeyFrame->mMutexObject);
-        mpObjectDetector->detectObject(mImColor,pKeyFrame->mvObjectPrediction, false);
+        mpObjectDetector->detectObject(ImColor,pKeyFrame->mvObjectPrediction, false);
         pKeyFrame->mvpMapObjects.resize(pKeyFrame->mvObjectPrediction.size());
     }
 
@@ -1671,18 +1672,18 @@ void Tracking::DetectObjectInKeyFrame(KeyFrame *pKeyFrame) {
     pKeyFrame->mcvObjectReady.notify_all(); // in case others is waiting
 
     if(mpFrameDrawer)
-        mpFrameDrawer->UpdateObjectFrame(mImColor, pKeyFrame);
+        mpFrameDrawer->UpdateObjectFrame(ImColor, pKeyFrame);
 
     mcvDetectionThreads.notify_all();
     SPDLOG_DEBUG("Detect {} Objects in KeyframeID={}", pKeyFrame->mvObjectPrediction.size(), pKeyFrame->mnId);
 }
 
-void Tracking::QueueDetectionThread(KeyFrame *pKeyframe) {
+void Tracking::QueueDetectionThread(KeyFrame *pKeyframe, const cv::Mat& ImColor) {
     std::lock_guard<std::mutex> lock(mMutexDetectionThreads);
     std::shared_ptr<std::thread> t = std::make_shared<std::thread>(
             std::bind(&Tracking::DetectObjectInKeyFrame,
-                      this, std::placeholders::_1),
-            pKeyframe);
+                      this, std::placeholders::_1, std::placeholders::_2),
+            pKeyframe, ImColor);
     //t->detach();
     mqDetectionThreads.push(t);
 }
