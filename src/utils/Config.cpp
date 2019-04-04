@@ -20,9 +20,20 @@ void Config::readConfig(std::string cfg_file) {
     fs_.release();
 }
 
-//#define ORB_SLAM2_PARSE_CONFIG(PARAM_OBJ, PARAM_TYPE, PARAM_NAME) PARAM_OBJ.PARAM_NAME = (PARAM_TYPE) node[#PARAM_NAME]
+/*
+ *  Utility Macro to use with parseConfig()
+ *
+ * */
+
+#define ORB_SLAM2_PARSE_CONFIG_SCOPE(scope_name) \
+node = fs_[scope_name]; \
+if (node.begin() != node.end())
+
 #define ORB_SLAM2_PARSE_CONFIG(PARAM_TYPE, ATTR_TYPE, ATTR_NAME) \
 m##PARAM_TYPE##Param.ATTR_NAME = (ATTR_TYPE) node[#ATTR_NAME];
+
+#define ORB_SLAM2_PARSE_BOOL_CONFIG(PARAM_TYPE, ATTR_NAME) \
+m##PARAM_TYPE##Param.ATTR_NAME = static_cast<bool>((int) node[#ATTR_NAME]) ;
 
 void Config::parseConfig() {
     if(fs_.isOpened()) {
@@ -42,9 +53,7 @@ void Config::parseConfig() {
         mCameraParam.rgb = static_cast<bool>( (int) fs_["Camera.rgb"] );
 
         // Object Detection
-        node = fs_["object_detection"];
-        if(node.begin() != node.end()){
-
+        ORB_SLAM2_PARSE_CONFIG_SCOPE("object_detection") {
             std::string label_map_path = (std::string) node["label_map_path"];
             if(!label_map_path.empty()){
                 //parse label map
@@ -65,7 +74,7 @@ void Config::parseConfig() {
                 }
             }
 
-            mObjectDetectionParam.apply_nms = static_cast<bool>( (int) node["apply_nms"] );
+            ORB_SLAM2_PARSE_BOOL_CONFIG(ObjectDetection, apply_nms)
             ORB_SLAM2_PARSE_CONFIG(ObjectDetection, std::string, model_path);
             ORB_SLAM2_PARSE_CONFIG(ObjectDetection, std::string, config_path);
             ORB_SLAM2_PARSE_CONFIG(ObjectDetection, double, nms_threshold);
@@ -74,10 +83,11 @@ void Config::parseConfig() {
         }
 
         // Object Initialization
-        node = fs_["object_initialization"];
-        ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, int, mean_k)
-        ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, std_dev_mul_th)
-
+        ORB_SLAM2_PARSE_CONFIG_SCOPE("object_initialization") {
+            ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, int, mean_k)
+            ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, std_dev_mul_th)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(ObjectInitializer, project_2d_outlier)
+        }
     }
     else{
         SPDLOG_CRITICAL("Config is not open");

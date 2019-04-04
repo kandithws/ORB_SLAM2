@@ -63,8 +63,6 @@ include_directories(
 )
 
 
-#   src/pcl_slam_visualizer/customized_pcl_visualizer/customized_interactor_style.cpp
-#  src/pcl_slam_visualizer/customized_pcl_visualizer/customized_pcl_visualizer.cpp
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 set(UTILS_SRC_FILES src/utils/Config.cpp
         include/utils/Config.h
@@ -73,8 +71,6 @@ set(UTILS_SRC_FILES src/utils/Config.cpp
         include/utils/matrix_utils.h
         src/utils/matrix_utils.cpp)
 set(PCL_EXTENDED_MODULE_SRC_FILES
-        #  src/pcl_slam_visualizer/customized_pcl_visualizer/customized_interactor_style.cpp
-        #  src/pcl_slam_visualizer/customized_pcl_visualizer/customized_pcl_visualizer.cpp
         src/pcl_slam_visualizer/pcl_slam_visualizer.cpp
         src/PCLViewer.cpp)
 
@@ -83,7 +79,7 @@ set(DNN_SRC_FILES
         include/dnn/CVObjectDetector.h
         src/dnn/BaseObjectDetector.cpp
         src/dnn/CVObjectDetector.cpp include/dnn/GrpcObjectDetector.h
-        ${PROTO_SRCS} ${GRPC_SRCS})
+        ${PROTO_SRCS} ${GRPC_SRCS} src/dnn/GrpcObjectDetector.cpp)
 
 
 set(OBJECT_INIT_SRC_FILES

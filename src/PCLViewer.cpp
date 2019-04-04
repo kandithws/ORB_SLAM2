@@ -63,21 +63,17 @@ void PCLViewer::getCurrentCamPose(Eigen::Affine3f& pose) {
 
 void PCLViewer::getObjectCubeData(MapObject *pObj, Eigen::Vector3f &t, Eigen::Quaternionf &q,
                                   Eigen::Vector3f &scale, Eigen::Affine3f &tf) {
-    SPDLOG_INFO("Test0");
     if(!pObj)
         SPDLOG_WARN("POINTER NULL");
 
     Cuboid cuboid; pObj->GetCuboid(cuboid);
-    SPDLOG_INFO("Test1");
     t = cuboid.mPose.translation().cast<float>();
     q = cuboid.mPose.rotation().cast<float>();
     scale = cuboid.mScale.cast<float>();
-    SPDLOG_INFO("Test2");
     Eigen::Matrix4f tf_mat(Eigen::Matrix4f::Identity());
     tf_mat.block<3,3>(0,0) = q.toRotationMatrix();
     tf_mat.block<3,1>(0,3) = t;
     tf.matrix() = tf_mat;
-    SPDLOG_INFO("Test3");
 }
 
 
@@ -92,6 +88,17 @@ void PCLViewer::spin() {
     slam_visualizer->addCoordinateSystem(0.5);
     PointT origin;
     slam_visualizer->addText3D("world", origin, 0.05);
+    // Add ground for debugging
+    Eigen::Affine3f ground_tf; // cam->ground
+    PCLConverter::makeAffineTf(0, 1.2, 0, 0, -2.2, 1.57, ground_tf);
+    slam_visualizer->addCoordinateSystem(0.5, ground_tf, "ground_tf");
+    PointT ground_point;
+    ground_point.x = ground_tf.translation()[0];
+    ground_point.y = ground_tf.translation()[1];
+    ground_point.z = ground_tf.translation()[2];
+    slam_visualizer->addText3D("ground", ground_point, 0.05, 1,1,1, "ground_text");
+    // slam_visualizer->addCoordinateSystem(0.5);
+
     slam_visualizer->addCoordinateSystem(0.25, "current_pose");
     pcl::visualization::PointCloudColorHandlerRGBField<PointT> init_rgb_handler(map_->GetCloudPtr());
     slam_visualizer->addPointCloud<PointT>(map_->GetCloudPtr(), init_rgb_handler, "map_cloud");

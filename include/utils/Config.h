@@ -21,6 +21,7 @@ namespace Params {
 typedef struct {
     int mean_k = 8;
     double std_dev_mul_th = 0.8;
+    bool project_2d_outlier = true;
 } ObjectInitializer;
 
 typedef struct {

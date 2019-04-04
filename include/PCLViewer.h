@@ -5,6 +5,7 @@
 #ifndef ORB_SLAM2_PCLVIEWER_H
 #define ORB_SLAM2_PCLVIEWER_H
 #include <pcl_slam_visualizer/pcl_slam_visualizer.h>
+#include <utils/PCLConverter.h>
 //#include <pcl_slam_visualizer/customized_pcl_visualizer/customized_pcl_visualizer.h>
 //#include <pcl/visualization/pcl_visualizer.h>
 #include <include/utils/Config.h>
@@ -42,7 +43,7 @@ class PCLViewer {
             Eigen::Quaternionf& q,
             Eigen::Vector3f& scale,
             Eigen::Affine3f& tf);
-    // std::shared_ptr<pcl::visualization::PCLSLAMVisualizer> slam_visualizer_;
+
     std::shared_ptr<std::thread> spin_thread_;
     Map* map_;
     std::string window_name_;

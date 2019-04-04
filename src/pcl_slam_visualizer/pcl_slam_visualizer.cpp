@@ -13,7 +13,6 @@ PCLVisualizer(name, create_interactor) {}
 
 bool PCLSLAMVisualizer::updateCube(const Eigen::Vector3f &t, const Eigen::Quaternionf &q, const double &sx,
                                    const double &sy, const double &sz, const std::string &id, int viewport) {
-    std::cout << "[UPDATE 0]" << std::endl;
     if (!contains(id)){
         return (false);
     }
@@ -22,27 +21,19 @@ bool PCLSLAMVisualizer::updateCube(const Eigen::Vector3f &t, const Eigen::Quater
     ShapeActorMap::iterator am_it = shape_actor_map->find(id);
 
     if (am_it == shape_actor_map->end ()){
-        std::cout << "[UPDATE ERROR!!!]" << std::endl;
         return false;
     }
 
-    std::cout << "[UPDATE 1]" << std::endl;
     vtkSmartPointer<vtkLODActor> actor = vtkLODActor::SafeDownCast (am_it->second);
     vtkSmartPointer<vtkDataSet> data = createCube(t,q,sx,sy,sz);
     //createActorFromVTKDataSet (data, actor);
     // Set new cube to the exsisting actor, PCLVisualizer::createActorFromVTKDataSet
-
-    // If actor is not initialized, initialize it here
-    std::cout << "[UPDATE 2]" << std::endl;
-    assert(actor);
-    std::cout << "[UPDATE 3]" << std::endl;
 
     vtkSmartPointer<vtkDataArray> scalars = data->GetPointData ()->GetScalars ();
     double minmax[2];
     if (scalars)
         scalars->GetRange (minmax);
 
-    std::cout << "[UPDATE 4]" << std::endl;
     vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New ();
 
     mapper->SetInputData(data); // TODO: Check VTK version
@@ -55,7 +46,6 @@ bool PCLSLAMVisualizer::updateCube(const Eigen::Vector3f &t, const Eigen::Quater
     actor->GetProperty ()->SetInterpolationToFlat ();
     actor->SetMapper (mapper);
     actor->Modified();
-    std::cout << "[UPDATE DONE]" << std::endl;
     return true;
 }
 
