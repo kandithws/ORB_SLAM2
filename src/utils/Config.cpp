@@ -80,6 +80,8 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_CONFIG(ObjectDetection, double, nms_threshold);
             ORB_SLAM2_PARSE_CONFIG(ObjectDetection, double, min_confidence);
             ORB_SLAM2_PARSE_CONFIG(ObjectDetection, int, input_size);
+            ORB_SLAM2_PARSE_CONFIG(ObjectDetection, std::string, grpc_url);
+            ORB_SLAM2_PARSE_CONFIG(ObjectDetection, std::string, type);
         }
 
         // Object Initialization

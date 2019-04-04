@@ -38,6 +38,7 @@ class BaseObjectDetector {
     static void drawPredictionBoxes(const std::vector<std::string>& label_map, cv::Mat& img, std::vector<PredictedObject>& preds);
     static std::vector<std::string> parseLabelMap(std::string path, char delim='\n'); // TODO--move to static method
     //void drawPredictions(cv::Mat& img, std::vector<PredictedObject>& preds, bool draw_boxes=false);
+    //static buildDetector();
 
   protected:
     BaseObjectDetector() = default;
