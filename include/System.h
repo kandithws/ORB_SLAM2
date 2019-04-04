@@ -40,6 +40,7 @@
 #include "spdlog/spdlog.h"
 #include "PCLViewer.h"
 #include "dnn/CVObjectDetector.h"
+#include "dnn/GrpcObjectDetector.h"
 
 
 namespace ORB_SLAM2

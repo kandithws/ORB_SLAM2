@@ -26,7 +26,8 @@ class PointCloudObjectInitializer : public BaseObjectInitializer {
 #ifdef ORB_SLAM2_POINTCLOUDOBJECTINITIALIZER_DEBUG
     pcl::PCDWriter mCloudDebugWriter;
 #endif
-
+  private:
+    bool mbProject2d;
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGBL> mCloudSORFilter;
 };
 }

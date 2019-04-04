@@ -21,6 +21,7 @@ namespace Params {
 typedef struct {
     int mean_k = 8;
     double std_dev_mul_th = 0.8;
+    bool project_2d_outlier = true;
 } ObjectInitializer;
 
 typedef struct {
@@ -38,12 +39,15 @@ typedef struct {
 
 typedef struct {
     std::vector<std::string> label_map;
+    std::string type; // CV, GRPC
     std::string config_path;
     std::string model_path;
     double min_confidence = 0.5;
     bool apply_nms = true;
     double nms_threshold = 0.4;
     int input_size = 416;
+    // For GRPC
+    std::string grpc_url;
 } ObjectDetection;
 
 

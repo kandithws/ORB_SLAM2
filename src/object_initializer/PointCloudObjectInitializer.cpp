@@ -5,6 +5,7 @@
 #include <object_initializer/PointCloudObjectInitializer.h>
 #include <random>
 #include "utils/Config.h"
+#include <pcl/common/transforms.h>
 
 
 typedef pcl::PointXYZRGBL PointT;
@@ -14,6 +15,7 @@ PointCloudObjectInitializer::PointCloudObjectInitializer() {
     // TODO : Config this
     mCloudSORFilter.setMeanK(Config::getInstance().ObjectInitializerParams().mean_k);
     mCloudSORFilter.setStddevMulThresh(Config::getInstance().ObjectInitializerParams().std_dev_mul_th);
+    mbProject2d = Config::getInstance().ObjectInitializerParams().project_2d_outlier;
 }
 
 Cuboid PointCloudObjectInitializer::CuboidFromPointCloud(pcl::PointCloud<PointT>::Ptr cloud) {
@@ -92,37 +94,61 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
 
         auto cloudObject = PCLConverter::toPointCloud(vObjMapPoints);
 
-#ifdef ORB_SLAM2_POINTCLOUDOBJECTINITIALIZER_DEBUG
-        // -  Get pcl::PointCloud
-        std::string outname = "/home/kandithws/debug_clouds/kf_"
-                + std::to_string(pKeyframe->mnId)
-                + "_obj_" + std::to_string(i)
-                + "_l"+ std::to_string(pred._label)
-                + ".pcd";
-        mCloudDebugWriter.write(outname, *cloudObject);
-#endif
 
         // -  PreProcessing, i.e. select only a maingroup of pointcloud (no need other processing)
-        // use pcl::filter.getRemovedIndices()
+
+        if(mbProject2d) {
+            // TODO -- fix this
+            SPDLOG_WARN("[mbProject2d] This feature is still on debugging");
+            // Transform all points to local frame
+            std::cout << "I AM HERE" << std::endl;
+            auto kf_tf_mat = pKeyframe->GetPose();
+            Eigen::Affine3f kf_tf;
+            PCLConverter::makeAffineTf(kf_tf_mat, kf_tf);
+
+            Eigen::Matrix4f projectionTransform(Eigen::Matrix4f::Identity());
+            projectionTransform.block<3,3>(0,0) = kf_tf.rotation().matrix().transpose();
+            projectionTransform.block<3,1>(0,3) = -1.f * kf_tf.translation();
+            pcl::PointCloud<PointT>::Ptr cloudPointsProjected (new pcl::PointCloud<PointT>);
+            pcl::transformPointCloud(*cloudObject, *cloudObject, projectionTransform);
+
+            // pcl::transformPointCloud(*cloudObject, *cloudObject, kf_tf);
+
+            // projection
+            auto end = cloudObject->end();
+            for(auto it = cloudObject->begin(); it != end; it++){
+                // For each point compute relative tf
+                // pcl::transformPoint(*it, *it, );
+                it->y = 0; // Onto ZX plane
+            }
+
+        }
 
         pcl::PointCloud<PointT>::Ptr cloudSegmented (new pcl::PointCloud<PointT>);
         std::vector<MapPoint*> vFilteredMapPoints;
+        std::vector<int> vFilteredMapPointsIndices;
         mCloudSORFilter.setInputCloud(cloudObject);
         mCloudSORFilter.setNegative(false); // ensure
         auto start_time = utils::time::time_now();
-        mCloudSORFilter.filter(*cloudSegmented);
+        //mCloudSORFilter.filter(*cloudSegmented);
+        mCloudSORFilter.filter(vFilteredMapPointsIndices);
         SPDLOG_DEBUG("Filtering time {}s", utils::time::time_diff_from_now_second(start_time));
         // try to filter, if it is fails on positive, try to get negative
-        if (cloudSegmented->empty()){
+        if (vFilteredMapPointsIndices.empty()){
             SPDLOG_WARN("Set Negative Filter");
             mCloudSORFilter.setNegative(true); // ensure
-            mCloudSORFilter.filter(*cloudSegmented);
+            vFilteredMapPoints.clear();
+            mCloudSORFilter.filter(vFilteredMapPointsIndices);
         }
 
-        PCLConverter::filterVector<MapPoint*>(*mCloudSORFilter.getIndices(), vObjMapPoints, vFilteredMapPoints);
+
+        PCLConverter::filterVector<MapPoint*>(vFilteredMapPointsIndices, vObjMapPoints, vFilteredMapPoints);
         // - Calculate Cuboid parameters
         auto start_time2 = utils::time::time_now();
-        auto cuboid = CuboidFromPointCloud(cloudSegmented);
+
+        auto inliers = PCLConverter::toPointCloud(vFilteredMapPoints);
+
+        auto cuboid = CuboidFromPointCloud(inliers);
         SPDLOG_DEBUG("Cuboid calculation time {}s", utils::time::time_diff_from_now_second(start_time2));
         auto scale = cuboid.mScale;
         SPDLOG_DEBUG("Cuboid scale x:{}, y:{}, z:{}", scale[0] * 2.0, scale[1]  * 2.0, scale[2]  * 2.0);

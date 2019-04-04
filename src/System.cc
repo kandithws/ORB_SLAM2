@@ -86,7 +86,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     // Init Object Detector
     // TODO -- Implement proper object detector factory
-    mpObjectDetector = BuildObjectDetector("CV");
+    mpObjectDetector = BuildObjectDetector(Config::getInstance().ObjectDetectionParams().type);
 
     //Create Drawers. These are used by the Viewer
     mpFrameDrawer = new FrameDrawer(mpMap);
@@ -159,6 +159,7 @@ void System::InitLogger() {
 std::shared_ptr<BaseObjectDetector> System::BuildObjectDetector(string type) {
     std::shared_ptr<BaseObjectDetector> pBaseDetector;
     auto objectDetectorParam = Config::getInstance().ObjectDetectionParams();
+    // TODO -- move this to BaseObject Detector
     if(type == "CV"){
         std::shared_ptr<CVObjectDetector> pObjDetector
                 = std::make_shared<CVObjectDetector>(
@@ -171,6 +172,15 @@ std::shared_ptr<BaseObjectDetector> System::BuildObjectDetector(string type) {
         pObjDetector->setConfidenceThreshold(objectDetectorParam.min_confidence);
         pObjDetector->setApplyNMS(objectDetectorParam.apply_nms);
         pObjDetector->setNMSThreshold(objectDetectorParam.nms_threshold);
+
+        pBaseDetector = std::static_pointer_cast<BaseObjectDetector>(pObjDetector);
+    }
+    else if (type == "GRPC"){
+        // std::shared_ptr<>
+        std::shared_ptr<GrpcObjectDetector> pObjDetector =
+                std::make_shared<GrpcObjectDetector>(objectDetectorParam.grpc_url);
+
+        pObjDetector->setLabelMap(objectDetectorParam.label_map);
 
         pBaseDetector = std::static_pointer_cast<BaseObjectDetector>(pObjDetector);
     }
