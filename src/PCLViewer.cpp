@@ -66,10 +66,10 @@ void PCLViewer::getObjectCubeData(MapObject *pObj, Eigen::Vector3f &t, Eigen::Qu
     if(!pObj)
         SPDLOG_WARN("POINTER NULL");
 
-    Cuboid cuboid; pObj->GetCuboid(cuboid);
-    t = cuboid.mPose.translation().cast<float>();
-    q = cuboid.mPose.rotation().cast<float>();
-    scale = cuboid.mScale.cast<float>();
+    auto eigen_tf = Converter::toSE3Quat(pObj->GetPose());
+    t = eigen_tf.translation().cast<float>();
+    q = eigen_tf.rotation().cast<float>();
+    scale = Converter::toVector3d(pObj->GetScale()).cast<float>();
     Eigen::Matrix4f tf_mat(Eigen::Matrix4f::Identity());
     tf_mat.block<3,3>(0,0) = q.toRotationMatrix();
     tf_mat.block<3,1>(0,3) = t;
@@ -111,7 +111,7 @@ void PCLViewer::spin() {
     unsigned long int last_object_id = 0;
     while(!slam_visualizer->wasStopped() && !is_shutdown_){
 
-        slam_visualizer->spinOnce(10);
+        slam_visualizer->spinOnce(100);
 
         if(map_->mbRenderReady){
             std::lock_guard<std::mutex> lock(map_->mMutexCloud);

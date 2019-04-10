@@ -11,6 +11,9 @@
 #include "Cuboid.h"
 #include "Converter.h"
 
+#include <boost/thread/locks.hpp>
+#include <boost/thread/shared_mutex.hpp>
+
 namespace ORB_SLAM2 {
 // TODO: Mimic pattern from MapPoint
 class MapPoint;
@@ -25,6 +28,7 @@ class MapObject {
     void GetCuboid(Cuboid& cuboid); // due to eigen
 
     cv::Mat GetPose();
+    cv::Mat GetScale();
 
     void AddObservation(KeyFrame *pKF, size_t idx);
     void EraseObservation(KeyFrame *pKF);
@@ -48,11 +52,17 @@ class MapObject {
     const int mLabel;
 
   protected:
+    //Copy from Cuboid
+    Eigen::Vector4d ProjectOntoImageRect(const SE3Quat& campose_cw, const Eigen::Matrix3d& Kalib) const;
+
     // Bad flag (we do not currently erase MapObject from memory)
     bool mbBad;
 
-    std::mutex mMutexPose;
-    Cuboid* mCuboid; // Due to eigen operator alignment
+    // std::mutex mMutexPose;
+    boost::shared_mutex mMutexPose;
+    //Cuboid* mCuboid; // Due to eigen operator alignment
+    cv::Mat mTwo; // 4x4 Homogeneous matrix
+    cv::Mat mScale; // 3x1 half scale vector
 
     // Keyframes observing the object and associated index in keyframe
     std::mutex mMutexObservations;

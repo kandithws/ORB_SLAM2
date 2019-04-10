@@ -9,32 +9,45 @@ namespace ORB_SLAM2 {
 uint32_t MapObject::nNextId=0;
 
 MapObject::MapObject(Cuboid& cuboid, int label, ORB_SLAM2::KeyFrame *pRefKF, ORB_SLAM2::Map *pMap) :
-        mLabel(label), mnFirstKFid(pRefKF->mnId), mnFirstFrame(pRefKF->mnFrameId), mpMap(pMap){
+        mnFirstKFid(pRefKF->mnId),
+        mnFirstFrame(pRefKF->mnFrameId), mLabel(label),
+        mTwo(4, 4, CV_32F), mScale(3,1, CV_32F), mpMap(pMap){
 
-    mCuboid = new Cuboid();
-    mCuboid->mPose = cuboid.mPose;
-    mCuboid->mScale = cuboid.mScale;
-
+    //mCuboid = new Cuboid();
+    //mCuboid->mPose = cuboid.mPose;
+    //mCuboid->mScale = cuboid.mScale;
+    // unique_lock<mutex> lock(mMutexPose);
+    mTwo = Converter::toCvMat(cuboid.mPose);
+    mScale = Converter::toCvMat(cuboid.mScale);
     // Avoid id conflict when create
-    unique_lock<mutex> lock(mpMap->mMutexObjectCreation);
+    unique_lock<mutex> lock2(mpMap->mMutexObjectCreation);
     mnId=nNextId++;
 }
 
 void MapObject::SetCuboid(Cuboid &cuboid) {
-    unique_lock<mutex> lock(mMutexPose);
-    mCuboid->mScale = cuboid.mScale;
-    mCuboid->mPose = cuboid.mPose;
+    //unique_lock<mutex> lock(mMutexPose);
+    boost::unique_lock<boost::shared_mutex> lock(mMutexPose);
+    mTwo = Converter::toCvMat(cuboid.mPose);
+    mScale = Converter::toCvMat(cuboid.mScale);
 }
 
 void MapObject::GetCuboid(Cuboid &cuboid) {
-    unique_lock<mutex> lock(mMutexPose);
-    cuboid.mScale = mCuboid->mScale;
-    cuboid.mPose = mCuboid->mPose;
+    // unique_lock<mutex> lock(mMutexPose);
+    boost::shared_lock<boost::shared_mutex> lock(mMutexPose);
+    cuboid.mPose = Converter::toSE3Quat(mTwo);
+    cuboid.mScale = Converter::toVector3d(mScale);
 }
 
 cv::Mat MapObject::GetPose() {
-    lock_guard<mutex> lock(mMutexPose);
-    return Converter::toCvMat(mCuboid->mPose);
+    //unique_lock<mutex> lock(mMutexPose);
+    boost::shared_lock<boost::shared_mutex> lock(mMutexPose);
+    return mTwo.clone();
+}
+
+cv::Mat MapObject::GetScale() {
+    //unique_lock<mutex> lock(mMutexPose);
+    boost::shared_lock<boost::shared_mutex> lock(mMutexPose);
+    return mScale.clone();
 }
 
 void MapObject::AddObservation(KeyFrame* pKF, size_t idx)
@@ -71,9 +84,11 @@ int MapObject::Observations()
 
 
 cv::Mat MapObject::GetCentroid() {
-    unique_lock<mutex> lock(mMutexPose);
-    Eigen::Vector3d translation = mCuboid->getTranslation();
-    return Converter::toCvMat(translation);
+    //unique_lock<mutex> lock(mMutexPose);
+    SPDLOG_INFO("LOCKING");
+    boost::shared_lock<boost::shared_mutex> lock(mMutexPose);
+    SPDLOG_INFO("LOCKED --> Returning");
+    return mTwo.rowRange(0, 3).col(3).clone();
 }
 
 cv::Point2f MapObject::GetProjectedCentroid(KeyFrame *pTargetKF) {
@@ -88,9 +103,9 @@ bool MapObject::GetProjectedBoundingBox(ORB_SLAM2::KeyFrame *pTargetKF, cv::Rect
     SPDLOG_INFO("I AM HERE 0");
     cv::Mat Tcw = pTargetKF->GetPose();
     SPDLOG_INFO("I AM HERE 1");
-    unique_lock<mutex> lock(mMutexPose);
+    //unique_lock<mutex> lock(mMutexPose);
     SPDLOG_INFO("I AM HERE 1.5");
-    auto bbox_eigen = mCuboid->projectOntoImageRect(Converter::toSE3Quat(Tcw),
+    auto bbox_eigen = ProjectOntoImageRect(Converter::toSE3Quat(Tcw),
             Converter::toMatrix3d(pTargetKF->mK));
     bb = cv::Rect(cv::Point2f(bbox_eigen[0], bbox_eigen[1]), cv::Point2f(bbox_eigen[2], bbox_eigen[3]));
     SPDLOG_INFO("I AM HERE 2");
@@ -108,10 +123,32 @@ bool MapObject::GetProjectedBoundingBox(ORB_SLAM2::KeyFrame *pTargetKF, cv::Rect
     return st;
 }
 
+Eigen::Vector4d MapObject::ProjectOntoImageRect(const SE3Quat& campose_cw, const Eigen::Matrix3d& Kalib) const{
+    Eigen::Matrix4d res = Converter::toSE3Quat(mTwo).to_homogeneous_matrix();
+    Eigen::Matrix3d scale_mat = Converter::toVector3d(mScale).asDiagonal();
+    res.topLeftCorner<3, 3>() = res.topLeftCorner<3, 3>() * scale_mat;
+    Eigen::Matrix3Xd corners_body;
+    corners_body.resize(3, 8);
+    corners_body << 1, 1, -1, -1, 1, 1, -1, -1,
+            1, -1, -1, 1, 1, -1, -1, 1,
+            -1, -1, -1, -1, 1, 1, 1, 1;
+    Eigen::Matrix3Xd corners_3d_world = utils::homo_to_real_coord<double>(
+            res * utils::real_to_homo_coord<double>(corners_body));
+
+    // Eigen::Matrix3Xd corners_3d_world = compute3D_BoxCorner();
+    Eigen::Matrix2Xd corner_2d = utils::homo_to_real_coord<double>(Kalib * utils::homo_to_real_coord<double>(
+            campose_cw.to_homogeneous_matrix() * utils::real_to_homo_coord<double>(corners_3d_world)));
+    Eigen::Vector2d bottomright = corner_2d.rowwise().maxCoeff(); // x y
+    Eigen::Vector2d topleft = corner_2d.rowwise().minCoeff();
+    return {topleft(0), topleft(1), bottomright(0), bottomright(1)};
+}
+
 bool MapObject::IsPositiveToKeyFrame(ORB_SLAM2::KeyFrame *pTargetKF) {
+    //unique_lock<mutex> lock(mMutexPose);
     SPDLOG_INFO("I AM HERE 0");
     cv::Mat Tcw = pTargetKF->GetPose(); // 4x4 homogeneous TF
     SPDLOG_INFO("I AM HERE 0.5");
+    //std::cout << mTwo << std::endl;
     cv::Mat centroid_w = GetCentroid(); // 3x1 x,y,z point
     SPDLOG_INFO("I AM HERE 1");
     SPDLOG_INFO("Tcw shape {}, {}", Tcw.rows, Tcw.cols);
