@@ -9,6 +9,7 @@
 #include "Map.h"
 #include "dnn/BaseObjectDetector.h"
 #include "Cuboid.h"
+#include "Converter.h"
 
 namespace ORB_SLAM2 {
 // TODO: Mimic pattern from MapPoint
@@ -23,22 +24,18 @@ class MapObject {
     void SetCuboid(Cuboid& cuboid);
     void GetCuboid(Cuboid& cuboid); // due to eigen
 
+    cv::Mat GetPose();
+
     void AddObservation(KeyFrame *pKF, size_t idx);
     void EraseObservation(KeyFrame *pKF);
 
     std::map<KeyFrame *, size_t> GetObservations();
     int Observations();
 
-    int GetIndexInKeyFrame(KeyFrame *pKF);
-    bool IsInKeyFrame(KeyFrame *pKF);
-//
-//    void AddMapPoint(MapPoint *pMp);
-//    void EraseMapPoint(MapPoint *pMp);
-//
-//    int GetIndexInKeyFrame(KeyFrame *pKF);
-//    bool IsInKeyFrame(KeyFrame *pKF);
-
-    // Add debug pointcloud -- save object pcd
+    cv::Mat GetCentroid();
+    cv::Point2f GetProjectedCentroid(KeyFrame *pTargetKF);
+    bool GetProjectedBoundingBox(KeyFrame *pTargetKF, cv::Rect& bb);
+    bool IsPositiveToKeyFrame(KeyFrame *pTargetKF);
 
   public:
     uint32_t mnId;
@@ -54,7 +51,7 @@ class MapObject {
     // Bad flag (we do not currently erase MapObject from memory)
     bool mbBad;
 
-    std::mutex mMutexCuboid;
+    std::mutex mMutexPose;
     Cuboid* mCuboid; // Due to eigen operator alignment
 
     // Keyframes observing the object and associated index in keyframe

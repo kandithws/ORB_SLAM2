@@ -7,6 +7,7 @@
 
 namespace ORB_SLAM2 {
 
+Config::Config() : cam_mat_(3,3, CV_64F) {}
 
 void Config::readConfig(std::string cfg_file) {
     std::lock_guard<std::mutex> lock(fs_mutex_);
@@ -52,6 +53,12 @@ void Config::parseConfig() {
         mCameraParam.fps = (double) fs_["Camera.fps"];
         mCameraParam.rgb = static_cast<bool>( (int) fs_["Camera.rgb"] );
 
+        cam_mat_.at<double>(0,0) = mCameraParam.fx;
+        cam_mat_.at<double>(0,2) = mCameraParam.cx;
+        cam_mat_.at<double>(1,1) = mCameraParam.fy;
+        cam_mat_.at<double>(1,2) = mCameraParam.cy;
+        cam_mat_.at<double>(2,2) = 1.0;
+
         // Object Detection
         ORB_SLAM2_PARSE_CONFIG_SCOPE("object_detection") {
             std::string label_map_path = (std::string) node["label_map_path"];
@@ -94,6 +101,10 @@ void Config::parseConfig() {
     else{
         SPDLOG_CRITICAL("Config is not open");
     }
+}
+
+cv::Mat Config::getCamMatrix() {
+    return cam_mat_.clone();
 }
 
 }

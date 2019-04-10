@@ -68,8 +68,10 @@ class Config {
     ORB_SLAM2_DEFINE_CONFIG_PARAM(ObjectDetection);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(ObjectInitializer);
 
+    cv::Mat getCamMatrix();
+
   protected:
-    Config() = default;
+    Config();
 
     cv::FileStorage fs_;
     std::string cfg_file_;
@@ -79,5 +81,7 @@ class Config {
     virtual ~Config() = default;
 
     void parseConfig();
+
+    cv::Mat cam_mat_;
 };
 }

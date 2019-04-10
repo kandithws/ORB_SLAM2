@@ -22,6 +22,9 @@ class PredictedObject {
     void setPolyfromRect(cv::Rect& rect);
     std::vector<cv::Point2f> _poly;
     cv::Rect2f& box();
+    inline cv::Point2f GetCentroid2D() const {
+        return ( _bbox->tl() + _bbox->br() ) * 0.5;
+    }
 
   private:
     void generateBoundingBox();

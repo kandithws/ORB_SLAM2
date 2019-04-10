@@ -29,6 +29,9 @@ class PointCloudObjectInitializer : public BaseObjectInitializer {
   private:
     bool mbProject2d;
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGBL> mCloudSORFilter;
+    inline double Point2DDistance(const cv::Point2f& p1, const cv::Point2f& p2){
+        return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+    }
 };
 }
 
