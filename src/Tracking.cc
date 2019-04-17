@@ -1661,7 +1661,7 @@ void Tracking::DetectObjectInKeyFrame(KeyFrame *pKeyFrame, const cv::Mat& ImColo
     {
         std::lock_guard<std::mutex> lock(pKeyFrame->mMutexObject);
         mpObjectDetector->detectObject(ImColor,pKeyFrame->mvObjectPrediction, false);
-        pKeyFrame->mvpMapObjects.resize(pKeyFrame->mvObjectPrediction.size());
+        pKeyFrame->mvpMapObjects.resize(pKeyFrame->mvObjectPrediction.size(), static_cast<MapObject*>(NULL));
     }
 
     {

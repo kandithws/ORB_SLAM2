@@ -18,9 +18,9 @@ object_detection:
 # Initialization parameters
 #--------------------------------------------------
 object_initialization:
-  mean_k: 10
+  mean_k: 8
   std_dev_mul_th: 0.75
-  project_2d_outlier: 0 # DO NOT USE FOR NOW
+  project_2d_outlier: 1 # DO NOT USE FOR NOW
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!

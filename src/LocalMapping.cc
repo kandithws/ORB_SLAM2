@@ -796,7 +796,7 @@ void LocalMapping::InitializeCurrentKeyFrameObjects() {
     auto start_time = utils::time::time_now();
 
     while(!mpCurrentKeyFrame->IsObjectsReady()){
-        usleep(1000);
+        usleep(100);
         if (utils::time::time_diff_from_now_second(start_time) > mfObjectInitTimeOut){
             SPDLOG_DEBUG("Put KF in processing Queue {}", mpCurrentKeyFrame->mnId);
             // TODO: Push to pending Queue

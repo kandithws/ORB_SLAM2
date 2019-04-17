@@ -664,11 +664,9 @@ std::vector<MapPoint*> KeyFrame::GetMapPointsInBoundingBox(const cv::Rect2f &bb)
     for (auto &idx : vIndices){
         MapPoint* pMP = mvpMapPoints[idx];
         if(pMP){
-            // Should include all points even they are bad for keyframes for object data
-            vMapPoint.push_back(pMP);
 
-            //if (!pMP->isBad())
-            //    vMapPoint.push_back(pMP);
+            if (!pMP->isBad())
+                vMapPoint.push_back(pMP);
             //else
             //    count++;
         }

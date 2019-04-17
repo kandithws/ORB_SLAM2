@@ -32,6 +32,14 @@ class PointCloudObjectInitializer : public BaseObjectInitializer {
     inline double Point2DDistance(const cv::Point2f& p1, const cv::Point2f& p2){
         return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
     }
+
+    Eigen::Vector4d ProjectOntoImageRect(const SE3Quat& objpose_wo,
+            const Eigen::Vector3d &obj_scale,
+            const SE3Quat& campose_cw, const Eigen::Matrix3d& Kalib);
+
+    bool GetProjectedBoundingBox(MapObject* pMO, KeyFrame *pTargetKF, cv::Rect& bb);
+
+
 };
 }
 

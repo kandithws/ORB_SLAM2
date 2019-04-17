@@ -132,6 +132,7 @@ void PCLViewer::spin() {
             std::vector<MapObject* > objects = map_->GetAllMapObjects();
 
             for (MapObject* pObj : objects){
+
                 Eigen::Vector3f t; Eigen::Quaternionf q;
                 Eigen::Vector3f scale; Eigen::Affine3f tf;
                 getObjectCubeData(pObj, t, q, scale, tf);
@@ -149,6 +150,7 @@ void PCLViewer::spin() {
                             0.0,
                             cube_label_str);
                 }
+
             }
             last_object_render_time = utils::time::time_now();
         }

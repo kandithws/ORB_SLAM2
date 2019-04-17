@@ -23,7 +23,7 @@ class Map;
 class MapObject {
   public:
     MapObject(Cuboid& cuboid, int label, KeyFrame *pRefKF, Map *pMap); // Get "3D BB" from Object Initializer
-
+    MapObject(const cv::Mat &pose, const cv::Mat &scale, int label, KeyFrame *pRefKF, Map *pMap);
     void SetCuboid(Cuboid& cuboid);
     void GetCuboid(Cuboid& cuboid); // due to eigen
 
@@ -53,13 +53,13 @@ class MapObject {
 
   protected:
     //Copy from Cuboid
-    Eigen::Vector4d ProjectOntoImageRect(const SE3Quat& campose_cw, const Eigen::Matrix3d& Kalib) const;
+    Eigen::Vector4d ProjectOntoImageRect(const SE3Quat& campose_cw, const Eigen::Matrix3d& Kalib);
 
     // Bad flag (we do not currently erase MapObject from memory)
     bool mbBad;
 
     // std::mutex mMutexPose;
-    boost::shared_mutex mMutexPose;
+    std::shared_ptr<boost::shared_mutex> mMutexPose;
     //Cuboid* mCuboid; // Due to eigen operator alignment
     cv::Mat mTwo; // 4x4 Homogeneous matrix
     cv::Mat mScale; // 3x1 half scale vector

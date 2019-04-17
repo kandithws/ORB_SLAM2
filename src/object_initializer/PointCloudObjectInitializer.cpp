@@ -6,7 +6,7 @@
 #include <random>
 #include "utils/Config.h"
 #include <pcl/common/transforms.h>
-
+#include <utils/vector_utils.h>
 
 typedef pcl::PointXYZRGBL PointT;
 
@@ -61,6 +61,59 @@ Cuboid PointCloudObjectInitializer::CuboidFromPointCloud(pcl::PointCloud<PointT>
     return cuboid;
 }
 
+Eigen::Vector4d PointCloudObjectInitializer::ProjectOntoImageRect(const g2o::SE3Quat &objpose_wo,
+                                                                  const Eigen::Vector3d &obj_scale,
+                                                                  const g2o::SE3Quat &campose_cw,
+                                                                  const Eigen::Matrix3d &Kalib) {
+    Eigen::Matrix4d res = objpose_wo.to_homogeneous_matrix();
+    Eigen::Matrix3d scale_mat = obj_scale.asDiagonal();
+    res.topLeftCorner<3, 3>() = res.topLeftCorner<3, 3>() * scale_mat;
+    Eigen::Matrix3Xd corners_body;
+    corners_body.resize(3, 8);
+    corners_body << 1, 1, -1, -1, 1, 1, -1, -1,
+            1, -1, -1, 1, 1, -1, -1, 1,
+            -1, -1, -1, -1, 1, 1, 1, 1;
+    Eigen::Matrix3Xd corners_3d_world = utils::homo_to_real_coord<double>(
+            res * utils::real_to_homo_coord<double>(corners_body));
+
+    // Eigen::Matrix3Xd corners_3d_world = compute3D_BoxCorner();
+    Eigen::Matrix2Xd corner_2d = utils::homo_to_real_coord<double>(Kalib * utils::homo_to_real_coord<double>(
+            campose_cw.to_homogeneous_matrix() * utils::real_to_homo_coord<double>(corners_3d_world)));
+    Eigen::Vector2d bottomright = corner_2d.rowwise().maxCoeff(); // x y
+    Eigen::Vector2d topleft = corner_2d.rowwise().minCoeff();
+    return {topleft(0), topleft(1), bottomright(0), bottomright(1)};
+}
+
+bool PointCloudObjectInitializer::GetProjectedBoundingBox(MapObject *pMO, KeyFrame *pTargetKF,
+                                                          cv::Rect &bb) {
+    SPDLOG_INFO("I AM HERE 0");
+    cv::Mat Tcw = pTargetKF->GetPose();
+    SPDLOG_INFO("I AM HERE 1");
+    //unique_lock<mutex> lock(mMutexPose);
+    cv::Mat Two = pMO->GetPose();
+    cv::Mat scale = pMO->GetScale();
+    SPDLOG_INFO("I AM HERE 1.5");
+    auto bbox_eigen = ProjectOntoImageRect(
+            Converter::toSE3Quat(Two),
+            Converter::toVector3d(scale),
+            Converter::toSE3Quat(Tcw),
+            Converter::toMatrix3d(pTargetKF->mK));
+    bb = cv::Rect(cv::Point2f(bbox_eigen[0], bbox_eigen[1]), cv::Point2f(bbox_eigen[2], bbox_eigen[3]));
+    SPDLOG_INFO("I AM HERE 2");
+    // Check corners visibility
+    bool st = false;
+    st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y);
+    st |= pTargetKF->IsInImage(bb.tl().x + bb.width, bb.tl().y);
+    st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y + bb.height);
+    st |= pTargetKF->IsInImage(bb.br().x, bb.br().y);
+
+    if(!st){
+        SPDLOG_WARN("Object {}, bounding boxes is not in Keyframe {}", pMO->mnId, pTargetKF->mnId);
+    }
+
+    return st;
+}
+
 void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pMap) {
 
     auto vPredictedObjects = pKeyframe->GetObjectPredictions();
@@ -77,14 +130,28 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         if ((*vit_kf)->mvpMapObjects.empty()) {
             continue;
         }
+
+
         std::vector<bool> vCovisKFAssociatedFound(vPredictedObjects.size(), false);
+        std::vector<MapObject*> vpMapObjects = (*vit_kf)->mvpMapObjects; // TODO -- MUTEX
+
         // TODO: Object Association
-        SPDLOG_INFO("HELLO WORLD! KF:{}", pKeyframe->mnId);
-        for (auto &pMO : (*vit_kf)->mvpMapObjects) {
+        SPDLOG_INFO("HELLO WORLD! KF:{}", (*vit_kf)->mnId);
+        for(size_t obj_idx=0; obj_idx < vpMapObjects.size(); obj_idx++) {
+            SPDLOG_INFO("Associate i={}", obj_idx);
+            MapObject* pMO = vpMapObjects[obj_idx];
             cv::Rect bb;
+
+            if(!pMO){
+                //TODO -- fix this, this mean all predictions doesn't either create a new object or match others
+                SPDLOG_ERROR("POINTER NULL!");
+                continue;
+            }
+
+
+            SPDLOG_INFO("Object ID:{}, label: {}", pMO->mnId, pMO->mLabel);
             // pMO->IsPositiveToKeyFrame(pKeyframe)
-            if (pMO->IsPositiveToKeyFrame(pKeyframe)
-            && pMO->GetProjectedBoundingBox(pKeyframe, bb)) { // Make sure
+            if (GetProjectedBoundingBox(pMO, pKeyframe, bb)) {
                 // Find label match with nearest center
                 double min_dist = std::numeric_limits<double>::max();
                 long int min_dist_idx = -1;
@@ -111,6 +178,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
                 // Found match
                 if (min_dist_idx > -1){
                     vAssociatedCount[min_dist_idx]++;
+                    assert(!vCovisKFAssociatedFound[min_dist_idx]);
                     vCovisKFAssociatedFound[min_dist_idx] = true;
                     // TODO -- Add Observations info
                     SPDLOG_INFO("Associating Observation! idx={} of KFID={}, to ObjID={}",
@@ -136,7 +204,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         auto vObjMapPoints = pKeyframe->GetMapPointsInBoundingBox(pred.box());
         SPDLOG_DEBUG("Obj {}: Total Point {}", i, vObjMapPoints.size());
 
-        if (vObjMapPoints.size() < 10) {
+        if (vObjMapPoints.size() < 8) {
             continue; // Too few points for calculation, TODO: Set as parameters
         }
 
@@ -150,29 +218,27 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         // -  PreProcessing, i.e. select only a maingroup of pointcloud (no need other processing)
 
         if (mbProject2d) {
-            // TODO -- fix this
-            SPDLOG_WARN("[mbProject2d] This feature is still on debugging");
+            // Instead of performming SOR on global frame
+            // we present points onto ZX plane so that SOR would find outliers
+            // In 2D perspective along the camera observation ray (not 3D)
+            // This would help to keep inliers for large tall that may have sparse
+            // point cloud along its height direction + outliers group vs object pointgroup would be more clutered
+            // TODO -- Optimize this!
             // Transform all points to local frame
             auto kf_tf_mat = pKeyframe->GetPose();
             Eigen::Affine3f kf_tf;
             PCLConverter::makeAffineTf(kf_tf_mat, kf_tf);
-
-            Eigen::Matrix4f projectionTransform(Eigen::Matrix4f::Identity());
-            projectionTransform.block<3, 3>(0, 0) = kf_tf.rotation().matrix().transpose();
-            projectionTransform.block<3, 1>(0, 3) = -1.f * kf_tf.translation();
-            pcl::PointCloud<PointT>::Ptr cloudPointsProjected(new pcl::PointCloud<PointT>);
-            pcl::transformPointCloud(*cloudObject, *cloudObject, projectionTransform);
-
-            // pcl::transformPointCloud(*cloudObject, *cloudObject, kf_tf);
-
             // projection
             auto end = cloudObject->end();
             for (auto it = cloudObject->begin(); it != end; it++) {
                 // For each point compute relative tf
-                // pcl::transformPoint(*it, *it, );
+                Eigen::Vector3f tmp = { it->x, it->y, it->z};
+                Eigen::Vector3f out;
+                pcl::transformPoint(tmp, out, kf_tf);
+                it->x = out[0];
                 it->y = 0; // Onto ZX plane
+                it->z = out[2];
             }
-
         }
 
         pcl::PointCloud<PointT>::Ptr cloudSegmented(new pcl::PointCloud<PointT>);
@@ -201,8 +267,11 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
 
         auto cuboid = CuboidFromPointCloud(inliers);
         SPDLOG_DEBUG("Cuboid calculation time {}s", utils::time::time_diff_from_now_second(start_time2));
-        auto scale = cuboid.mScale;
-        SPDLOG_DEBUG("Cuboid scale x:{}, y:{}, z:{}", scale[0] * 2.0, scale[1] * 2.0, scale[2] * 2.0);
+
+        auto pose = Converter::toCvMat(cuboid.mPose);
+        auto scale = Converter::toCvMat(cuboid.mScale);
+
+        //SPDLOG_DEBUG("Cuboid scale x:{}, y:{}, z:{}", scale[0] * 2.0, scale[1] * 2.0, scale[2] * 2.0);
 
         uint32_t color = (static_cast<uint32_t>(std::rand() % 255) << 16) |
                          (static_cast<uint32_t>(std::rand() % 255) << 8) |
@@ -213,7 +282,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         }
 
         // Create new MapObject -- pattern from LocalMapping.cc MapPoint!
-        MapObject *pMO = new MapObject(cuboid, pred._label, pKeyframe, pMap);
+        MapObject *pMO = new MapObject(pose, scale, pred._label, pKeyframe, pMap);
         pMO->AddObservation(pKeyframe, i);
         pKeyframe->AddMapObject(pMO, i);
         pMap->AddMapObject(pMO);
