@@ -12,7 +12,6 @@
 #include "utils/matrix_utils.h"
 
 namespace Eigen {
-
 typedef Eigen::Matrix<double, 9, 1> Vector9d;
 typedef Eigen::Matrix<double, 9, 9> Matrix9d;
 typedef Eigen::Matrix<double, 3, 8> Matrix38d;

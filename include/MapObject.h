@@ -24,8 +24,11 @@ class MapObject {
   public:
     MapObject(Cuboid& cuboid, int label, KeyFrame *pRefKF, Map *pMap); // Get "3D BB" from Object Initializer
     MapObject(const cv::Mat &pose, const cv::Mat &scale, int label, KeyFrame *pRefKF, Map *pMap);
-    void SetCuboid(Cuboid& cuboid);
+    virtual ~MapObject();
+    void SetCuboid(const Cuboid& cuboid);
     void GetCuboid(Cuboid& cuboid); // due to eigen
+
+    const Cuboid* GetCuboidPtr();
 
     cv::Mat GetPose();
     cv::Mat GetScale();
@@ -59,8 +62,8 @@ class MapObject {
     bool mbBad;
 
     // std::mutex mMutexPose;
-    std::shared_ptr<boost::shared_mutex> mMutexPose;
-    //Cuboid* mCuboid; // Due to eigen operator alignment
+    std::mutex mMutexPose;
+    Cuboid* mCuboid; // Due to eigen operator alignment
     cv::Mat mTwo; // 4x4 Homogeneous matrix
     cv::Mat mScale; // 3x1 half scale vector
 

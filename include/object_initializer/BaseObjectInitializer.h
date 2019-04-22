@@ -8,6 +8,7 @@
 #include "Map.h"
 #include "MapObject.h"
 
+// TODO -- Change to interface
 namespace ORB_SLAM2 {
 class BaseObjectInitializer {
   public:

@@ -749,4 +749,9 @@ void KeyFrame::AddMapObject(ORB_SLAM2::MapObject *pMO, const size_t &idx) {
     std::lock_guard<std::mutex> lock(mMutexObject);
     mvpMapObjects[idx]=pMO;
 }
+
+std::vector<MapObject*> KeyFrame::GetMapObjects() {
+    std::lock_guard<std::mutex> lock(mMutexObject);
+    return mvpMapObjects;
+}
 } //namespace ORB_SLAM

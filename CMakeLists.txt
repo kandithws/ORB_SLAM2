@@ -108,7 +108,7 @@ set(ORBSLAM2_SRC_FILES
         src/KeyFrameDatabase.cc
         src/Sim3Solver.cc
         src/Initializer.cc
-        src/Viewer.cc include/MapObject.h src/MapObject.cpp include/Cuboid.h src/Cuboid.cpp)
+        src/Viewer.cc include/MapObject.h src/MapObject.cpp include/Cuboid.h src/Cuboid.cpp src/ObjectOptimizer.cpp)
 
 add_library(${PROJECT_NAME} SHARED
         ${ORBSLAM2_SRC_FILES}

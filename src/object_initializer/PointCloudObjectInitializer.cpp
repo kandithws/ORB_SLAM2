@@ -86,20 +86,17 @@ Eigen::Vector4d PointCloudObjectInitializer::ProjectOntoImageRect(const g2o::SE3
 
 bool PointCloudObjectInitializer::GetProjectedBoundingBox(MapObject *pMO, KeyFrame *pTargetKF,
                                                           cv::Rect &bb) {
-    SPDLOG_INFO("I AM HERE 0");
     cv::Mat Tcw = pTargetKF->GetPose();
-    SPDLOG_INFO("I AM HERE 1");
     //unique_lock<mutex> lock(mMutexPose);
     cv::Mat Two = pMO->GetPose();
     cv::Mat scale = pMO->GetScale();
-    SPDLOG_INFO("I AM HERE 1.5");
     auto bbox_eigen = ProjectOntoImageRect(
             Converter::toSE3Quat(Two),
             Converter::toVector3d(scale),
             Converter::toSE3Quat(Tcw),
             Converter::toMatrix3d(pTargetKF->mK));
     bb = cv::Rect(cv::Point2f(bbox_eigen[0], bbox_eigen[1]), cv::Point2f(bbox_eigen[2], bbox_eigen[3]));
-    SPDLOG_INFO("I AM HERE 2");
+
     // Check corners visibility
     bool st = false;
     st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y);
@@ -135,23 +132,20 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         std::vector<bool> vCovisKFAssociatedFound(vPredictedObjects.size(), false);
         std::vector<MapObject*> vpMapObjects = (*vit_kf)->mvpMapObjects; // TODO -- MUTEX
 
-        // TODO: Object Association
-        SPDLOG_INFO("HELLO WORLD! KF:{}", (*vit_kf)->mnId);
         for(size_t obj_idx=0; obj_idx < vpMapObjects.size(); obj_idx++) {
-            SPDLOG_INFO("Associate i={}", obj_idx);
             MapObject* pMO = vpMapObjects[obj_idx];
             cv::Rect bb;
 
             if(!pMO){
                 //TODO -- fix this, this mean all predictions doesn't either create a new object or match others
-                SPDLOG_ERROR("POINTER NULL!");
                 continue;
             }
 
 
             SPDLOG_INFO("Object ID:{}, label: {}", pMO->mnId, pMO->mLabel);
             // pMO->IsPositiveToKeyFrame(pKeyframe)
-            if (GetProjectedBoundingBox(pMO, pKeyframe, bb)) {
+            if (pMO->IsPositiveToKeyFrame(pKeyframe)
+            && pMO->GetProjectedBoundingBox(pKeyframe, bb)) {
                 // Find label match with nearest center
                 double min_dist = std::numeric_limits<double>::max();
                 long int min_dist_idx = -1;
@@ -200,8 +194,15 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
             continue;
 
         auto &pred = vPredictedObjects[i];
+        const auto box = pred.box();
+        int bboxSizeThresh = min(pKeyframe->mnMaxX - pKeyframe->mnMinX, pKeyframe->mnMaxY - pKeyframe->mnMinY) / 10;
+
+        if (box.width < bboxSizeThresh || box.height < bboxSizeThresh){
+            continue;
+        }
+
         // if the keyframe does not have object then continue
-        auto vObjMapPoints = pKeyframe->GetMapPointsInBoundingBox(pred.box());
+        auto vObjMapPoints = pKeyframe->GetMapPointsInBoundingBox(box);
         SPDLOG_DEBUG("Obj {}: Total Point {}", i, vObjMapPoints.size());
 
         if (vObjMapPoints.size() < 8) {
@@ -268,8 +269,8 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         auto cuboid = CuboidFromPointCloud(inliers);
         SPDLOG_DEBUG("Cuboid calculation time {}s", utils::time::time_diff_from_now_second(start_time2));
 
-        auto pose = Converter::toCvMat(cuboid.mPose);
-        auto scale = Converter::toCvMat(cuboid.mScale);
+        //auto pose = Converter::toCvMat(cuboid.mPose);
+        //auto scale = Converter::toCvMat(cuboid.mScale);
 
         //SPDLOG_DEBUG("Cuboid scale x:{}, y:{}, z:{}", scale[0] * 2.0, scale[1] * 2.0, scale[2] * 2.0);
 
@@ -282,11 +283,10 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         }
 
         // Create new MapObject -- pattern from LocalMapping.cc MapPoint!
-        MapObject *pMO = new MapObject(pose, scale, pred._label, pKeyframe, pMap);
+        MapObject *pMO = new MapObject(cuboid, pred._label, pKeyframe, pMap);
         pMO->AddObservation(pKeyframe, i);
         pKeyframe->AddMapObject(pMO, i);
         pMap->AddMapObject(pMO);
-
     }
 }
 

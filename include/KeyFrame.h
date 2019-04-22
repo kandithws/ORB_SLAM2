@@ -101,6 +101,7 @@ public:
 
     // Object observation functions
     void AddMapObject(MapObject* pMO, const size_t &idx); //idx of Predicted
+    std::vector<MapObject*> GetMapObjects();
 
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r) const;
