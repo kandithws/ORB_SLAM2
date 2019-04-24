@@ -399,28 +399,20 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
     // Setup optimizer
     g2o::SparseOptimizer optimizer;
 
-    g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
+    g2o::BlockSolverX::LinearSolverType * linearSolver;
 
-    linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolver_6_3::PoseMatrixType>();
+    linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
 
-    g2o::BlockSolver_6_3 * solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
+    g2o::BlockSolverX* solver_ptr = new g2o::BlockSolverX(linearSolver);
 
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
     optimizer.setAlgorithm(solver);
-    /*
-    auto linearSolver = g2o::make_unique<g2o::LinearSolverEigen<g2o::BlockSolver_6_3::PoseMatrixType>>();
-
-    auto solver_ptr = g2o::make_unique<g2o::BlockSolver_6_3>(std::move(linearSolver));
-
-    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
-    optimizer.setAlgorithm(solver);
-    */
 
     if (pbStopFlag)
         optimizer.setForceStopFlag(pbStopFlag);
 
     unsigned long maxKFId = 0;
-    uint32_t  maxLandmarkId = 0;
+    unsigned long  maxLandmarkId = 0;
 
     // Set Local KeyFrame vertices
     unordered_set<uint32_t> sLandmarkIds;
@@ -447,8 +439,23 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
             maxKFId = pKFi->mnId;
     }
 
+    //unordered_set<uint32_t> sLandmarkIds;
+    list<MapObject* > lLocalLandmarksFixed;
+
     // Set Fixed KeyFrame vertices
     for (auto pKFi : lFixedCameras) {
+
+        auto objects = pKFi->GetMapObjects();
+        for (auto& obj : objects){
+            if (obj){
+                // Not in both fixed and non-fixed landmarks
+                if (sLandmarkIds.find(obj->mnId) == sLandmarkIds.end()) {
+                    sLandmarkIds.insert(obj->mnId);
+                    lLocalLandmarksFixed.push_back(obj);
+                }
+            }
+        }
+
         auto* vSE3 = new g2o::VertexSE3Expmap();
         vSE3->setEstimate(Converter::toSE3Quat(pKFi->GetPose()));
         vSE3->setId(pKFi->mnId);
@@ -458,7 +465,6 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
             maxKFId = pKFi->mnId;
     }
 
-    /*
     for (const auto& pMO : lLocalLandmarks) {
         Cuboid pInitCuboidGlobalPose;
         pMO->GetCuboid(pInitCuboidGlobalPose);
@@ -470,7 +476,19 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         if (pMO->mnId > maxLandmarkId)
             maxLandmarkId = pMO->mnId;
     }
-     */
+
+    for (const auto& pMO : lLocalLandmarksFixed) {
+        Cuboid pInitCuboidGlobalPose;
+        pMO->GetCuboid(pInitCuboidGlobalPose);
+        auto* vCuboid = new g2o::VertexCuboid();
+        vCuboid->setEstimate(pInitCuboidGlobalPose);
+        vCuboid->setId(maxKFId + 1 + pMO->mnId);
+        vCuboid->setFixed(true);
+        optimizer.addVertex(vCuboid);
+        if (pMO->mnId > maxLandmarkId)
+            maxLandmarkId = pMO->mnId;
+    }
+
 
     // Set MapPoint vertices
     const int nExpectedSize = (lLocalKeyFrames.size() + lFixedCameras.size()) * lLocalMapPoints.size();
@@ -498,7 +516,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
 
     // Constructing Object Edges !!!
     // ---------- 3D Object - Cam Error -----------
-    /*
+
     for (auto pKFi : lFixedCameras) {
         // add g2o camera-object measurement edges, if there is
         auto landmarks = pKFi->GetMapObjects();
@@ -506,7 +524,6 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
             if (pMO){
                 auto* edgeSE3Cuboid = new g2o::EdgeSE3Cuboid();
                 edgeSE3Cuboid->setVertex(0, optimizer.vertex(pKFi->mnId));
-
                 edgeSE3Cuboid->setVertex(1, optimizer.vertex(maxKFId + 1 + pMO->mnId));
                 edgeSE3Cuboid->setMeasurement(pMO->GetCuboidPtr()->transformTo(
                         Converter::toSE3Quat(pKFi->GetPoseInverse())));
@@ -521,17 +538,13 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         }
     }
 
-
-
     for (auto pKFi : lLocalKeyFrames) {
         // add g2o camera-object measurement edges, if there is
-        SPDLOG_INFO("Local Keyframes {}", pKFi->mnId);
         auto landmarks = pKFi->GetMapObjects();
         for (const auto& pMO : landmarks) {
             if (pMO){
                 auto* edgeSE3Cuboid = new g2o::EdgeSE3Cuboid();
                 edgeSE3Cuboid->setVertex(0, optimizer.vertex(pKFi->mnId));
-                SPDLOG_INFO("VERTEX {}", maxKFId + 1 + pMO->mnId);
                 edgeSE3Cuboid->setVertex(1, optimizer.vertex(maxKFId + 1 + pMO->mnId));
                 edgeSE3Cuboid->setMeasurement(pMO->GetCuboidPtr()->transformTo(
                         Converter::toSE3Quat(pKFi->GetPoseInverse())));
@@ -545,7 +558,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         }
     }
 
-     */
+
 
     // TODO -- Implement 2D Reprojection Error
     /*
@@ -771,7 +784,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         pMP->UpdateNormalAndDepth();
     }
 
-    /*
+
     //Landmarks
     for (const auto& pMO : lLocalLandmarks) {
         auto* vCube = dynamic_cast<g2o::VertexCuboid*>(optimizer.vertex(maxKFId + 1 + pMO->mnId));
@@ -779,7 +792,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         // pMO->SetPoseAndDimension(cuboid);
         pMO->SetCuboid(cuboid);
     }
-    */
+
 
     pMap->NotifyMapUpdated();
 }
