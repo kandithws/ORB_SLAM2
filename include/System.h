@@ -22,7 +22,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VIEWER_DISABLE_PANGOLIN
+//#define VIEWER_DISABLE_PANGOLIN
 
 #include <string>
 #include <thread>

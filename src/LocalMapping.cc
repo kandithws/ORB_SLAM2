@@ -90,8 +90,11 @@ void LocalMapping::Run()
 
                 // Local BA
                 if(mpMap->KeyFramesInMap()>2){
-                    if (mbUseObject)
+                    if (mbUseObject){
                         Optimizer::LocalBundleAdjustmentWithObjects(mpCurrentKeyFrame,&mbAbortBA, mpMap);
+                        // Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
+                    }
+
                     else
                         Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
                 }

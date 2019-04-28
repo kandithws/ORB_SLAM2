@@ -71,6 +71,8 @@ void Viewer::Run()
     pangolin::Var<bool> menuShowPoints("menu.Show Points",true,true);
     pangolin::Var<bool> menuShowKeyFrames("menu.Show KeyFrames",true,true);
     pangolin::Var<bool> menuShowGraph("menu.Show Graph",true,true);
+    pangolin::Var<bool> menuShowObjects("menu.Show Objects",true,true);
+    pangolin::Var<bool> menuShowObjectGraph("menu.Show ObjectGraph",true,true);
     pangolin::Var<bool> menuLocalizationMode("menu.Localization Mode",false,true);
     pangolin::Var<bool> menuReset("menu.Reset",false,false);
 
@@ -129,10 +131,16 @@ void Viewer::Run()
         d_cam.Activate(s_cam);
         glClearColor(1.0f,1.0f,1.0f,1.0f);
         mpMapDrawer->DrawCurrentCamera(Twc);
+
         if(menuShowKeyFrames || menuShowGraph)
             mpMapDrawer->DrawKeyFrames(menuShowKeyFrames,menuShowGraph);
         if(menuShowPoints)
             mpMapDrawer->DrawMapPoints();
+
+        if(menuShowObjects || menuShowObjectGraph){
+            mpMapDrawer->DrawObjects(menuShowObjects, menuShowObjectGraph);
+        }
+
 
         pangolin::FinishFrame();
 #endif
