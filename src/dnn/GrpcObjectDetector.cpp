@@ -17,7 +17,7 @@ GrpcObjectDetector::GrpcObjectDetector(std::string url, bool verbose)
     SPDLOG_INFO("Connected to", url);
 }
 
-void GrpcObjectDetector::detectObject(const cv::Mat &img, std::vector<ORB_SLAM2::PredictedObject> &preds, bool rgb) {
+void GrpcObjectDetector::detectObject(const cv::Mat &img, std::vector<std::shared_ptr<ORB_SLAM2::PredictedObject> > &preds, bool rgb) {
 
     Image req; Detections res;
     toGrpcImage(img, req, rgb ? "rgb8" : "bgr8");
@@ -25,7 +25,7 @@ void GrpcObjectDetector::detectObject(const cv::Mat &img, std::vector<ORB_SLAM2:
         toPredictions(res, preds);
     }
     else {
-        SPDLOG_WARN("Fail to request an image for prediction");
+        SPDLOG_WARN("Fail tos request an image for prediction");
     }
 }
 
@@ -46,14 +46,15 @@ bool GrpcObjectDetector::requestDetectObject(const Image &req, Detections &res) 
     return st.ok();
 }
 
-void GrpcObjectDetector::toPredictions(const Detections &detections, std::vector<ORB_SLAM2::PredictedObject> &preds) {
+void GrpcObjectDetector::toPredictions(const Detections &detections, std::vector<std::shared_ptr<PredictedObject> > &preds) {
     auto detect_vect = detections.detections();
     auto end = detect_vect.end();
 
     for (auto it = detect_vect.begin(); it != end; it++){
         cv::Rect box(cv::Point(it->box().tl().x(), it->box().tl().y()),
                 cv::Point(it->box().br().x(), it->box().br().y()));
-        preds.push_back(PredictedObject(it->label_id(), it->confidence(), box));
+
+        preds.push_back(std::make_shared<PredictedObject>(it->label_id(), it->confidence(), box));
     }
 }
 

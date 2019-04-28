@@ -22,7 +22,7 @@ void CVObjectDetector::setInputSize(int input_width, int input_height) {
     _input_height = input_height < 0 ? input_width : input_height;
 }
 
-void CVObjectDetector::detectObject(const cv::Mat &img, std::vector<PredictedObject> &preds, bool rgb) {
+void CVObjectDetector::detectObject(const cv::Mat &img, std::vector<std::shared_ptr<PredictedObject> > &preds, bool rgb) {
     // required RGB input
     cv::Size inp_size(_input_width > 0 ? _input_width : img.cols,
                       _input_height > 0 ? _input_height : img.rows);
@@ -61,7 +61,7 @@ void CVObjectDetector::detectObject(const cv::Mat &img, std::vector<PredictedObj
 
 }
 
-void CVObjectDetector::applyNMSBoxes(std::vector<PredictedObject> &preds, std::vector<int> &class_ids,
+void CVObjectDetector::applyNMSBoxes(std::vector<std::shared_ptr<PredictedObject> > &preds, std::vector<int> &class_ids,
                                      std::vector<float> &confidences,
                                      std::vector<cv::Rect> &boxes) {
     std::vector<int> indices;
@@ -70,7 +70,8 @@ void CVObjectDetector::applyNMSBoxes(std::vector<PredictedObject> &preds, std::v
         int idx = indices[i];
 
         // Build results on the fly for simplicity
-        preds.push_back(PredictedObject(class_ids[idx], confidences[idx], boxes[idx]));
+        auto pred = std::make_shared<PredictedObject>(class_ids[idx], confidences[idx], boxes[idx]);
+        preds.push_back(pred);
     }
 
 }

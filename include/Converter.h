@@ -51,6 +51,11 @@ public:
     static Eigen::Matrix<float, 4, 4> toHomogeneous4f(const cv::Mat &cvTransform);
 
     static std::vector<float> toQuaternion(const cv::Mat &M);
+
+    // Bounding Boxes
+
+    static Eigen::Vector4d toVector4d(const cv::Rect& cvRect);
+    static cv::Rect toCvRect(const Eigen::Vector4d& rectVect);
 };
 
 }// namespace ORB_SLAM

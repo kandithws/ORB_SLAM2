@@ -54,10 +54,11 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
             mGrid[i][j] = F.mGrid[i][j];
     }
 
-    SetPose(F.mTcw);    
+    SetPose(F.mTcw);
 }
 
-KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, const cv::Mat &imColor, bool rgb) :
+KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, const cv::Mat &imColor,
+        const cv::Mat &imGray, bool rgb) :
     KeyFrame(F, pMap, pKFDB)
 {
     // Extracting Keypoints color
@@ -77,6 +78,9 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, const cv::Mat &
         }
         mvKeysUnColor[i] = rgb_val;
     }
+    // For further, debugging /initialization
+    mImColor = imColor.clone();
+    mImGray = imGray.clone();
 }
 
 void KeyFrame::ComputeBoW()
@@ -740,7 +744,7 @@ bool KeyFrame::IsObjectsReady() {
     return mbObjectReady;
 }
 
-std::vector<PredictedObject> KeyFrame::GetObjectPredictions() {
+std::vector<std::shared_ptr<PredictedObject> > KeyFrame::GetObjectPredictions() {
     std::lock_guard<std::mutex> lock(mMutexObject);
     return mvObjectPrediction;
 }
@@ -748,10 +752,16 @@ std::vector<PredictedObject> KeyFrame::GetObjectPredictions() {
 void KeyFrame::AddMapObject(ORB_SLAM2::MapObject *pMO, const size_t &idx) {
     std::lock_guard<std::mutex> lock(mMutexObject);
     mvpMapObjects[idx]=pMO;
+    mvpMapObjectsInverse[pMO] = idx;
 }
 
 std::vector<MapObject*> KeyFrame::GetMapObjects() {
     std::lock_guard<std::mutex> lock(mMutexObject);
     return mvpMapObjects;
+}
+
+std::map<MapObject*, size_t> KeyFrame::GetMapObjectObservationsMap() {
+    std::lock_guard<std::mutex> lock(mMutexObject);
+    return mvpMapObjectsInverse;
 }
 } //namespace ORB_SLAM

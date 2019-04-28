@@ -119,7 +119,7 @@ cv::Point2f MapObject::GetProjectedCentroid(KeyFrame *pTargetKF) {
                    centroidHomo.at<float>(1) / centroidHomo.at<float>(2));
 }
 
-bool MapObject::GetProjectedBoundingBox(ORB_SLAM2::KeyFrame *pTargetKF, cv::Rect &bb) {
+bool MapObject::GetProjectedBoundingBox(ORB_SLAM2::KeyFrame *pTargetKF, cv::Rect &bb, bool check_centroid) {
     cv::Mat Tcw = pTargetKF->GetPose();
     unique_lock<mutex> lock(mMutexPose);
 
@@ -129,10 +129,17 @@ bool MapObject::GetProjectedBoundingBox(ORB_SLAM2::KeyFrame *pTargetKF, cv::Rect
 
     // Check corners visibility
     bool st = false;
-    st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y);
-    st |= pTargetKF->IsInImage(bb.tl().x + bb.width, bb.tl().y);
-    st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y + bb.height);
-    st |= pTargetKF->IsInImage(bb.br().x, bb.br().y);
+    if (check_centroid){
+        auto bb_center = (bb.br() + bb.tl())*0.5;
+        st = pTargetKF->IsInImage(bb_center.x, bb_center.y);
+    }
+    else {
+        st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y);
+        st |= pTargetKF->IsInImage(bb.tl().x + bb.width, bb.tl().y);
+        st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y + bb.height);
+        st |= pTargetKF->IsInImage(bb.br().x, bb.br().y);
+    }
+
 
     if(!st){
         SPDLOG_WARN("Object {}, bounding boxes is not in Keyframe {}", mnId, pTargetKF->mnId);

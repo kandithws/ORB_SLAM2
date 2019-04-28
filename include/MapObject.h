@@ -41,7 +41,8 @@ class MapObject {
 
     cv::Mat GetCentroid();
     cv::Point2f GetProjectedCentroid(KeyFrame *pTargetKF);
-    bool GetProjectedBoundingBox(KeyFrame *pTargetKF, cv::Rect& bb);
+    // if check centroid = true, will check if the centroid is in image, otherwise any corner
+    bool GetProjectedBoundingBox(KeyFrame *pTargetKF, cv::Rect& bb, bool check_centroid=true);
     bool IsPositiveToKeyFrame(KeyFrame *pTargetKF);
 
   public:

@@ -28,7 +28,7 @@ class CVObjectDetector : public BaseObjectDetector {
     /*
      * @param rgb: true if input channel if rgb else, bgr
      * */
-    void detectObject(const cv::Mat& img, std::vector<PredictedObject>& preds, bool rgb=false);
+    void detectObject(const cv::Mat& img, std::vector<std::shared_ptr<PredictedObject> >& preds, bool rgb=false);
     void setApplyNMS(bool st = true) { _apply_nms = st; }
     void setConfidenceThreshold(double val) { _conf_th = val; }
     void setNMSThreshold(double val) { _nms_th = val; }
@@ -46,7 +46,7 @@ class CVObjectDetector : public BaseObjectDetector {
     virtual void postProcess(const cv::Mat& img, std::vector<cv::Mat>& raw_outs, std::vector<int>& class_ids,
                              std::vector<float>& confidences,
                              std::vector<cv::Rect>& boxes);
-    void applyNMSBoxes(std::vector<PredictedObject>& preds, std::vector<int>& class_ids,
+    void applyNMSBoxes(std::vector<std::shared_ptr<PredictedObject> >& preds, std::vector<int>& class_ids,
                        std::vector<float>& confidences,
                        std::vector<cv::Rect>& boxes); // Non-maxima supression
     std::shared_ptr<cv::dnn::Net> _model;

@@ -552,9 +552,15 @@ void Tracking::StereoInitialization()
     {
         // Set Frame pose to the origin
         mCurrentFrame.SetPose(cv::Mat::eye(4,4,CV_32F));
-
+        KeyFrame* pKFini;
         // Create KeyFrame
-        KeyFrame* pKFini = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB, mImColor);
+        if (mbUseObject){
+            pKFini = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB, mImColor, mImGray);
+        }
+        else {
+            pKFini = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+        }
+
 
         // Insert KeyFrame in the map
         mpMap->AddKeyFrame(pKFini);
@@ -1114,7 +1120,7 @@ void Tracking::CreateNewKeyFrame()
     KeyFrame* pKF;
     if (mbUseObject){
         if((mSensor!=System::MONOCULAR) || (mSensor!=System::RGBD))
-            pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB, mImColor);
+            pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB, mImColor, mImGray);
         else
             pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB); // TODO: Stereo Vision support
 

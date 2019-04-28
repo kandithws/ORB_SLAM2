@@ -85,7 +85,7 @@ set(DNN_SRC_FILES
 
 
 set(OBJECT_INIT_SRC_FILES
-        include/object_initializer/BaseObjectInitializer.h
+        include/object_initializer/IObjectInitializer.h
         include/object_initializer/PointCloudObjectInitializer.h
         src/object_initializer/PointCloudObjectInitializer.cpp)
 

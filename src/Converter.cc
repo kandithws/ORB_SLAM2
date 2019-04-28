@@ -147,4 +147,11 @@ std::vector<float> Converter::toQuaternion(const cv::Mat &M) {
     return v;
 }
 
+Eigen::Vector4d Converter::toVector4d(const cv::Rect& cvRect){
+    Eigen::Vector4d out;
+    auto center = (cvRect.tl() + cvRect.br()) * 0.5;
+    out << (double)center.x, (double)center.y, (double)cvRect.width, (double)cvRect.height;
+    return out;
+}
+
 } //namespace ORB_SLAM

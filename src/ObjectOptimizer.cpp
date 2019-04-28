@@ -516,7 +516,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
 
     // Constructing Object Edges !!!
     // ---------- 3D Object - Cam Error -----------
-
+    /*
     for (auto pKFi : lFixedCameras) {
         // add g2o camera-object measurement edges, if there is
         auto landmarks = pKFi->GetMapObjects();
@@ -529,6 +529,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
                         Converter::toSE3Quat(pKFi->GetPoseInverse())));
                 Eigen::Vector9d inv_sigma;
                 inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1; // Identity for now
+                inv_sigma = inv_sigma * 2.0;
                 // inv_sigma = inv_sigma * 2.0 * pMO->mQuality;
                 Eigen::Matrix9d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
                 edgeSE3Cuboid->setInformation(info);
@@ -550,6 +551,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
                         Converter::toSE3Quat(pKFi->GetPoseInverse())));
                 Eigen::Vector9d inv_sigma;
                 inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1;
+                inv_sigma = inv_sigma * 2.0;
                 // inv_sigma = inv_sigma * 2.0 * pLandmark->mQuality;
                 Eigen::Matrix9d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
                 edgeSE3Cuboid->setInformation(info);
@@ -557,22 +559,33 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
             }
         }
     }
-
-
+    */
 
     // TODO -- Implement 2D Reprojection Error
-    /*
+
     for (auto pKFi : lFixedCameras) {
         // add g2o camera-object measurement edges, if there is
         auto landmarks = pKFi->GetMapObjects();
+        auto vObservations = pKFi->GetObjectPredictions();
+        auto vObservationsMap = pKFi->GetMapObjectObservationsMap();
+
         for (const auto& pMO : landmarks) {
+            if (vObservationsMap.find(pMO) == vObservationsMap.end())
+                continue;
+
             auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj();
             edgeSE3CuboidProj->setVertex(0, optimizer.vertex(pKFi->mnId));
             edgeSE3CuboidProj->setVertex(1, optimizer.vertex(maxKFId + 1 + pMO->mnId));
             // TODO
-            //edgeSE3Cuboid->setMeasurement();
+            edgeSE3CuboidProj->setMeasurement(
+                    Converter::toVector4d(vObservations[vObservationsMap[pMO]]->box()));
 
-            // edgeSE3Cuboid->setInformation(info);
+
+            Eigen::Vector4d inv_sigma;
+            inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1;
+            inv_sigma = inv_sigma * 2.0;
+            Eigen::Matrix4d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
+            edgeSE3CuboidProj->setInformation(info);
             optimizer.addEdge(edgeSE3CuboidProj);
         }
     }
@@ -580,23 +593,31 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
     for (auto pKFi : lLocalKeyFrames) {
         // add g2o camera-object measurement edges, if there is
         auto landmarks = pKFi->GetMapObjects();
+        auto vObservations = pKFi->GetObjectPredictions();
+        auto vObservationsMap = pKFi->GetMapObjectObservationsMap();
+
         for (const auto& pMO : landmarks) {
+            if (vObservationsMap.find(pMO) == vObservationsMap.end())
+                continue;
+
             auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj();
             edgeSE3CuboidProj->setVertex(0, optimizer.vertex(pKFi->mnId));
             edgeSE3CuboidProj->setVertex(1, optimizer.vertex(maxKFId + 1 + pMO->mnId));
             // TODO
-            // edgeSE3Cuboid->setMeasurement(pMO->GetCuboidPtr()->transformTo(
-            //        Converter::toSE3Quat(pKFi->GetPoseInverse())));
-            Eigen::Vector9d inv_sigma;
+            edgeSE3CuboidProj->setMeasurement(
+                    Converter::toVector4d(vObservations[vObservationsMap[pMO]]->box()));
+
+
+            Eigen::Vector4d inv_sigma;
             inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1;
-            // inv_sigma = inv_sigma * 2.0 * pLandmark->mQuality;
-            Eigen::Matrix9d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
-            // edgeSE3Cuboid->setInformation(info);
+            inv_sigma = inv_sigma * 2.0;
+            Eigen::Matrix4d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
+            edgeSE3CuboidProj->setInformation(info);
             optimizer.addEdge(edgeSE3CuboidProj);
         }
     }
-    */
 
+    // -----------------------------------------------------------
     for (auto pMP : lLocalMapPoints) {
         auto* vPoint = new g2o::VertexSBAPointXYZ();
         vPoint->setEstimate(Converter::toVector3d(pMP->GetWorldPos()));

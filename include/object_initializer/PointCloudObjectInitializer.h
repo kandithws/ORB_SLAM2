@@ -3,7 +3,7 @@
 
 //#define ORB_SLAM2_POINTCLOUDOBJECTINITIALIZER_DEBUG
 
-#include <object_initializer/BaseObjectInitializer.h>
+#include <object_initializer/IObjectInitializer.h>
 #include <spdlog/spdlog.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/statistical_outlier_removal.h>
@@ -16,12 +16,10 @@
 namespace ORB_SLAM2{
 class Cuboid;
 
-class PointCloudObjectInitializer : public BaseObjectInitializer {
+class PointCloudObjectInitializer : public IObjectInitializer {
   public:
     PointCloudObjectInitializer();
-    virtual void InitializeObjects(KeyFrame* pKeyframe, Map* pMap);
-
-    Cuboid CuboidFromPointCloud(pcl::PointCloud<PCLConverter::PCLPointT>::Ptr cloud);
+    void InitializeObjects(KeyFrame* pKeyframe, Map* pMap);
 
 #ifdef ORB_SLAM2_POINTCLOUDOBJECTINITIALIZER_DEBUG
     pcl::PCDWriter mCloudDebugWriter;
@@ -33,11 +31,7 @@ class PointCloudObjectInitializer : public BaseObjectInitializer {
         return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
     }
 
-    Eigen::Vector4d ProjectOntoImageRect(const SE3Quat& objpose_wo,
-            const Eigen::Vector3d &obj_scale,
-            const SE3Quat& campose_cw, const Eigen::Matrix3d& Kalib);
-
-    bool GetProjectedBoundingBox(MapObject* pMO, KeyFrame *pTargetKF, cv::Rect& bb);
+    Cuboid CuboidFromPointCloud(pcl::PointCloud<PCLConverter::PCLPointT>::Ptr cloud);
 
 
 };

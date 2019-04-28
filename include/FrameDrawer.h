@@ -78,7 +78,7 @@ protected:
 
     // Info of the Object frame to be drawn
     cv::Mat mImKFBGR;
-    std::vector<PredictedObject> mvPredictedObjects;
+    std::vector<std::shared_ptr<PredictedObject> > mvPredictedObjects;
     std::mutex mMutexObject;
     std::vector<std::string> mvObjectLabelMap;
     //std::mutex mMutexbObjectFrameUpdated;

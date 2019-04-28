@@ -80,20 +80,20 @@ std::vector<std::string> BaseObjectDetector::parseLabelMap(std::string path, cha
     return label_map;
 }
 
-void BaseObjectDetector::drawPredictionBoxes(cv::Mat &img, std::vector<PredictedObject> &preds) {
+void BaseObjectDetector::drawPredictionBoxes(cv::Mat &img, std::vector<std::shared_ptr<PredictedObject> > &preds) {
     for (auto &pred : preds) {
-        int top = (int) pred.box().tl().y;
-        int left = (int) pred.box().tl().x;
-        cv::rectangle(img, pred.box().tl(), pred.box().br(), cv::Scalar(0, 255, 0));
+        int top = (int) pred->box().tl().y;
+        int left = (int) pred->box().tl().x;
+        cv::rectangle(img, pred->box().tl(), pred->box().br(), cv::Scalar(0, 255, 0));
 
         char conf_str[10];
-        sprintf(conf_str, "%.2f", pred._confidence);
+        sprintf(conf_str, "%.2f", pred->_confidence);
         std::string label(conf_str);
         if (_label_map.size() > 0) {
-            CV_Assert(pred._label < (int) _label_map.size());
-            label = _label_map[pred._label] + ": " + label;
+            CV_Assert(pred->_label < (int) _label_map.size());
+            label = _label_map[pred->_label] + ": " + label;
         } else {
-            label = "class" + std::to_string(pred._label) + ": " + label;
+            label = "class" + std::to_string(pred->_label) + ": " + label;
         }
 
         int baseLine;
@@ -103,20 +103,21 @@ void BaseObjectDetector::drawPredictionBoxes(cv::Mat &img, std::vector<Predicted
     }
 }
 
-void BaseObjectDetector::drawPredictionBoxes(const std::vector<std::string>& label_map, cv::Mat &img, std::vector<PredictedObject> &preds) {
+void BaseObjectDetector::drawPredictionBoxes(const std::vector<std::string>& label_map,
+        cv::Mat &img, std::vector<std::shared_ptr<PredictedObject> > &preds) {
     for (auto &pred : preds) {
-        int top = (int) pred.box().tl().y;
-        int left = (int) pred.box().tl().x;
-        cv::rectangle(img, pred.box().tl(), pred.box().br(), cv::Scalar(0, 255, 0));
+        int top = (int) pred->box().tl().y;
+        int left = (int) pred->box().tl().x;
+        cv::rectangle(img, pred->box().tl(), pred->box().br(), cv::Scalar(0, 255, 0));
 
         char conf_str[10];
-        sprintf(conf_str, "%.2f", pred._confidence);
+        sprintf(conf_str, "%.2f", pred->_confidence);
         std::string label(conf_str);
         if (label_map.size() > 0) {
-            CV_Assert(pred._label < (int) label_map.size());
-            label = label_map[pred._label] + ": " + label;
+            CV_Assert(pred->_label < (int) label_map.size());
+            label = label_map[pred->_label] + ": " + label;
         } else {
-            label = "class" + std::to_string(pred._label) + ": " + label;
+            label = "class" + std::to_string(pred->_label) + ": " + label;
         }
 
         int baseLine;

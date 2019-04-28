@@ -51,7 +51,9 @@ class KeyFrame
 {
 public:
     KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB);
-    KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB, const cv::Mat& imColor, bool rgb=false);
+    KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB,
+            const cv::Mat& imColor, const cv::Mat& imGray,
+            bool rgb=false);
 
     // Pose functions
     void SetPose(const cv::Mat &Tcw);
@@ -102,7 +104,7 @@ public:
     // Object observation functions
     void AddMapObject(MapObject* pMO, const size_t &idx); //idx of Predicted
     std::vector<MapObject*> GetMapObjects();
-
+    std::map<MapObject*, size_t> GetMapObjectObservationsMap();
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r) const;
     std::vector<MapPoint*> GetMapPointsInBoundingBox(const cv::Rect2f& bb);
@@ -133,7 +135,7 @@ public:
 
     bool IsObjectsReady();
 
-    std::vector<PredictedObject> GetObjectPredictions();
+    std::vector<std::shared_ptr<PredictedObject> > GetObjectPredictions();
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
@@ -186,8 +188,9 @@ public:
 
     // TODO : Migrate this to protected
     std::vector<uint32_t> mvKeysUnColor;
-    std::vector<PredictedObject> mvObjectPrediction;
+    std::vector<std::shared_ptr<PredictedObject> > mvObjectPrediction;
     std::vector<MapObject*> mvpMapObjects;
+    std::map<MapObject*, size_t> mvpMapObjectsInverse;
 
     //BoW
     DBoW2::BowVector mBowVec;
@@ -216,6 +219,9 @@ public:
     std::condition_variable mcvObjectReady;
     bool mbObjectReady = false;
     // The following variables need to be accessed trough a mutex to be thread safe.
+    std::mutex mMutexImages;
+    cv::Mat mImColor;
+    cv::Mat mImGray;
 protected:
 
     // SE3 Pose and camera center

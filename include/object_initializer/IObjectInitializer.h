@@ -10,11 +10,10 @@
 
 // TODO -- Change to interface
 namespace ORB_SLAM2 {
-class BaseObjectInitializer {
+class IObjectInitializer {
   public:
-    BaseObjectInitializer() = default;
-
     virtual void InitializeObjects(KeyFrame* pKeyframe, Map* pMap) = 0;
+
 };
 }
 

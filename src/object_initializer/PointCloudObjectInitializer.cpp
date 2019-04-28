@@ -61,56 +61,6 @@ Cuboid PointCloudObjectInitializer::CuboidFromPointCloud(pcl::PointCloud<PointT>
     return cuboid;
 }
 
-Eigen::Vector4d PointCloudObjectInitializer::ProjectOntoImageRect(const g2o::SE3Quat &objpose_wo,
-                                                                  const Eigen::Vector3d &obj_scale,
-                                                                  const g2o::SE3Quat &campose_cw,
-                                                                  const Eigen::Matrix3d &Kalib) {
-    Eigen::Matrix4d res = objpose_wo.to_homogeneous_matrix();
-    Eigen::Matrix3d scale_mat = obj_scale.asDiagonal();
-    res.topLeftCorner<3, 3>() = res.topLeftCorner<3, 3>() * scale_mat;
-    Eigen::Matrix3Xd corners_body;
-    corners_body.resize(3, 8);
-    corners_body << 1, 1, -1, -1, 1, 1, -1, -1,
-            1, -1, -1, 1, 1, -1, -1, 1,
-            -1, -1, -1, -1, 1, 1, 1, 1;
-    Eigen::Matrix3Xd corners_3d_world = utils::homo_to_real_coord<double>(
-            res * utils::real_to_homo_coord<double>(corners_body));
-
-    // Eigen::Matrix3Xd corners_3d_world = compute3D_BoxCorner();
-    Eigen::Matrix2Xd corner_2d = utils::homo_to_real_coord<double>(Kalib * utils::homo_to_real_coord<double>(
-            campose_cw.to_homogeneous_matrix() * utils::real_to_homo_coord<double>(corners_3d_world)));
-    Eigen::Vector2d bottomright = corner_2d.rowwise().maxCoeff(); // x y
-    Eigen::Vector2d topleft = corner_2d.rowwise().minCoeff();
-    return {topleft(0), topleft(1), bottomright(0), bottomright(1)};
-}
-
-bool PointCloudObjectInitializer::GetProjectedBoundingBox(MapObject *pMO, KeyFrame *pTargetKF,
-                                                          cv::Rect &bb) {
-    cv::Mat Tcw = pTargetKF->GetPose();
-    //unique_lock<mutex> lock(mMutexPose);
-    cv::Mat Two = pMO->GetPose();
-    cv::Mat scale = pMO->GetScale();
-    auto bbox_eigen = ProjectOntoImageRect(
-            Converter::toSE3Quat(Two),
-            Converter::toVector3d(scale),
-            Converter::toSE3Quat(Tcw),
-            Converter::toMatrix3d(pTargetKF->mK));
-    bb = cv::Rect(cv::Point2f(bbox_eigen[0], bbox_eigen[1]), cv::Point2f(bbox_eigen[2], bbox_eigen[3]));
-
-    // Check corners visibility
-    bool st = false;
-    st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y);
-    st |= pTargetKF->IsInImage(bb.tl().x + bb.width, bb.tl().y);
-    st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y + bb.height);
-    st |= pTargetKF->IsInImage(bb.br().x, bb.br().y);
-
-    if(!st){
-        SPDLOG_WARN("Object {}, bounding boxes is not in Keyframe {}", pMO->mnId, pTargetKF->mnId);
-    }
-
-    return st;
-}
-
 void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pMap) {
 
     auto vPredictedObjects = pKeyframe->GetObjectPredictions();
@@ -119,6 +69,9 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
     int nn = 10;
     //if(mbMonocular)
     //    nn=20;
+
+
+    // ------------- Object Association -------------------
     const vector<KeyFrame *> vpNeighKFs = pKeyframe->GetBestCovisibilityKeyFrames(nn);
 
     for (vector<KeyFrame *>::const_iterator vit_kf = vpNeighKFs.begin(), vend_kf = vpNeighKFs.end();
@@ -127,7 +80,6 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         if ((*vit_kf)->mvpMapObjects.empty()) {
             continue;
         }
-
 
         std::vector<bool> vCovisKFAssociatedFound(vPredictedObjects.size(), false);
         std::vector<MapObject*> vpMapObjects = (*vit_kf)->mvpMapObjects; // TODO -- MUTEX
@@ -141,9 +93,6 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
                 continue;
             }
 
-
-            SPDLOG_INFO("Object ID:{}, label: {}", pMO->mnId, pMO->mLabel);
-            // pMO->IsPositiveToKeyFrame(pKeyframe)
             if (pMO->IsPositiveToKeyFrame(pKeyframe)
             && pMO->GetProjectedBoundingBox(pKeyframe, bb)) {
                 // Find label match with nearest center
@@ -158,8 +107,8 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
                     }
 
                     // Find nearest bounding box center (we shouldn't use IOU because it may not intersec just yet)
-                    if (vPredictedObjects[i]._label == pMO->mLabel) {
-                        auto dist = Point2DDistance(bb_center, vPredictedObjects[i].GetCentroid2D());
+                    if (vPredictedObjects[i]->_label == pMO->mLabel) {
+                        auto dist = Point2DDistance(bb_center, vPredictedObjects[i]->GetCentroid2D());
                         // TODO -- add max image distance allow
                         SPDLOG_INFO("BB Center dist idx:{}, dist={}", i, dist);
                         if (dist < min_dist){
@@ -187,13 +136,14 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         }
     }
 
+    // ------------- Init objects where there is no association-------------------
 
     SPDLOG_DEBUG("----Init Object for KF:  {} -----", pKeyframe->mnId);
     for (size_t i = 0; i < vPredictedObjects.size(); i++) {
         if (vAssociatedCount[i] > 0)
             continue;
 
-        auto &pred = vPredictedObjects[i];
+        auto &pred = *vPredictedObjects[i];
         const auto box = pred.box();
         int bboxSizeThresh = min(pKeyframe->mnMaxX - pKeyframe->mnMinX, pKeyframe->mnMaxY - pKeyframe->mnMinY) / 10;
 
@@ -269,11 +219,6 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         auto cuboid = CuboidFromPointCloud(inliers);
         SPDLOG_DEBUG("Cuboid calculation time {}s", utils::time::time_diff_from_now_second(start_time2));
 
-        //auto pose = Converter::toCvMat(cuboid.mPose);
-        //auto scale = Converter::toCvMat(cuboid.mScale);
-
-        //SPDLOG_DEBUG("Cuboid scale x:{}, y:{}, z:{}", scale[0] * 2.0, scale[1] * 2.0, scale[2] * 2.0);
-
         uint32_t color = (static_cast<uint32_t>(std::rand() % 255) << 16) |
                          (static_cast<uint32_t>(std::rand() % 255) << 8) |
                          (static_cast<uint32_t>(std::rand() % 255));
@@ -288,6 +233,11 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         pKeyframe->AddMapObject(pMO, i);
         pMap->AddMapObject(pMO);
     }
+
+    // TODO -- release current KF debugging image
+    std::lock_guard<std::mutex> imglock(pKeyframe->mMutexImages);
+    pKeyframe->mImGray.release();
+    pKeyframe->mImColor.release();
 }
 
 }
