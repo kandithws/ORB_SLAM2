@@ -568,12 +568,13 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         auto landmarks = pKFi->GetMapObjects();
         auto vObservations = pKFi->GetObjectPredictions();
         auto vObservationsMap = pKFi->GetMapObjectObservationsMap();
+        auto K = Converter::toMatrix3d(pKFi->mK);
 
         for (const auto& pMO : landmarks) {
             if (vObservationsMap.find(pMO) == vObservationsMap.end())
                 continue;
 
-            auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj();
+            auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj(K);
             edgeSE3CuboidProj->setVertex(0, optimizer.vertex(pKFi->mnId));
             edgeSE3CuboidProj->setVertex(1, optimizer.vertex(maxKFId + 1 + pMO->mnId));
             // TODO
@@ -581,10 +582,11 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
                     Converter::toVector4d(vObservations[vObservationsMap[pMO]]->box()));
 
 
-            Eigen::Vector4d inv_sigma;
-            inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1;
-            inv_sigma = inv_sigma * 2.0;
-            Eigen::Matrix4d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
+            //Eigen::Vector4d inv_sigma;
+            //inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1;
+            //inv_sigma = inv_sigma * 2.0;
+            //Eigen::Matrix4d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
+            Eigen::Matrix4d info = Eigen::Matrix4d::Identity() * 2.0;
             edgeSE3CuboidProj->setInformation(info);
             optimizer.addEdge(edgeSE3CuboidProj);
         }
@@ -595,12 +597,13 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         auto landmarks = pKFi->GetMapObjects();
         auto vObservations = pKFi->GetObjectPredictions();
         auto vObservationsMap = pKFi->GetMapObjectObservationsMap();
+        auto K = Converter::toMatrix3d(pKFi->mK);
 
         for (const auto& pMO : landmarks) {
             if (vObservationsMap.find(pMO) == vObservationsMap.end())
                 continue;
 
-            auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj();
+            auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj(K);
             edgeSE3CuboidProj->setVertex(0, optimizer.vertex(pKFi->mnId));
             edgeSE3CuboidProj->setVertex(1, optimizer.vertex(maxKFId + 1 + pMO->mnId));
             // TODO
@@ -608,10 +611,11 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
                     Converter::toVector4d(vObservations[vObservationsMap[pMO]]->box()));
 
 
-            Eigen::Vector4d inv_sigma;
-            inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1;
-            inv_sigma = inv_sigma * 2.0;
-            Eigen::Matrix4d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
+            //Eigen::Vector4d inv_sigma;
+            //inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1;
+            //inv_sigma = inv_sigma * 2.0;
+            //Eigen::Matrix4d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
+            Eigen::Matrix4d info = Eigen::Matrix4d::Identity() * 2.0;
             edgeSE3CuboidProj->setInformation(info);
             optimizer.addEdge(edgeSE3CuboidProj);
         }
@@ -815,6 +819,6 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
     }
 
 
-    pMap->NotifyMapUpdated();
+    //pMap->NotifyMapUpdated();
 }
 }

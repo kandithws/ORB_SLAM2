@@ -84,7 +84,9 @@ public:
 // camera -object 2D projection error, rectangle difference, could also change to iou
 class EdgeSE3CuboidProj : public BaseBinaryEdge<4, Eigen::Vector4d, VertexSE3Expmap, VertexCuboid> {
 public:
-    EdgeSE3CuboidProj() = default;
+    EdgeSE3CuboidProj(const Eigen::Matrix3d& K){
+        Kalib = K;
+    }
 
     inline bool read(std::istream& is) override
     {
