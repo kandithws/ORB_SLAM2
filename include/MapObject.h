@@ -37,6 +37,7 @@ class MapObject {
     void EraseObservation(KeyFrame *pKF);
 
     std::map<KeyFrame *, size_t> GetObservations();
+    //std::vector<KeyFrame*> GetObservingKeyFrames();
     int Observations();
 
     cv::Mat GetCentroid();

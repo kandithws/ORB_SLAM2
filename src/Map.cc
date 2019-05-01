@@ -160,7 +160,7 @@ pcl::PointCloud<Map::PCLPointT>::Ptr Map::GetCloudPtr() {
 void Map::InitPointCloudThread() {
     mbIsShutdown = false;
     mpCloudMap = BOOST_MAKE_SHARED(pcl::PointCloud<PCLPointT >);
-    mtPointcloudRendererThread = std::make_shared<std::thread>(std::bind(&Map::RenderPointCloudThread, this));
+    //mtPointcloudRendererThread = std::make_shared<std::thread>(std::bind(&Map::RenderPointCloudThread, this));
 }
 
 void Map::ShutDown() {

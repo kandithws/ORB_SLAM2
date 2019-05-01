@@ -100,6 +100,15 @@ map<KeyFrame*, size_t> MapObject::GetObservations()
     return mObservations;
 }
 
+//std::vector<KeyFrame*> MapObject::GetObservingKeyFrames() {
+//    std::vector<KeyFrame* > out;
+//    out.reserve(mObservations.size());
+//    unique_lock<mutex> lock(mMutexObservations);
+//    for(auto elem : mObservations){
+//
+//    }
+//}
+
 int MapObject::Observations(){
     unique_lock<mutex> lock(mMutexObservations);
     return nObs;

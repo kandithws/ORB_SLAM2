@@ -534,7 +534,7 @@ void LoopClosing::CorrectLoop()
                 }
             }
         }
-        mpMap->NotifyMapUpdated();
+        //mpMap->NotifyMapUpdated();
     }
 
     // Project MapPoints observed in the neighborhood of the loop keyframe
@@ -610,7 +610,7 @@ void LoopClosing::SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap)
                 pRep->Replace(mvpLoopMapPoints[i]);
             }
         }
-        mpMap->NotifyMapUpdated();
+        //mpMap->NotifyMapUpdated();
     }
 }
 

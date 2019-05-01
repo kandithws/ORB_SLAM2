@@ -74,7 +74,6 @@ void MapDrawer::DrawMapPoints()
             continue;
         cv::Mat pos = (*sit)->GetWorldPos();
         glVertex3f(pos.at<float>(0),pos.at<float>(1),pos.at<float>(2));
-
     }
 
     glEnd();
@@ -174,6 +173,89 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph)
 
         glEnd();
     }
+}
+
+void MapDrawer::DrawObjects(const bool bDrawObj, const bool bDrawGraph) {
+    auto vMapObjects = mpMap->GetAllMapObjects();
+
+    if (bDrawObj){
+        for (auto &pObj : vMapObjects){
+            cv::Mat Twc = pObj->GetPose().t();
+            cv::Mat scale = pObj->GetScale();
+            float x, y, z;
+            x = scale.at<float>(0); y = scale.at<float>(1); z = scale.at<float>(2);
+
+            glPushMatrix();
+
+            glMultMatrixf(Twc.ptr<GLfloat>(0));
+
+
+            glLineWidth(mMapObjectLineWidth);
+            glColor3f(1.0f,0.0f,0.0f);
+            glBegin(GL_LINES);
+
+            glVertex3f(x,-y,-z);
+            glVertex3f(x,y,-z);
+            //2
+            glVertex3f(x,y,-z);
+            glVertex3f(x,y,z);
+            //3
+            glVertex3f(x,y,z);
+            glVertex3f(x,-y,z);
+            //4
+            glVertex3f(x,-y,z);
+            glVertex3f(x,-y,-z);
+            //5
+            glVertex3f(x,-y,-z);
+            glVertex3f(-x,-y,-z);
+            //6
+            glVertex3f(-x,-y,-z);
+            glVertex3f(-x,-y,z);
+            //7
+            glVertex3f(-x,-y,z);
+            glVertex3f(x,-y,z);
+
+            //8
+            glVertex3f(x,y,-z);
+            glVertex3f(-x,y,-z);
+            //9
+            glVertex3f(-x,y,-z);
+            glVertex3f(-x,y,z);
+            //10
+            glVertex3f(-x,y,z);
+            glVertex3f(x,y,z);
+            //11
+            glVertex3f(-x,-y,z);
+            glVertex3f(-x,y,z);
+            //12
+            glVertex3f(-x,-y,-z);
+            glVertex3f(-x,y,-z);
+
+            glEnd();
+
+            glPopMatrix();
+        }
+    }
+
+    if (bDrawGraph){
+
+        glLineWidth(mGraphLineWidth);
+        glColor4f(0.75f,0.0f,0.75f, 0.6f);
+        glBegin(GL_LINES);
+
+        for (auto &pObj : vMapObjects){
+            cv::Mat Twc = pObj->GetPose();
+
+            auto mapObservations = pObj->GetObservations();
+            for (auto &key_val : mapObservations ){
+                cv::Mat Owc = key_val.first->GetCameraCenter();
+                glVertex3f(Owc.at<float>(0),Owc.at<float>(1),Owc.at<float>(2));
+                glVertex3f(Twc.at<float>(0,3),Twc.at<float>(1,3),Twc.at<float>(2,3));
+            }
+        }
+        glEnd();
+    }
+
 }
 
 void MapDrawer::DrawCurrentCamera(pangolin::OpenGlMatrix &Twc)

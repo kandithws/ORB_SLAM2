@@ -22,8 +22,6 @@
 #ifndef VIEWER_H
 #define VIEWER_H
 
-
-
 #include "FrameDrawer.h"
 #include "MapDrawer.h"
 #include "Tracking.h"
