@@ -156,6 +156,12 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         auto vObjMapPoints = mbUseMask && (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK) ?
                 pKeyframe->GetMapPointsInMask(box, pred._mask, pred._mask_type) : pKeyframe->GetMapPointsInBoundingBox(box);
 
+        //if (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK){
+        //    std::string outdebug = "debug/mask_"+ Config::getInstance().getLabelName(pred._label)
+        //            + "kf_" + std::to_string(pKeyframe->mnId) + "obj_" + std::to_string(i) + ".png";
+        //
+        //    cv::imwrite(outdebug, pred._mask * 255);
+        //}
         SPDLOG_DEBUG("Obj {}: Total Point {}", i, vObjMapPoints.size());
 
         if (vObjMapPoints.size() < 8) {

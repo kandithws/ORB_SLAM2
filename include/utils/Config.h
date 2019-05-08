@@ -65,6 +65,8 @@ class Config {
 
     void readConfig(std::string cfg_file);
 
+    std::string getLabelName(const int& label_id);
+
     ORB_SLAM2_DEFINE_CONFIG_PARAM(Camera);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(ObjectDetection);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(ObjectInitializer);

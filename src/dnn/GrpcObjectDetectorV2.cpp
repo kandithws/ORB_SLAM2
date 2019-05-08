@@ -2,6 +2,7 @@
 // Created by kandithws on 8/5/2562.
 //
 
+#include <include/utils/Config.h>
 #include "dnn/GrpcObjectDetectorV2.h"
 
 namespace ORB_SLAM2 {
@@ -67,7 +68,12 @@ void GrpcObjectDetectorV2::toPredictions(const detection_service_v2::InstanceDet
         PredictedObject::MASK_TYPE mt(static_cast<PredictedObject::MASK_TYPE>(out.mask_type()));
 
         auto buffer = out.mask().data().c_str();
-        cv::Mat mask(out.mask().height(), out.mask().width(), CV_8UC1, &buffer);
+        cv::Mat mask(out.mask().height(), out.mask().width(), CV_8UC1, (void*)buffer);
+        //static int i = 0;
+        //std::string outname = "debug/outdet_" +
+        //        Config::getInstance().getLabelName(label_id)
+        //        + "_" + std::to_string(i++) + ".png";
+        //cv::imwrite(outname, mask * 255);
         preds.push_back(std::make_shared<PredictedObject>(
                 label_id, conf, box, mask, mt
         ));

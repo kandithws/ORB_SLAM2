@@ -108,4 +108,13 @@ cv::Mat Config::getCamMatrix() {
     return cam_mat_.clone();
 }
 
+std::string Config::getLabelName(const int &label_id) {
+    try{
+        return mObjectDetectionParam.label_map[label_id];
+    }
+    catch (std::exception &e) {
+        return "Unknown";
+    }
+}
+
 }
