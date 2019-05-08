@@ -6,57 +6,21 @@
 
 namespace ORB_SLAM2 {
 
-PredictedObject::PredictedObject() {}
+PredictedObject::PredictedObject(const int &label, const float &conf, const cv::Rect &box)
+        : _label(label), _confidence(conf), _bbox(box), _mask_type(MASK_TYPE::NO_MASK)
+{}
 
-PredictedObject::PredictedObject(int label, float conf) :
-    _label(label),
-    _confidence(conf) {}
 
-PredictedObject::PredictedObject(int label, float conf, cv::Rect &box) :
-    _label(label),
-    _confidence(conf) {
-    setPolyfromRect(box);
-    _bbox = std::shared_ptr<cv::Rect2f>(new cv::Rect2f(box));
+PredictedObject::PredictedObject(const int &label, const float& conf, const cv::Rect& box,
+                                 const cv::Mat &mask, const MASK_TYPE& mask_type) :
+        _label(label), _confidence(conf), _bbox(box),
+        _mask(mask),
+        _mask_type(mask_type)
+{}
+
+const cv::Rect2f& PredictedObject::box() const {
+    return _bbox;
 }
-
-PredictedObject::PredictedObject(int label, float conf, std::vector<cv::Point2f> &poly) :
-    _label(label),
-    _confidence(conf),
-    _poly(poly) {}
-
-cv::Rect2f &PredictedObject::box() {
-    // TODO -- Throws runtime assertion
-    if (!_bbox)
-        generateBoundingBox();
-
-    return *_bbox;
-}
-
-void PredictedObject::setPolyfromRect(cv::Rect &rect) {
-    if (!_poly.empty())
-        _poly.clear();
-
-    _poly.push_back(rect.tl());
-    _poly.push_back(rect.br());
-}
-
-void PredictedObject::generateBoundingBox() {
-    double x_min = std::numeric_limits<double>::max(), y_min = std::numeric_limits<double>::max();
-    double x_max = std::numeric_limits<double>::min(), y_max = std::numeric_limits<double>::min();
-    for (const auto &pt : _poly) {
-        if (pt.x < x_min)
-            x_min = pt.x;
-        if (pt.x > x_max)
-            x_max = pt.x;
-        if (pt.y < y_min)
-            y_min = pt.y;
-        if (pt.y > y_max)
-            y_max = pt.y;
-    }
-
-    _bbox = std::shared_ptr<cv::Rect2f>(new cv::Rect2f(cv::Point2f(x_min, y_min), cv::Point2f(x_max, y_max)));
-}
-
 std::vector<std::string> BaseObjectDetector::parseLabelMap(std::string path, char delim) {
     std::vector<std::string> label_map;
     std::ifstream file(path);

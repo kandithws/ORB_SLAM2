@@ -19,13 +19,13 @@ class GrpcObjectDetector : public BaseObjectDetector {
     void detectObject(const cv::Mat& img, std::vector<std::shared_ptr<PredictedObject> >& preds, bool rgb=false);
 
   private:
-    void toGrpcImage(const cv::Mat& img, Image &grpc_img, std::string encoding="bgr8");
+    void toGrpcImage(const cv::Mat& img, detection_service::Image &grpc_img, std::string encoding="bgr8");
 
-    bool requestDetectObject(const Image &req, Detections& res);
+    bool requestDetectObject(const detection_service::Image &req, detection_service::Detections& res);
 
-    void toPredictions(const Detections &detections, std::vector<std::shared_ptr<PredictedObject> >& preds);
+    void toPredictions(const detection_service::Detections &detections, std::vector<std::shared_ptr<PredictedObject> >& preds);
     std::shared_ptr<grpc::Channel> _channel;
-    std::unique_ptr<DetectionService::Stub> _stub;
+    std::unique_ptr<detection_service::DetectionService::Stub> _stub;
     bool _verbose;
 
 };

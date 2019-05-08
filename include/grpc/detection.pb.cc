@@ -24,6 +24,7 @@ extern PROTOBUF_INTERNAL_EXPORT_protobuf_detection_2eproto ::google::protobuf::i
 extern PROTOBUF_INTERNAL_EXPORT_protobuf_detection_2eproto ::google::protobuf::internal::SCCInfo<1> scc_info_Detection;
 extern PROTOBUF_INTERNAL_EXPORT_protobuf_detection_2eproto ::google::protobuf::internal::SCCInfo<1> scc_info_Rect;
 }  // namespace protobuf_detection_2eproto
+namespace detection_service {
 class ImageDefaultTypeInternal {
  public:
   ::google::protobuf::internal::ExplicitlyConstructed<Image>
@@ -49,16 +50,17 @@ class DetectionsDefaultTypeInternal {
   ::google::protobuf::internal::ExplicitlyConstructed<Detections>
       _instance;
 } _Detections_default_instance_;
+}  // namespace detection_service
 namespace protobuf_detection_2eproto {
 static void InitDefaultsImage() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::_Image_default_instance_;
-    new (ptr) ::Image();
+    void* ptr = &::detection_service::_Image_default_instance_;
+    new (ptr) ::detection_service::Image();
     ::google::protobuf::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::Image::InitAsDefaultInstance();
+  ::detection_service::Image::InitAsDefaultInstance();
 }
 
 ::google::protobuf::internal::SCCInfo<0> scc_info_Image =
@@ -68,11 +70,11 @@ static void InitDefaultsPoint2d() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::_Point2d_default_instance_;
-    new (ptr) ::Point2d();
+    void* ptr = &::detection_service::_Point2d_default_instance_;
+    new (ptr) ::detection_service::Point2d();
     ::google::protobuf::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::Point2d::InitAsDefaultInstance();
+  ::detection_service::Point2d::InitAsDefaultInstance();
 }
 
 ::google::protobuf::internal::SCCInfo<0> scc_info_Point2d =
@@ -82,11 +84,11 @@ static void InitDefaultsRect() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::_Rect_default_instance_;
-    new (ptr) ::Rect();
+    void* ptr = &::detection_service::_Rect_default_instance_;
+    new (ptr) ::detection_service::Rect();
     ::google::protobuf::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::Rect::InitAsDefaultInstance();
+  ::detection_service::Rect::InitAsDefaultInstance();
 }
 
 ::google::protobuf::internal::SCCInfo<1> scc_info_Rect =
@@ -97,11 +99,11 @@ static void InitDefaultsDetection() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::_Detection_default_instance_;
-    new (ptr) ::Detection();
+    void* ptr = &::detection_service::_Detection_default_instance_;
+    new (ptr) ::detection_service::Detection();
     ::google::protobuf::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::Detection::InitAsDefaultInstance();
+  ::detection_service::Detection::InitAsDefaultInstance();
 }
 
 ::google::protobuf::internal::SCCInfo<1> scc_info_Detection =
@@ -112,11 +114,11 @@ static void InitDefaultsDetections() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::_Detections_default_instance_;
-    new (ptr) ::Detections();
+    void* ptr = &::detection_service::_Detections_default_instance_;
+    new (ptr) ::detection_service::Detections();
     ::google::protobuf::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::Detections::InitAsDefaultInstance();
+  ::detection_service::Detections::InitAsDefaultInstance();
 }
 
 ::google::protobuf::internal::SCCInfo<1> scc_info_Detections =
@@ -135,58 +137,58 @@ void InitDefaults() {
 
 const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
   ~0u,  // no _has_bits_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Image, _internal_metadata_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Image, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Image, width_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Image, height_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Image, encoding_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Image, data_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Image, width_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Image, height_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Image, encoding_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Image, data_),
   ~0u,  // no _has_bits_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Point2d, _internal_metadata_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Point2d, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Point2d, x_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Point2d, y_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Point2d, x_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Point2d, y_),
   ~0u,  // no _has_bits_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Rect, _internal_metadata_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Rect, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Rect, tl_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Rect, br_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Rect, tl_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Rect, br_),
   ~0u,  // no _has_bits_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Detection, _internal_metadata_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Detection, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Detection, confidence_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Detection, label_id_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Detection, label_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Detection, box_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Detection, confidence_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Detection, label_id_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Detection, label_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Detection, box_),
   ~0u,  // no _has_bits_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Detections, _internal_metadata_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Detections, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Detections, detections_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::detection_service::Detections, detections_),
 };
 static const ::google::protobuf::internal::MigrationSchema schemas[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, -1, sizeof(::Image)},
-  { 9, -1, sizeof(::Point2d)},
-  { 16, -1, sizeof(::Rect)},
-  { 23, -1, sizeof(::Detection)},
-  { 32, -1, sizeof(::Detections)},
+  { 0, -1, sizeof(::detection_service::Image)},
+  { 9, -1, sizeof(::detection_service::Point2d)},
+  { 16, -1, sizeof(::detection_service::Rect)},
+  { 23, -1, sizeof(::detection_service::Detection)},
+  { 32, -1, sizeof(::detection_service::Detections)},
 };
 
 static ::google::protobuf::Message const * const file_default_instances[] = {
-  reinterpret_cast<const ::google::protobuf::Message*>(&::_Image_default_instance_),
-  reinterpret_cast<const ::google::protobuf::Message*>(&::_Point2d_default_instance_),
-  reinterpret_cast<const ::google::protobuf::Message*>(&::_Rect_default_instance_),
-  reinterpret_cast<const ::google::protobuf::Message*>(&::_Detection_default_instance_),
-  reinterpret_cast<const ::google::protobuf::Message*>(&::_Detections_default_instance_),
+  reinterpret_cast<const ::google::protobuf::Message*>(&::detection_service::_Image_default_instance_),
+  reinterpret_cast<const ::google::protobuf::Message*>(&::detection_service::_Point2d_default_instance_),
+  reinterpret_cast<const ::google::protobuf::Message*>(&::detection_service::_Rect_default_instance_),
+  reinterpret_cast<const ::google::protobuf::Message*>(&::detection_service::_Detection_default_instance_),
+  reinterpret_cast<const ::google::protobuf::Message*>(&::detection_service::_Detections_default_instance_),
 };
 
 void protobuf_AssignDescriptors() {
@@ -210,19 +212,22 @@ void protobuf_RegisterTypes(const ::std::string&) {
 void AddDescriptorsImpl() {
   InitDefaults();
   static const char descriptor[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-      "\n\017detection.proto\"F\n\005Image\022\r\n\005width\030\001 \001("
-      "\r\022\016\n\006height\030\002 \001(\r\022\020\n\010encoding\030\004 \001(\t\022\014\n\004d"
-      "ata\030\005 \001(\014\"\037\n\007Point2d\022\t\n\001x\030\001 \001(\005\022\t\n\001y\030\002 \001"
-      "(\005\"2\n\004Rect\022\024\n\002tl\030\001 \001(\0132\010.Point2d\022\024\n\002br\030\002"
-      " \001(\0132\010.Point2d\"T\n\tDetection\022\022\n\nconfidenc"
-      "e\030\001 \001(\002\022\020\n\010label_id\030\002 \001(\r\022\r\n\005label\030\003 \001(\t"
-      "\022\022\n\003box\030\004 \001(\0132\005.Rect\",\n\nDetections\022\036\n\nde"
-      "tections\030\001 \003(\0132\n.Detection2<\n\020DetectionS"
-      "ervice\022(\n\017ObjectDetection\022\006.Image\032\013.Dete"
-      "ctions\"\000b\006proto3"
+      "\n\017detection.proto\022\021detection_service\"F\n\005"
+      "Image\022\r\n\005width\030\001 \001(\r\022\016\n\006height\030\002 \001(\r\022\020\n\010"
+      "encoding\030\004 \001(\t\022\014\n\004data\030\005 \001(\014\"\037\n\007Point2d\022"
+      "\t\n\001x\030\001 \001(\005\022\t\n\001y\030\002 \001(\005\"V\n\004Rect\022&\n\002tl\030\001 \001("
+      "\0132\032.detection_service.Point2d\022&\n\002br\030\002 \001("
+      "\0132\032.detection_service.Point2d\"f\n\tDetecti"
+      "on\022\022\n\nconfidence\030\001 \001(\002\022\020\n\010label_id\030\002 \001(\r"
+      "\022\r\n\005label\030\003 \001(\t\022$\n\003box\030\004 \001(\0132\027.detection"
+      "_service.Rect\">\n\nDetections\0220\n\ndetection"
+      "s\030\001 \003(\0132\034.detection_service.Detection2`\n"
+      "\020DetectionService\022L\n\017ObjectDetection\022\030.d"
+      "etection_service.Image\032\035.detection_servi"
+      "ce.Detections\"\000b\006proto3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 376);
+      descriptor, 503);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "detection.proto", &protobuf_RegisterTypes);
 }
@@ -238,6 +243,7 @@ struct StaticDescriptorInitializer {
   }
 } static_descriptor_initializer;
 }  // namespace protobuf_detection_2eproto
+namespace detection_service {
 
 // ===================================================================
 
@@ -255,7 +261,7 @@ Image::Image()
   ::google::protobuf::internal::InitSCC(
       &protobuf_detection_2eproto::scc_info_Image.base);
   SharedCtor();
-  // @@protoc_insertion_point(constructor:Image)
+  // @@protoc_insertion_point(constructor:detection_service.Image)
 }
 Image::Image(const Image& from)
   : ::google::protobuf::Message(),
@@ -272,7 +278,7 @@ Image::Image(const Image& from)
   ::memcpy(&width_, &from.width_,
     static_cast<size_t>(reinterpret_cast<char*>(&height_) -
     reinterpret_cast<char*>(&width_)) + sizeof(height_));
-  // @@protoc_insertion_point(copy_constructor:Image)
+  // @@protoc_insertion_point(copy_constructor:detection_service.Image)
 }
 
 void Image::SharedCtor() {
@@ -284,7 +290,7 @@ void Image::SharedCtor() {
 }
 
 Image::~Image() {
-  // @@protoc_insertion_point(destructor:Image)
+  // @@protoc_insertion_point(destructor:detection_service.Image)
   SharedDtor();
 }
 
@@ -308,7 +314,7 @@ const Image& Image::default_instance() {
 
 
 void Image::Clear() {
-// @@protoc_insertion_point(message_clear_start:Image)
+// @@protoc_insertion_point(message_clear_start:detection_service.Image)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -325,7 +331,7 @@ bool Image::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:Image)
+  // @@protoc_insertion_point(parse_start:detection_service.Image)
   for (;;) {
     ::std::pair<::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
@@ -368,7 +374,7 @@ bool Image::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             this->encoding().data(), static_cast<int>(this->encoding().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
-            "Image.encoding"));
+            "detection_service.Image.encoding"));
         } else {
           goto handle_unusual;
         }
@@ -399,17 +405,17 @@ bool Image::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:Image)
+  // @@protoc_insertion_point(parse_success:detection_service.Image)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:Image)
+  // @@protoc_insertion_point(parse_failure:detection_service.Image)
   return false;
 #undef DO_
 }
 
 void Image::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:Image)
+  // @@protoc_insertion_point(serialize_start:detection_service.Image)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -428,7 +434,7 @@ void Image::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
       this->encoding().data(), static_cast<int>(this->encoding().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "Image.encoding");
+      "detection_service.Image.encoding");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
       4, this->encoding(), output);
   }
@@ -443,13 +449,13 @@ void Image::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), output);
   }
-  // @@protoc_insertion_point(serialize_end:Image)
+  // @@protoc_insertion_point(serialize_end:detection_service.Image)
 }
 
 ::google::protobuf::uint8* Image::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
   (void)deterministic; // Unused
-  // @@protoc_insertion_point(serialize_to_array_start:Image)
+  // @@protoc_insertion_point(serialize_to_array_start:detection_service.Image)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -468,7 +474,7 @@ void Image::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
       this->encoding().data(), static_cast<int>(this->encoding().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "Image.encoding");
+      "detection_service.Image.encoding");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         4, this->encoding(), target);
@@ -485,12 +491,12 @@ void Image::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), target);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:Image)
+  // @@protoc_insertion_point(serialize_to_array_end:detection_service.Image)
   return target;
 }
 
 size_t Image::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Image)
+// @@protoc_insertion_point(message_byte_size_start:detection_service.Image)
   size_t total_size = 0;
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -532,22 +538,22 @@ size_t Image::ByteSizeLong() const {
 }
 
 void Image::MergeFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Image)
+// @@protoc_insertion_point(generalized_merge_from_start:detection_service.Image)
   GOOGLE_DCHECK_NE(&from, this);
   const Image* source =
       ::google::protobuf::internal::DynamicCastToGenerated<const Image>(
           &from);
   if (source == NULL) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Image)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:detection_service.Image)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Image)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:detection_service.Image)
     MergeFrom(*source);
   }
 }
 
 void Image::MergeFrom(const Image& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Image)
+// @@protoc_insertion_point(class_specific_merge_from_start:detection_service.Image)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -570,14 +576,14 @@ void Image::MergeFrom(const Image& from) {
 }
 
 void Image::CopyFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Image)
+// @@protoc_insertion_point(generalized_copy_from_start:detection_service.Image)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void Image::CopyFrom(const Image& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Image)
+// @@protoc_insertion_point(class_specific_copy_from_start:detection_service.Image)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -622,7 +628,7 @@ Point2d::Point2d()
   ::google::protobuf::internal::InitSCC(
       &protobuf_detection_2eproto::scc_info_Point2d.base);
   SharedCtor();
-  // @@protoc_insertion_point(constructor:Point2d)
+  // @@protoc_insertion_point(constructor:detection_service.Point2d)
 }
 Point2d::Point2d(const Point2d& from)
   : ::google::protobuf::Message(),
@@ -631,7 +637,7 @@ Point2d::Point2d(const Point2d& from)
   ::memcpy(&x_, &from.x_,
     static_cast<size_t>(reinterpret_cast<char*>(&y_) -
     reinterpret_cast<char*>(&x_)) + sizeof(y_));
-  // @@protoc_insertion_point(copy_constructor:Point2d)
+  // @@protoc_insertion_point(copy_constructor:detection_service.Point2d)
 }
 
 void Point2d::SharedCtor() {
@@ -641,7 +647,7 @@ void Point2d::SharedCtor() {
 }
 
 Point2d::~Point2d() {
-  // @@protoc_insertion_point(destructor:Point2d)
+  // @@protoc_insertion_point(destructor:detection_service.Point2d)
   SharedDtor();
 }
 
@@ -663,7 +669,7 @@ const Point2d& Point2d::default_instance() {
 
 
 void Point2d::Clear() {
-// @@protoc_insertion_point(message_clear_start:Point2d)
+// @@protoc_insertion_point(message_clear_start:detection_service.Point2d)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -678,7 +684,7 @@ bool Point2d::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:Point2d)
+  // @@protoc_insertion_point(parse_start:detection_service.Point2d)
   for (;;) {
     ::std::pair<::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
@@ -724,17 +730,17 @@ bool Point2d::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:Point2d)
+  // @@protoc_insertion_point(parse_success:detection_service.Point2d)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:Point2d)
+  // @@protoc_insertion_point(parse_failure:detection_service.Point2d)
   return false;
 #undef DO_
 }
 
 void Point2d::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:Point2d)
+  // @@protoc_insertion_point(serialize_start:detection_service.Point2d)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -752,13 +758,13 @@ void Point2d::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), output);
   }
-  // @@protoc_insertion_point(serialize_end:Point2d)
+  // @@protoc_insertion_point(serialize_end:detection_service.Point2d)
 }
 
 ::google::protobuf::uint8* Point2d::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
   (void)deterministic; // Unused
-  // @@protoc_insertion_point(serialize_to_array_start:Point2d)
+  // @@protoc_insertion_point(serialize_to_array_start:detection_service.Point2d)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -776,12 +782,12 @@ void Point2d::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), target);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:Point2d)
+  // @@protoc_insertion_point(serialize_to_array_end:detection_service.Point2d)
   return target;
 }
 
 size_t Point2d::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Point2d)
+// @@protoc_insertion_point(message_byte_size_start:detection_service.Point2d)
   size_t total_size = 0;
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -809,22 +815,22 @@ size_t Point2d::ByteSizeLong() const {
 }
 
 void Point2d::MergeFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Point2d)
+// @@protoc_insertion_point(generalized_merge_from_start:detection_service.Point2d)
   GOOGLE_DCHECK_NE(&from, this);
   const Point2d* source =
       ::google::protobuf::internal::DynamicCastToGenerated<const Point2d>(
           &from);
   if (source == NULL) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Point2d)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:detection_service.Point2d)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Point2d)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:detection_service.Point2d)
     MergeFrom(*source);
   }
 }
 
 void Point2d::MergeFrom(const Point2d& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Point2d)
+// @@protoc_insertion_point(class_specific_merge_from_start:detection_service.Point2d)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -839,14 +845,14 @@ void Point2d::MergeFrom(const Point2d& from) {
 }
 
 void Point2d::CopyFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Point2d)
+// @@protoc_insertion_point(generalized_copy_from_start:detection_service.Point2d)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void Point2d::CopyFrom(const Point2d& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Point2d)
+// @@protoc_insertion_point(class_specific_copy_from_start:detection_service.Point2d)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -876,10 +882,10 @@ void Point2d::InternalSwap(Point2d* other) {
 // ===================================================================
 
 void Rect::InitAsDefaultInstance() {
-  ::_Rect_default_instance_._instance.get_mutable()->tl_ = const_cast< ::Point2d*>(
-      ::Point2d::internal_default_instance());
-  ::_Rect_default_instance_._instance.get_mutable()->br_ = const_cast< ::Point2d*>(
-      ::Point2d::internal_default_instance());
+  ::detection_service::_Rect_default_instance_._instance.get_mutable()->tl_ = const_cast< ::detection_service::Point2d*>(
+      ::detection_service::Point2d::internal_default_instance());
+  ::detection_service::_Rect_default_instance_._instance.get_mutable()->br_ = const_cast< ::detection_service::Point2d*>(
+      ::detection_service::Point2d::internal_default_instance());
 }
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int Rect::kTlFieldNumber;
@@ -891,23 +897,23 @@ Rect::Rect()
   ::google::protobuf::internal::InitSCC(
       &protobuf_detection_2eproto::scc_info_Rect.base);
   SharedCtor();
-  // @@protoc_insertion_point(constructor:Rect)
+  // @@protoc_insertion_point(constructor:detection_service.Rect)
 }
 Rect::Rect(const Rect& from)
   : ::google::protobuf::Message(),
       _internal_metadata_(NULL) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   if (from.has_tl()) {
-    tl_ = new ::Point2d(*from.tl_);
+    tl_ = new ::detection_service::Point2d(*from.tl_);
   } else {
     tl_ = NULL;
   }
   if (from.has_br()) {
-    br_ = new ::Point2d(*from.br_);
+    br_ = new ::detection_service::Point2d(*from.br_);
   } else {
     br_ = NULL;
   }
-  // @@protoc_insertion_point(copy_constructor:Rect)
+  // @@protoc_insertion_point(copy_constructor:detection_service.Rect)
 }
 
 void Rect::SharedCtor() {
@@ -917,7 +923,7 @@ void Rect::SharedCtor() {
 }
 
 Rect::~Rect() {
-  // @@protoc_insertion_point(destructor:Rect)
+  // @@protoc_insertion_point(destructor:detection_service.Rect)
   SharedDtor();
 }
 
@@ -941,7 +947,7 @@ const Rect& Rect::default_instance() {
 
 
 void Rect::Clear() {
-// @@protoc_insertion_point(message_clear_start:Rect)
+// @@protoc_insertion_point(message_clear_start:detection_service.Rect)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -961,13 +967,13 @@ bool Rect::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:Rect)
+  // @@protoc_insertion_point(parse_start:detection_service.Rect)
   for (;;) {
     ::std::pair<::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // .Point2d tl = 1;
+      // .detection_service.Point2d tl = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
@@ -979,7 +985,7 @@ bool Rect::MergePartialFromCodedStream(
         break;
       }
 
-      // .Point2d br = 2;
+      // .detection_service.Point2d br = 2;
       case 2: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
@@ -1003,27 +1009,27 @@ bool Rect::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:Rect)
+  // @@protoc_insertion_point(parse_success:detection_service.Rect)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:Rect)
+  // @@protoc_insertion_point(parse_failure:detection_service.Rect)
   return false;
 #undef DO_
 }
 
 void Rect::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:Rect)
+  // @@protoc_insertion_point(serialize_start:detection_service.Rect)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // .Point2d tl = 1;
+  // .detection_service.Point2d tl = 1;
   if (this->has_tl()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       1, this->_internal_tl(), output);
   }
 
-  // .Point2d br = 2;
+  // .detection_service.Point2d br = 2;
   if (this->has_br()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->_internal_br(), output);
@@ -1033,24 +1039,24 @@ void Rect::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), output);
   }
-  // @@protoc_insertion_point(serialize_end:Rect)
+  // @@protoc_insertion_point(serialize_end:detection_service.Rect)
 }
 
 ::google::protobuf::uint8* Rect::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
   (void)deterministic; // Unused
-  // @@protoc_insertion_point(serialize_to_array_start:Rect)
+  // @@protoc_insertion_point(serialize_to_array_start:detection_service.Rect)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // .Point2d tl = 1;
+  // .detection_service.Point2d tl = 1;
   if (this->has_tl()) {
     target = ::google::protobuf::internal::WireFormatLite::
       InternalWriteMessageToArray(
         1, this->_internal_tl(), deterministic, target);
   }
 
-  // .Point2d br = 2;
+  // .detection_service.Point2d br = 2;
   if (this->has_br()) {
     target = ::google::protobuf::internal::WireFormatLite::
       InternalWriteMessageToArray(
@@ -1061,12 +1067,12 @@ void Rect::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), target);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:Rect)
+  // @@protoc_insertion_point(serialize_to_array_end:detection_service.Rect)
   return target;
 }
 
 size_t Rect::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Rect)
+// @@protoc_insertion_point(message_byte_size_start:detection_service.Rect)
   size_t total_size = 0;
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -1074,14 +1080,14 @@ size_t Rect::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()));
   }
-  // .Point2d tl = 1;
+  // .detection_service.Point2d tl = 1;
   if (this->has_tl()) {
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::MessageSize(
         *tl_);
   }
 
-  // .Point2d br = 2;
+  // .detection_service.Point2d br = 2;
   if (this->has_br()) {
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::MessageSize(
@@ -1094,44 +1100,44 @@ size_t Rect::ByteSizeLong() const {
 }
 
 void Rect::MergeFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Rect)
+// @@protoc_insertion_point(generalized_merge_from_start:detection_service.Rect)
   GOOGLE_DCHECK_NE(&from, this);
   const Rect* source =
       ::google::protobuf::internal::DynamicCastToGenerated<const Rect>(
           &from);
   if (source == NULL) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Rect)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:detection_service.Rect)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Rect)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:detection_service.Rect)
     MergeFrom(*source);
   }
 }
 
 void Rect::MergeFrom(const Rect& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Rect)
+// @@protoc_insertion_point(class_specific_merge_from_start:detection_service.Rect)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
   if (from.has_tl()) {
-    mutable_tl()->::Point2d::MergeFrom(from.tl());
+    mutable_tl()->::detection_service::Point2d::MergeFrom(from.tl());
   }
   if (from.has_br()) {
-    mutable_br()->::Point2d::MergeFrom(from.br());
+    mutable_br()->::detection_service::Point2d::MergeFrom(from.br());
   }
 }
 
 void Rect::CopyFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Rect)
+// @@protoc_insertion_point(generalized_copy_from_start:detection_service.Rect)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void Rect::CopyFrom(const Rect& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Rect)
+// @@protoc_insertion_point(class_specific_copy_from_start:detection_service.Rect)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1161,8 +1167,8 @@ void Rect::InternalSwap(Rect* other) {
 // ===================================================================
 
 void Detection::InitAsDefaultInstance() {
-  ::_Detection_default_instance_._instance.get_mutable()->box_ = const_cast< ::Rect*>(
-      ::Rect::internal_default_instance());
+  ::detection_service::_Detection_default_instance_._instance.get_mutable()->box_ = const_cast< ::detection_service::Rect*>(
+      ::detection_service::Rect::internal_default_instance());
 }
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int Detection::kConfidenceFieldNumber;
@@ -1176,7 +1182,7 @@ Detection::Detection()
   ::google::protobuf::internal::InitSCC(
       &protobuf_detection_2eproto::scc_info_Detection.base);
   SharedCtor();
-  // @@protoc_insertion_point(constructor:Detection)
+  // @@protoc_insertion_point(constructor:detection_service.Detection)
 }
 Detection::Detection(const Detection& from)
   : ::google::protobuf::Message(),
@@ -1187,14 +1193,14 @@ Detection::Detection(const Detection& from)
     label_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.label_);
   }
   if (from.has_box()) {
-    box_ = new ::Rect(*from.box_);
+    box_ = new ::detection_service::Rect(*from.box_);
   } else {
     box_ = NULL;
   }
   ::memcpy(&confidence_, &from.confidence_,
     static_cast<size_t>(reinterpret_cast<char*>(&label_id_) -
     reinterpret_cast<char*>(&confidence_)) + sizeof(label_id_));
-  // @@protoc_insertion_point(copy_constructor:Detection)
+  // @@protoc_insertion_point(copy_constructor:detection_service.Detection)
 }
 
 void Detection::SharedCtor() {
@@ -1205,7 +1211,7 @@ void Detection::SharedCtor() {
 }
 
 Detection::~Detection() {
-  // @@protoc_insertion_point(destructor:Detection)
+  // @@protoc_insertion_point(destructor:detection_service.Detection)
   SharedDtor();
 }
 
@@ -1229,7 +1235,7 @@ const Detection& Detection::default_instance() {
 
 
 void Detection::Clear() {
-// @@protoc_insertion_point(message_clear_start:Detection)
+// @@protoc_insertion_point(message_clear_start:detection_service.Detection)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -1249,7 +1255,7 @@ bool Detection::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:Detection)
+  // @@protoc_insertion_point(parse_start:detection_service.Detection)
   for (;;) {
     ::std::pair<::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
@@ -1292,14 +1298,14 @@ bool Detection::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             this->label().data(), static_cast<int>(this->label().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
-            "Detection.label"));
+            "detection_service.Detection.label"));
         } else {
           goto handle_unusual;
         }
         break;
       }
 
-      // .Rect box = 4;
+      // .detection_service.Rect box = 4;
       case 4: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
@@ -1323,17 +1329,17 @@ bool Detection::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:Detection)
+  // @@protoc_insertion_point(parse_success:detection_service.Detection)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:Detection)
+  // @@protoc_insertion_point(parse_failure:detection_service.Detection)
   return false;
 #undef DO_
 }
 
 void Detection::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:Detection)
+  // @@protoc_insertion_point(serialize_start:detection_service.Detection)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -1352,12 +1358,12 @@ void Detection::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
       this->label().data(), static_cast<int>(this->label().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "Detection.label");
+      "detection_service.Detection.label");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
       3, this->label(), output);
   }
 
-  // .Rect box = 4;
+  // .detection_service.Rect box = 4;
   if (this->has_box()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       4, this->_internal_box(), output);
@@ -1367,13 +1373,13 @@ void Detection::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), output);
   }
-  // @@protoc_insertion_point(serialize_end:Detection)
+  // @@protoc_insertion_point(serialize_end:detection_service.Detection)
 }
 
 ::google::protobuf::uint8* Detection::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
   (void)deterministic; // Unused
-  // @@protoc_insertion_point(serialize_to_array_start:Detection)
+  // @@protoc_insertion_point(serialize_to_array_start:detection_service.Detection)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -1392,13 +1398,13 @@ void Detection::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
       this->label().data(), static_cast<int>(this->label().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "Detection.label");
+      "detection_service.Detection.label");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         3, this->label(), target);
   }
 
-  // .Rect box = 4;
+  // .detection_service.Rect box = 4;
   if (this->has_box()) {
     target = ::google::protobuf::internal::WireFormatLite::
       InternalWriteMessageToArray(
@@ -1409,12 +1415,12 @@ void Detection::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), target);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:Detection)
+  // @@protoc_insertion_point(serialize_to_array_end:detection_service.Detection)
   return target;
 }
 
 size_t Detection::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Detection)
+// @@protoc_insertion_point(message_byte_size_start:detection_service.Detection)
   size_t total_size = 0;
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -1429,7 +1435,7 @@ size_t Detection::ByteSizeLong() const {
         this->label());
   }
 
-  // .Rect box = 4;
+  // .detection_service.Rect box = 4;
   if (this->has_box()) {
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::MessageSize(
@@ -1454,22 +1460,22 @@ size_t Detection::ByteSizeLong() const {
 }
 
 void Detection::MergeFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Detection)
+// @@protoc_insertion_point(generalized_merge_from_start:detection_service.Detection)
   GOOGLE_DCHECK_NE(&from, this);
   const Detection* source =
       ::google::protobuf::internal::DynamicCastToGenerated<const Detection>(
           &from);
   if (source == NULL) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Detection)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:detection_service.Detection)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Detection)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:detection_service.Detection)
     MergeFrom(*source);
   }
 }
 
 void Detection::MergeFrom(const Detection& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Detection)
+// @@protoc_insertion_point(class_specific_merge_from_start:detection_service.Detection)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -1480,7 +1486,7 @@ void Detection::MergeFrom(const Detection& from) {
     label_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.label_);
   }
   if (from.has_box()) {
-    mutable_box()->::Rect::MergeFrom(from.box());
+    mutable_box()->::detection_service::Rect::MergeFrom(from.box());
   }
   if (from.confidence() != 0) {
     set_confidence(from.confidence());
@@ -1491,14 +1497,14 @@ void Detection::MergeFrom(const Detection& from) {
 }
 
 void Detection::CopyFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Detection)
+// @@protoc_insertion_point(generalized_copy_from_start:detection_service.Detection)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void Detection::CopyFrom(const Detection& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Detection)
+// @@protoc_insertion_point(class_specific_copy_from_start:detection_service.Detection)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1541,21 +1547,21 @@ Detections::Detections()
   ::google::protobuf::internal::InitSCC(
       &protobuf_detection_2eproto::scc_info_Detections.base);
   SharedCtor();
-  // @@protoc_insertion_point(constructor:Detections)
+  // @@protoc_insertion_point(constructor:detection_service.Detections)
 }
 Detections::Detections(const Detections& from)
   : ::google::protobuf::Message(),
       _internal_metadata_(NULL),
       detections_(from.detections_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  // @@protoc_insertion_point(copy_constructor:Detections)
+  // @@protoc_insertion_point(copy_constructor:detection_service.Detections)
 }
 
 void Detections::SharedCtor() {
 }
 
 Detections::~Detections() {
-  // @@protoc_insertion_point(destructor:Detections)
+  // @@protoc_insertion_point(destructor:detection_service.Detections)
   SharedDtor();
 }
 
@@ -1577,7 +1583,7 @@ const Detections& Detections::default_instance() {
 
 
 void Detections::Clear() {
-// @@protoc_insertion_point(message_clear_start:Detections)
+// @@protoc_insertion_point(message_clear_start:detection_service.Detections)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -1590,13 +1596,13 @@ bool Detections::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:Detections)
+  // @@protoc_insertion_point(parse_start:detection_service.Detections)
   for (;;) {
     ::std::pair<::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // repeated .Detection detections = 1;
+      // repeated .detection_service.Detection detections = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
@@ -1620,21 +1626,21 @@ bool Detections::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:Detections)
+  // @@protoc_insertion_point(parse_success:detection_service.Detections)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:Detections)
+  // @@protoc_insertion_point(parse_failure:detection_service.Detections)
   return false;
 #undef DO_
 }
 
 void Detections::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:Detections)
+  // @@protoc_insertion_point(serialize_start:detection_service.Detections)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated .Detection detections = 1;
+  // repeated .detection_service.Detection detections = 1;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->detections_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
@@ -1647,17 +1653,17 @@ void Detections::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), output);
   }
-  // @@protoc_insertion_point(serialize_end:Detections)
+  // @@protoc_insertion_point(serialize_end:detection_service.Detections)
 }
 
 ::google::protobuf::uint8* Detections::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
   (void)deterministic; // Unused
-  // @@protoc_insertion_point(serialize_to_array_start:Detections)
+  // @@protoc_insertion_point(serialize_to_array_start:detection_service.Detections)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated .Detection detections = 1;
+  // repeated .detection_service.Detection detections = 1;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->detections_size()); i < n; i++) {
     target = ::google::protobuf::internal::WireFormatLite::
@@ -1669,12 +1675,12 @@ void Detections::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), target);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:Detections)
+  // @@protoc_insertion_point(serialize_to_array_end:detection_service.Detections)
   return target;
 }
 
 size_t Detections::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Detections)
+// @@protoc_insertion_point(message_byte_size_start:detection_service.Detections)
   size_t total_size = 0;
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -1682,7 +1688,7 @@ size_t Detections::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()));
   }
-  // repeated .Detection detections = 1;
+  // repeated .detection_service.Detection detections = 1;
   {
     unsigned int count = static_cast<unsigned int>(this->detections_size());
     total_size += 1UL * count;
@@ -1699,22 +1705,22 @@ size_t Detections::ByteSizeLong() const {
 }
 
 void Detections::MergeFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Detections)
+// @@protoc_insertion_point(generalized_merge_from_start:detection_service.Detections)
   GOOGLE_DCHECK_NE(&from, this);
   const Detections* source =
       ::google::protobuf::internal::DynamicCastToGenerated<const Detections>(
           &from);
   if (source == NULL) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Detections)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:detection_service.Detections)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Detections)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:detection_service.Detections)
     MergeFrom(*source);
   }
 }
 
 void Detections::MergeFrom(const Detections& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Detections)
+// @@protoc_insertion_point(class_specific_merge_from_start:detection_service.Detections)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -1724,14 +1730,14 @@ void Detections::MergeFrom(const Detections& from) {
 }
 
 void Detections::CopyFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Detections)
+// @@protoc_insertion_point(generalized_copy_from_start:detection_service.Detections)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void Detections::CopyFrom(const Detections& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Detections)
+// @@protoc_insertion_point(class_specific_copy_from_start:detection_service.Detections)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1758,22 +1764,23 @@ void Detections::InternalSwap(Detections* other) {
 
 
 // @@protoc_insertion_point(namespace_scope)
+}  // namespace detection_service
 namespace google {
 namespace protobuf {
-template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::Image* Arena::CreateMaybeMessage< ::Image >(Arena* arena) {
-  return Arena::CreateInternal< ::Image >(arena);
+template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::detection_service::Image* Arena::CreateMaybeMessage< ::detection_service::Image >(Arena* arena) {
+  return Arena::CreateInternal< ::detection_service::Image >(arena);
 }
-template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::Point2d* Arena::CreateMaybeMessage< ::Point2d >(Arena* arena) {
-  return Arena::CreateInternal< ::Point2d >(arena);
+template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::detection_service::Point2d* Arena::CreateMaybeMessage< ::detection_service::Point2d >(Arena* arena) {
+  return Arena::CreateInternal< ::detection_service::Point2d >(arena);
 }
-template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::Rect* Arena::CreateMaybeMessage< ::Rect >(Arena* arena) {
-  return Arena::CreateInternal< ::Rect >(arena);
+template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::detection_service::Rect* Arena::CreateMaybeMessage< ::detection_service::Rect >(Arena* arena) {
+  return Arena::CreateInternal< ::detection_service::Rect >(arena);
 }
-template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::Detection* Arena::CreateMaybeMessage< ::Detection >(Arena* arena) {
-  return Arena::CreateInternal< ::Detection >(arena);
+template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::detection_service::Detection* Arena::CreateMaybeMessage< ::detection_service::Detection >(Arena* arena) {
+  return Arena::CreateInternal< ::detection_service::Detection >(arena);
 }
-template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::Detections* Arena::CreateMaybeMessage< ::Detections >(Arena* arena) {
-  return Arena::CreateInternal< ::Detections >(arena);
+template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::detection_service::Detections* Arena::CreateMaybeMessage< ::detection_service::Detections >(Arena* arena) {
+  return Arena::CreateInternal< ::detection_service::Detections >(arena);
 }
 }  // namespace protobuf
 }  // namespace google

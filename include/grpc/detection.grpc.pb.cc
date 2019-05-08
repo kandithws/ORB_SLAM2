@@ -16,9 +16,10 @@
 #include <grpcpp/impl/codegen/server_callback.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/sync_stream.h>
+namespace detection_service {
 
 static const char* DetectionService_method_names[] = {
-  "/DetectionService/ObjectDetection",
+  "/detection_service.DetectionService/ObjectDetection",
 };
 
 std::unique_ptr< DetectionService::Stub> DetectionService::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -31,38 +32,40 @@ DetectionService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& c
   : channel_(channel), rpcmethod_ObjectDetection_(DetectionService_method_names[0], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
-::grpc::Status DetectionService::Stub::ObjectDetection(::grpc::ClientContext* context, const ::Image& request, ::Detections* response) {
+::grpc::Status DetectionService::Stub::ObjectDetection(::grpc::ClientContext* context, const ::detection_service::Image& request, ::detection_service::Detections* response) {
   return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ObjectDetection_, context, request, response);
 }
 
-void DetectionService::Stub::experimental_async::ObjectDetection(::grpc::ClientContext* context, const ::Image* request, ::Detections* response, std::function<void(::grpc::Status)> f) {
+void DetectionService::Stub::experimental_async::ObjectDetection(::grpc::ClientContext* context, const ::detection_service::Image* request, ::detection_service::Detections* response, std::function<void(::grpc::Status)> f) {
   return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ObjectDetection_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::Detections>* DetectionService::Stub::AsyncObjectDetectionRaw(::grpc::ClientContext* context, const ::Image& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::Detections>::Create(channel_.get(), cq, rpcmethod_ObjectDetection_, context, request, true);
+::grpc::ClientAsyncResponseReader< ::detection_service::Detections>* DetectionService::Stub::AsyncObjectDetectionRaw(::grpc::ClientContext* context, const ::detection_service::Image& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::detection_service::Detections>::Create(channel_.get(), cq, rpcmethod_ObjectDetection_, context, request, true);
 }
 
-::grpc::ClientAsyncResponseReader< ::Detections>* DetectionService::Stub::PrepareAsyncObjectDetectionRaw(::grpc::ClientContext* context, const ::Image& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::Detections>::Create(channel_.get(), cq, rpcmethod_ObjectDetection_, context, request, false);
+::grpc::ClientAsyncResponseReader< ::detection_service::Detections>* DetectionService::Stub::PrepareAsyncObjectDetectionRaw(::grpc::ClientContext* context, const ::detection_service::Image& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::detection_service::Detections>::Create(channel_.get(), cq, rpcmethod_ObjectDetection_, context, request, false);
 }
 
 DetectionService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       DetectionService_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< DetectionService::Service, ::Image, ::Detections>(
+      new ::grpc::internal::RpcMethodHandler< DetectionService::Service, ::detection_service::Image, ::detection_service::Detections>(
           std::mem_fn(&DetectionService::Service::ObjectDetection), this)));
 }
 
 DetectionService::Service::~Service() {
 }
 
-::grpc::Status DetectionService::Service::ObjectDetection(::grpc::ServerContext* context, const ::Image* request, ::Detections* response) {
+::grpc::Status DetectionService::Service::ObjectDetection(::grpc::ServerContext* context, const ::detection_service::Image* request, ::detection_service::Detections* response) {
   (void) context;
   (void) request;
   (void) response;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
+
+}  // namespace detection_service
 

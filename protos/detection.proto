@@ -1,4 +1,5 @@
 syntax = "proto3";
+package detection_service;
 
 /*
   ROS - like format
