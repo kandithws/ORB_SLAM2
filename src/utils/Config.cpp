@@ -96,6 +96,7 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, int, mean_k)
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, std_dev_mul_th)
             ORB_SLAM2_PARSE_BOOL_CONFIG(ObjectInitializer, project_2d_outlier)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(ObjectInitializer, use_mask)
         }
     }
     else{

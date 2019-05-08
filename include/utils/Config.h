@@ -22,6 +22,7 @@ typedef struct {
     int mean_k = 8;
     double std_dev_mul_th = 0.8;
     bool project_2d_outlier = true;
+    bool use_mask = true;
 } ObjectInitializer;
 
 typedef struct {
