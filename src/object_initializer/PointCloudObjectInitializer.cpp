@@ -190,6 +190,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
                 it->y = 0; // Onto ZX plane
                 it->z = out[2];
             }
+
         }
 
         pcl::PointCloud<PointT>::Ptr cloudSegmented(new pcl::PointCloud<PointT>);
