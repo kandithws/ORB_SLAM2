@@ -19,6 +19,7 @@ namespace ORB_SLAM2 {
 namespace Params {
 
 typedef struct {
+    bool use_stat_rm_outlier = true;
     int mean_k = 8;
     double std_dev_mul_th = 0.8;
     bool project_2d_outlier = true;

@@ -706,7 +706,6 @@ std::vector<MapPoint*> KeyFrame::GetMapPointsInMask(const cv::Rect2f &bb,
         }
     }
 
-
     int count = 0;
     for (auto &idx : vIndices){
         MapPoint* pMP = mvpMapPoints[idx];
@@ -720,6 +719,50 @@ std::vector<MapPoint*> KeyFrame::GetMapPointsInMask(const cv::Rect2f &bb,
     }
     return vMapPoint;
 }
+
+
+void KeyFrame::DrawDebugPointsInMask(cv::Mat &draw, const cv::Rect2f &bb, const cv::Mat &mask,
+                                     const ORB_SLAM2::PredictedObject::MASK_TYPE &mask_type) {
+
+    cv::cvtColor(mask * 255, draw, CV_GRAY2BGR);
+
+    unique_lock<std::mutex> lock(mMutexFeatures);
+    if (mask_type == PredictedObject::MASK_TYPE::CROPPED){
+        const auto& tl = bb.tl();
+        const auto& br = bb.br();
+        for (size_t i=0, iend=mvKeysUn.size(); i < iend; i++){
+            const auto& pt = mvKeysUn[i].pt;
+            if( ((tl.x <= pt.x) && (br.x >= pt.x)) && ((tl.y <= pt.y) && (br.y >= pt.y)) ){ // is in bounding box
+                assert( (pt.x - tl.x >= 0) && (pt.y - tl.y >=0));
+                if ((mask.at<uchar>( int(pt.y - tl.y), int(pt.x - tl.x)) > 0)){
+                    cv::circle(draw, cv::Point(int(pt.x - tl.x), int(pt.y - tl.y)), 2,
+                               cv::Scalar(0,255,0), 2);
+                }
+
+                else{
+                    cv::circle(draw, cv::Point(int(pt.x - tl.x), int(pt.y - tl.y)), 2,
+                               cv::Scalar(0,0,255), 1);
+                }
+            }
+        }
+    }
+    else if (mask_type == PredictedObject::MASK_TYPE::FULL) {
+        for (size_t i=0, iend=mvKeysUn.size(); i < iend; i++){
+            const auto& pt = mvKeysUn[i].pt;
+            if ((mask.at<uchar>(int(pt.y), int(pt.x)) > 0)){
+                cv::circle(draw, cv::Point(int(pt.x), int(pt.y)), 2,
+                           cv::Scalar(0,255,0), 2);
+            }
+            else{
+                cv::circle(draw, cv::Point(int(pt.x), int(pt.y)), 2,
+                           cv::Scalar(0,0,255), 1);
+            }
+
+        }
+    }
+
+}
+
 
 bool KeyFrame::IsInImage(const float &x, const float &y) const
 {

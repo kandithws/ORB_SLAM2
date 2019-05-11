@@ -17,6 +17,7 @@ PointCloudObjectInitializer::PointCloudObjectInitializer() {
     mCloudSORFilter.setStddevMulThresh(Config::getInstance().ObjectInitializerParams().std_dev_mul_th);
     mbProject2d = Config::getInstance().ObjectInitializerParams().project_2d_outlier;
     mbUseMask = Config::getInstance().ObjectInitializerParams().use_mask;
+    mbUseStatRemoveOutlier = Config::getInstance().ObjectInitializerParams().use_stat_rm_outlier;
     //mbUseMask = true;
 }
 
@@ -156,12 +157,15 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         auto vObjMapPoints = mbUseMask && (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK) ?
                 pKeyframe->GetMapPointsInMask(box, pred._mask, pred._mask_type) : pKeyframe->GetMapPointsInBoundingBox(box);
 
-        //if (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK){
-        //    std::string outdebug = "debug/mask_"+ Config::getInstance().getLabelName(pred._label)
-        //            + "kf_" + std::to_string(pKeyframe->mnId) + "obj_" + std::to_string(i) + ".png";
-        //
-        //    cv::imwrite(outdebug, pred._mask * 255);
-        //}
+//        if (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK){
+//            std::string outdebug = "debug/mask_"+ Config::getInstance().getLabelName(pred._label)
+//                    + "kf_" + std::to_string(pKeyframe->mnId) + "obj_" + std::to_string(i) + ".png";
+//
+//            cv::Mat drawn_mask;
+//            SPDLOG_INFO("I AM HERE!!!!!!");
+//            pKeyframe->DrawDebugPointsInMask(drawn_mask, box, pred._mask, pred._mask_type);
+//            cv::imwrite(outdebug, drawn_mask);
+//        }
         SPDLOG_DEBUG("Obj {}: Total Point {}", i, vObjMapPoints.size());
 
         if (vObjMapPoints.size() < 8) {
@@ -174,11 +178,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         }
 
         std::vector<MapPoint *> vFilteredMapPoints;
-        if (mbUseMask){
-            SPDLOG_INFO("USING MASK!!!");
-            vFilteredMapPoints = vObjMapPoints;
-        }
-        else {
+        if (mbUseStatRemoveOutlier) {
             auto cloudObject = PCLConverter::toPointCloud(vObjMapPoints);
             // -  PreProcessing, i.e. select only a maingroup of pointcloud (no need other processing)
             if (mbProject2d) {
@@ -221,6 +221,11 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
             }
             PCLConverter::filterVector<MapPoint *>(vFilteredMapPointsIndices, vObjMapPoints, vFilteredMapPoints);
         }
+        else{
+            vFilteredMapPoints = vObjMapPoints;
+        }
+
+
 
         // - Calculate Cuboid parameters
         auto inliers = PCLConverter::toPointCloud(vFilteredMapPoints);

@@ -111,6 +111,9 @@ public:
     std::vector<MapPoint*> GetMapPointsInMask(const cv::Rect2f& bb, const cv::Mat& mask,
             const PredictedObject::MASK_TYPE& mask_type);
 
+    void DrawDebugPointsInMask(cv::Mat &draw, const cv::Rect2f& bb, const cv::Mat& mask,
+                               const PredictedObject::MASK_TYPE& mask_type);
+
     cv::Mat UnprojectStereo(int i);
 
     // Image
