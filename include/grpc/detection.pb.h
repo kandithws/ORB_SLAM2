@@ -45,6 +45,7 @@ struct TableStruct {
 };
 void AddDescriptors();
 }  // namespace protobuf_detection_2eproto
+namespace detection_service {
 class Detection;
 class DetectionDefaultTypeInternal;
 extern DetectionDefaultTypeInternal _Detection_default_instance_;
@@ -60,19 +61,21 @@ extern Point2dDefaultTypeInternal _Point2d_default_instance_;
 class Rect;
 class RectDefaultTypeInternal;
 extern RectDefaultTypeInternal _Rect_default_instance_;
+}  // namespace detection_service
 namespace google {
 namespace protobuf {
-template<> ::Detection* Arena::CreateMaybeMessage<::Detection>(Arena*);
-template<> ::Detections* Arena::CreateMaybeMessage<::Detections>(Arena*);
-template<> ::Image* Arena::CreateMaybeMessage<::Image>(Arena*);
-template<> ::Point2d* Arena::CreateMaybeMessage<::Point2d>(Arena*);
-template<> ::Rect* Arena::CreateMaybeMessage<::Rect>(Arena*);
+template<> ::detection_service::Detection* Arena::CreateMaybeMessage<::detection_service::Detection>(Arena*);
+template<> ::detection_service::Detections* Arena::CreateMaybeMessage<::detection_service::Detections>(Arena*);
+template<> ::detection_service::Image* Arena::CreateMaybeMessage<::detection_service::Image>(Arena*);
+template<> ::detection_service::Point2d* Arena::CreateMaybeMessage<::detection_service::Point2d>(Arena*);
+template<> ::detection_service::Rect* Arena::CreateMaybeMessage<::detection_service::Rect>(Arena*);
 }  // namespace protobuf
 }  // namespace google
+namespace detection_service {
 
 // ===================================================================
 
-class Image : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:Image) */ {
+class Image : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:detection_service.Image) */ {
  public:
   Image();
   virtual ~Image();
@@ -199,7 +202,7 @@ class Image : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
   ::google::protobuf::uint32 height() const;
   void set_height(::google::protobuf::uint32 value);
 
-  // @@protoc_insertion_point(class_scope:Image)
+  // @@protoc_insertion_point(class_scope:detection_service.Image)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
@@ -212,7 +215,7 @@ class Image : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
 };
 // -------------------------------------------------------------------
 
-class Point2d : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:Point2d) */ {
+class Point2d : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:detection_service.Point2d) */ {
  public:
   Point2d();
   virtual ~Point2d();
@@ -311,7 +314,7 @@ class Point2d : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   ::google::protobuf::int32 y() const;
   void set_y(::google::protobuf::int32 value);
 
-  // @@protoc_insertion_point(class_scope:Point2d)
+  // @@protoc_insertion_point(class_scope:detection_service.Point2d)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
@@ -322,7 +325,7 @@ class Point2d : public ::google::protobuf::Message /* @@protoc_insertion_point(c
 };
 // -------------------------------------------------------------------
 
-class Rect : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:Rect) */ {
+class Rect : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:detection_service.Rect) */ {
  public:
   Rect();
   virtual ~Rect();
@@ -409,42 +412,42 @@ class Rect : public ::google::protobuf::Message /* @@protoc_insertion_point(clas
 
   // accessors -------------------------------------------------------
 
-  // .Point2d tl = 1;
+  // .detection_service.Point2d tl = 1;
   bool has_tl() const;
   void clear_tl();
   static const int kTlFieldNumber = 1;
   private:
-  const ::Point2d& _internal_tl() const;
+  const ::detection_service::Point2d& _internal_tl() const;
   public:
-  const ::Point2d& tl() const;
-  ::Point2d* release_tl();
-  ::Point2d* mutable_tl();
-  void set_allocated_tl(::Point2d* tl);
+  const ::detection_service::Point2d& tl() const;
+  ::detection_service::Point2d* release_tl();
+  ::detection_service::Point2d* mutable_tl();
+  void set_allocated_tl(::detection_service::Point2d* tl);
 
-  // .Point2d br = 2;
+  // .detection_service.Point2d br = 2;
   bool has_br() const;
   void clear_br();
   static const int kBrFieldNumber = 2;
   private:
-  const ::Point2d& _internal_br() const;
+  const ::detection_service::Point2d& _internal_br() const;
   public:
-  const ::Point2d& br() const;
-  ::Point2d* release_br();
-  ::Point2d* mutable_br();
-  void set_allocated_br(::Point2d* br);
+  const ::detection_service::Point2d& br() const;
+  ::detection_service::Point2d* release_br();
+  ::detection_service::Point2d* mutable_br();
+  void set_allocated_br(::detection_service::Point2d* br);
 
-  // @@protoc_insertion_point(class_scope:Rect)
+  // @@protoc_insertion_point(class_scope:detection_service.Rect)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::Point2d* tl_;
-  ::Point2d* br_;
+  ::detection_service::Point2d* tl_;
+  ::detection_service::Point2d* br_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   friend struct ::protobuf_detection_2eproto::TableStruct;
 };
 // -------------------------------------------------------------------
 
-class Detection : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:Detection) */ {
+class Detection : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:detection_service.Detection) */ {
  public:
   Detection();
   virtual ~Detection();
@@ -545,17 +548,17 @@ class Detection : public ::google::protobuf::Message /* @@protoc_insertion_point
   ::std::string* release_label();
   void set_allocated_label(::std::string* label);
 
-  // .Rect box = 4;
+  // .detection_service.Rect box = 4;
   bool has_box() const;
   void clear_box();
   static const int kBoxFieldNumber = 4;
   private:
-  const ::Rect& _internal_box() const;
+  const ::detection_service::Rect& _internal_box() const;
   public:
-  const ::Rect& box() const;
-  ::Rect* release_box();
-  ::Rect* mutable_box();
-  void set_allocated_box(::Rect* box);
+  const ::detection_service::Rect& box() const;
+  ::detection_service::Rect* release_box();
+  ::detection_service::Rect* mutable_box();
+  void set_allocated_box(::detection_service::Rect* box);
 
   // float confidence = 1;
   void clear_confidence();
@@ -569,12 +572,12 @@ class Detection : public ::google::protobuf::Message /* @@protoc_insertion_point
   ::google::protobuf::uint32 label_id() const;
   void set_label_id(::google::protobuf::uint32 value);
 
-  // @@protoc_insertion_point(class_scope:Detection)
+  // @@protoc_insertion_point(class_scope:detection_service.Detection)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::internal::ArenaStringPtr label_;
-  ::Rect* box_;
+  ::detection_service::Rect* box_;
   float confidence_;
   ::google::protobuf::uint32 label_id_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
@@ -582,7 +585,7 @@ class Detection : public ::google::protobuf::Message /* @@protoc_insertion_point
 };
 // -------------------------------------------------------------------
 
-class Detections : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:Detections) */ {
+class Detections : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:detection_service.Detections) */ {
  public:
   Detections();
   virtual ~Detections();
@@ -669,23 +672,23 @@ class Detections : public ::google::protobuf::Message /* @@protoc_insertion_poin
 
   // accessors -------------------------------------------------------
 
-  // repeated .Detection detections = 1;
+  // repeated .detection_service.Detection detections = 1;
   int detections_size() const;
   void clear_detections();
   static const int kDetectionsFieldNumber = 1;
-  ::Detection* mutable_detections(int index);
-  ::google::protobuf::RepeatedPtrField< ::Detection >*
+  ::detection_service::Detection* mutable_detections(int index);
+  ::google::protobuf::RepeatedPtrField< ::detection_service::Detection >*
       mutable_detections();
-  const ::Detection& detections(int index) const;
-  ::Detection* add_detections();
-  const ::google::protobuf::RepeatedPtrField< ::Detection >&
+  const ::detection_service::Detection& detections(int index) const;
+  ::detection_service::Detection* add_detections();
+  const ::google::protobuf::RepeatedPtrField< ::detection_service::Detection >&
       detections() const;
 
-  // @@protoc_insertion_point(class_scope:Detections)
+  // @@protoc_insertion_point(class_scope:detection_service.Detections)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::RepeatedPtrField< ::Detection > detections_;
+  ::google::protobuf::RepeatedPtrField< ::detection_service::Detection > detections_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   friend struct ::protobuf_detection_2eproto::TableStruct;
 };
@@ -705,13 +708,13 @@ inline void Image::clear_width() {
   width_ = 0u;
 }
 inline ::google::protobuf::uint32 Image::width() const {
-  // @@protoc_insertion_point(field_get:Image.width)
+  // @@protoc_insertion_point(field_get:detection_service.Image.width)
   return width_;
 }
 inline void Image::set_width(::google::protobuf::uint32 value) {
   
   width_ = value;
-  // @@protoc_insertion_point(field_set:Image.width)
+  // @@protoc_insertion_point(field_set:detection_service.Image.width)
 }
 
 // uint32 height = 2;
@@ -719,13 +722,13 @@ inline void Image::clear_height() {
   height_ = 0u;
 }
 inline ::google::protobuf::uint32 Image::height() const {
-  // @@protoc_insertion_point(field_get:Image.height)
+  // @@protoc_insertion_point(field_get:detection_service.Image.height)
   return height_;
 }
 inline void Image::set_height(::google::protobuf::uint32 value) {
   
   height_ = value;
-  // @@protoc_insertion_point(field_set:Image.height)
+  // @@protoc_insertion_point(field_set:detection_service.Image.height)
 }
 
 // string encoding = 4;
@@ -733,41 +736,41 @@ inline void Image::clear_encoding() {
   encoding_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline const ::std::string& Image::encoding() const {
-  // @@protoc_insertion_point(field_get:Image.encoding)
+  // @@protoc_insertion_point(field_get:detection_service.Image.encoding)
   return encoding_.GetNoArena();
 }
 inline void Image::set_encoding(const ::std::string& value) {
   
   encoding_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:Image.encoding)
+  // @@protoc_insertion_point(field_set:detection_service.Image.encoding)
 }
 #if LANG_CXX11
 inline void Image::set_encoding(::std::string&& value) {
   
   encoding_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:Image.encoding)
+  // @@protoc_insertion_point(field_set_rvalue:detection_service.Image.encoding)
 }
 #endif
 inline void Image::set_encoding(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   
   encoding_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:Image.encoding)
+  // @@protoc_insertion_point(field_set_char:detection_service.Image.encoding)
 }
 inline void Image::set_encoding(const char* value, size_t size) {
   
   encoding_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:Image.encoding)
+  // @@protoc_insertion_point(field_set_pointer:detection_service.Image.encoding)
 }
 inline ::std::string* Image::mutable_encoding() {
   
-  // @@protoc_insertion_point(field_mutable:Image.encoding)
+  // @@protoc_insertion_point(field_mutable:detection_service.Image.encoding)
   return encoding_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* Image::release_encoding() {
-  // @@protoc_insertion_point(field_release:Image.encoding)
+  // @@protoc_insertion_point(field_release:detection_service.Image.encoding)
   
   return encoding_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -778,7 +781,7 @@ inline void Image::set_allocated_encoding(::std::string* encoding) {
     
   }
   encoding_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), encoding);
-  // @@protoc_insertion_point(field_set_allocated:Image.encoding)
+  // @@protoc_insertion_point(field_set_allocated:detection_service.Image.encoding)
 }
 
 // bytes data = 5;
@@ -786,41 +789,41 @@ inline void Image::clear_data() {
   data_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline const ::std::string& Image::data() const {
-  // @@protoc_insertion_point(field_get:Image.data)
+  // @@protoc_insertion_point(field_get:detection_service.Image.data)
   return data_.GetNoArena();
 }
 inline void Image::set_data(const ::std::string& value) {
   
   data_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:Image.data)
+  // @@protoc_insertion_point(field_set:detection_service.Image.data)
 }
 #if LANG_CXX11
 inline void Image::set_data(::std::string&& value) {
   
   data_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:Image.data)
+  // @@protoc_insertion_point(field_set_rvalue:detection_service.Image.data)
 }
 #endif
 inline void Image::set_data(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   
   data_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:Image.data)
+  // @@protoc_insertion_point(field_set_char:detection_service.Image.data)
 }
 inline void Image::set_data(const void* value, size_t size) {
   
   data_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:Image.data)
+  // @@protoc_insertion_point(field_set_pointer:detection_service.Image.data)
 }
 inline ::std::string* Image::mutable_data() {
   
-  // @@protoc_insertion_point(field_mutable:Image.data)
+  // @@protoc_insertion_point(field_mutable:detection_service.Image.data)
   return data_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* Image::release_data() {
-  // @@protoc_insertion_point(field_release:Image.data)
+  // @@protoc_insertion_point(field_release:detection_service.Image.data)
   
   return data_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -831,7 +834,7 @@ inline void Image::set_allocated_data(::std::string* data) {
     
   }
   data_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), data);
-  // @@protoc_insertion_point(field_set_allocated:Image.data)
+  // @@protoc_insertion_point(field_set_allocated:detection_service.Image.data)
 }
 
 // -------------------------------------------------------------------
@@ -843,13 +846,13 @@ inline void Point2d::clear_x() {
   x_ = 0;
 }
 inline ::google::protobuf::int32 Point2d::x() const {
-  // @@protoc_insertion_point(field_get:Point2d.x)
+  // @@protoc_insertion_point(field_get:detection_service.Point2d.x)
   return x_;
 }
 inline void Point2d::set_x(::google::protobuf::int32 value) {
   
   x_ = value;
-  // @@protoc_insertion_point(field_set:Point2d.x)
+  // @@protoc_insertion_point(field_set:detection_service.Point2d.x)
 }
 
 // int32 y = 2;
@@ -857,20 +860,20 @@ inline void Point2d::clear_y() {
   y_ = 0;
 }
 inline ::google::protobuf::int32 Point2d::y() const {
-  // @@protoc_insertion_point(field_get:Point2d.y)
+  // @@protoc_insertion_point(field_get:detection_service.Point2d.y)
   return y_;
 }
 inline void Point2d::set_y(::google::protobuf::int32 value) {
   
   y_ = value;
-  // @@protoc_insertion_point(field_set:Point2d.y)
+  // @@protoc_insertion_point(field_set:detection_service.Point2d.y)
 }
 
 // -------------------------------------------------------------------
 
 // Rect
 
-// .Point2d tl = 1;
+// .detection_service.Point2d tl = 1;
 inline bool Rect::has_tl() const {
   return this != internal_default_instance() && tl_ != NULL;
 }
@@ -880,32 +883,32 @@ inline void Rect::clear_tl() {
   }
   tl_ = NULL;
 }
-inline const ::Point2d& Rect::_internal_tl() const {
+inline const ::detection_service::Point2d& Rect::_internal_tl() const {
   return *tl_;
 }
-inline const ::Point2d& Rect::tl() const {
-  const ::Point2d* p = tl_;
-  // @@protoc_insertion_point(field_get:Rect.tl)
-  return p != NULL ? *p : *reinterpret_cast<const ::Point2d*>(
-      &::_Point2d_default_instance_);
+inline const ::detection_service::Point2d& Rect::tl() const {
+  const ::detection_service::Point2d* p = tl_;
+  // @@protoc_insertion_point(field_get:detection_service.Rect.tl)
+  return p != NULL ? *p : *reinterpret_cast<const ::detection_service::Point2d*>(
+      &::detection_service::_Point2d_default_instance_);
 }
-inline ::Point2d* Rect::release_tl() {
-  // @@protoc_insertion_point(field_release:Rect.tl)
+inline ::detection_service::Point2d* Rect::release_tl() {
+  // @@protoc_insertion_point(field_release:detection_service.Rect.tl)
   
-  ::Point2d* temp = tl_;
+  ::detection_service::Point2d* temp = tl_;
   tl_ = NULL;
   return temp;
 }
-inline ::Point2d* Rect::mutable_tl() {
+inline ::detection_service::Point2d* Rect::mutable_tl() {
   
   if (tl_ == NULL) {
-    auto* p = CreateMaybeMessage<::Point2d>(GetArenaNoVirtual());
+    auto* p = CreateMaybeMessage<::detection_service::Point2d>(GetArenaNoVirtual());
     tl_ = p;
   }
-  // @@protoc_insertion_point(field_mutable:Rect.tl)
+  // @@protoc_insertion_point(field_mutable:detection_service.Rect.tl)
   return tl_;
 }
-inline void Rect::set_allocated_tl(::Point2d* tl) {
+inline void Rect::set_allocated_tl(::detection_service::Point2d* tl) {
   ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
   if (message_arena == NULL) {
     delete tl_;
@@ -921,10 +924,10 @@ inline void Rect::set_allocated_tl(::Point2d* tl) {
     
   }
   tl_ = tl;
-  // @@protoc_insertion_point(field_set_allocated:Rect.tl)
+  // @@protoc_insertion_point(field_set_allocated:detection_service.Rect.tl)
 }
 
-// .Point2d br = 2;
+// .detection_service.Point2d br = 2;
 inline bool Rect::has_br() const {
   return this != internal_default_instance() && br_ != NULL;
 }
@@ -934,32 +937,32 @@ inline void Rect::clear_br() {
   }
   br_ = NULL;
 }
-inline const ::Point2d& Rect::_internal_br() const {
+inline const ::detection_service::Point2d& Rect::_internal_br() const {
   return *br_;
 }
-inline const ::Point2d& Rect::br() const {
-  const ::Point2d* p = br_;
-  // @@protoc_insertion_point(field_get:Rect.br)
-  return p != NULL ? *p : *reinterpret_cast<const ::Point2d*>(
-      &::_Point2d_default_instance_);
+inline const ::detection_service::Point2d& Rect::br() const {
+  const ::detection_service::Point2d* p = br_;
+  // @@protoc_insertion_point(field_get:detection_service.Rect.br)
+  return p != NULL ? *p : *reinterpret_cast<const ::detection_service::Point2d*>(
+      &::detection_service::_Point2d_default_instance_);
 }
-inline ::Point2d* Rect::release_br() {
-  // @@protoc_insertion_point(field_release:Rect.br)
+inline ::detection_service::Point2d* Rect::release_br() {
+  // @@protoc_insertion_point(field_release:detection_service.Rect.br)
   
-  ::Point2d* temp = br_;
+  ::detection_service::Point2d* temp = br_;
   br_ = NULL;
   return temp;
 }
-inline ::Point2d* Rect::mutable_br() {
+inline ::detection_service::Point2d* Rect::mutable_br() {
   
   if (br_ == NULL) {
-    auto* p = CreateMaybeMessage<::Point2d>(GetArenaNoVirtual());
+    auto* p = CreateMaybeMessage<::detection_service::Point2d>(GetArenaNoVirtual());
     br_ = p;
   }
-  // @@protoc_insertion_point(field_mutable:Rect.br)
+  // @@protoc_insertion_point(field_mutable:detection_service.Rect.br)
   return br_;
 }
-inline void Rect::set_allocated_br(::Point2d* br) {
+inline void Rect::set_allocated_br(::detection_service::Point2d* br) {
   ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
   if (message_arena == NULL) {
     delete br_;
@@ -975,7 +978,7 @@ inline void Rect::set_allocated_br(::Point2d* br) {
     
   }
   br_ = br;
-  // @@protoc_insertion_point(field_set_allocated:Rect.br)
+  // @@protoc_insertion_point(field_set_allocated:detection_service.Rect.br)
 }
 
 // -------------------------------------------------------------------
@@ -987,13 +990,13 @@ inline void Detection::clear_confidence() {
   confidence_ = 0;
 }
 inline float Detection::confidence() const {
-  // @@protoc_insertion_point(field_get:Detection.confidence)
+  // @@protoc_insertion_point(field_get:detection_service.Detection.confidence)
   return confidence_;
 }
 inline void Detection::set_confidence(float value) {
   
   confidence_ = value;
-  // @@protoc_insertion_point(field_set:Detection.confidence)
+  // @@protoc_insertion_point(field_set:detection_service.Detection.confidence)
 }
 
 // uint32 label_id = 2;
@@ -1001,13 +1004,13 @@ inline void Detection::clear_label_id() {
   label_id_ = 0u;
 }
 inline ::google::protobuf::uint32 Detection::label_id() const {
-  // @@protoc_insertion_point(field_get:Detection.label_id)
+  // @@protoc_insertion_point(field_get:detection_service.Detection.label_id)
   return label_id_;
 }
 inline void Detection::set_label_id(::google::protobuf::uint32 value) {
   
   label_id_ = value;
-  // @@protoc_insertion_point(field_set:Detection.label_id)
+  // @@protoc_insertion_point(field_set:detection_service.Detection.label_id)
 }
 
 // string label = 3;
@@ -1015,41 +1018,41 @@ inline void Detection::clear_label() {
   label_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline const ::std::string& Detection::label() const {
-  // @@protoc_insertion_point(field_get:Detection.label)
+  // @@protoc_insertion_point(field_get:detection_service.Detection.label)
   return label_.GetNoArena();
 }
 inline void Detection::set_label(const ::std::string& value) {
   
   label_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:Detection.label)
+  // @@protoc_insertion_point(field_set:detection_service.Detection.label)
 }
 #if LANG_CXX11
 inline void Detection::set_label(::std::string&& value) {
   
   label_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:Detection.label)
+  // @@protoc_insertion_point(field_set_rvalue:detection_service.Detection.label)
 }
 #endif
 inline void Detection::set_label(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   
   label_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:Detection.label)
+  // @@protoc_insertion_point(field_set_char:detection_service.Detection.label)
 }
 inline void Detection::set_label(const char* value, size_t size) {
   
   label_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:Detection.label)
+  // @@protoc_insertion_point(field_set_pointer:detection_service.Detection.label)
 }
 inline ::std::string* Detection::mutable_label() {
   
-  // @@protoc_insertion_point(field_mutable:Detection.label)
+  // @@protoc_insertion_point(field_mutable:detection_service.Detection.label)
   return label_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* Detection::release_label() {
-  // @@protoc_insertion_point(field_release:Detection.label)
+  // @@protoc_insertion_point(field_release:detection_service.Detection.label)
   
   return label_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -1060,10 +1063,10 @@ inline void Detection::set_allocated_label(::std::string* label) {
     
   }
   label_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), label);
-  // @@protoc_insertion_point(field_set_allocated:Detection.label)
+  // @@protoc_insertion_point(field_set_allocated:detection_service.Detection.label)
 }
 
-// .Rect box = 4;
+// .detection_service.Rect box = 4;
 inline bool Detection::has_box() const {
   return this != internal_default_instance() && box_ != NULL;
 }
@@ -1073,32 +1076,32 @@ inline void Detection::clear_box() {
   }
   box_ = NULL;
 }
-inline const ::Rect& Detection::_internal_box() const {
+inline const ::detection_service::Rect& Detection::_internal_box() const {
   return *box_;
 }
-inline const ::Rect& Detection::box() const {
-  const ::Rect* p = box_;
-  // @@protoc_insertion_point(field_get:Detection.box)
-  return p != NULL ? *p : *reinterpret_cast<const ::Rect*>(
-      &::_Rect_default_instance_);
+inline const ::detection_service::Rect& Detection::box() const {
+  const ::detection_service::Rect* p = box_;
+  // @@protoc_insertion_point(field_get:detection_service.Detection.box)
+  return p != NULL ? *p : *reinterpret_cast<const ::detection_service::Rect*>(
+      &::detection_service::_Rect_default_instance_);
 }
-inline ::Rect* Detection::release_box() {
-  // @@protoc_insertion_point(field_release:Detection.box)
+inline ::detection_service::Rect* Detection::release_box() {
+  // @@protoc_insertion_point(field_release:detection_service.Detection.box)
   
-  ::Rect* temp = box_;
+  ::detection_service::Rect* temp = box_;
   box_ = NULL;
   return temp;
 }
-inline ::Rect* Detection::mutable_box() {
+inline ::detection_service::Rect* Detection::mutable_box() {
   
   if (box_ == NULL) {
-    auto* p = CreateMaybeMessage<::Rect>(GetArenaNoVirtual());
+    auto* p = CreateMaybeMessage<::detection_service::Rect>(GetArenaNoVirtual());
     box_ = p;
   }
-  // @@protoc_insertion_point(field_mutable:Detection.box)
+  // @@protoc_insertion_point(field_mutable:detection_service.Detection.box)
   return box_;
 }
-inline void Detection::set_allocated_box(::Rect* box) {
+inline void Detection::set_allocated_box(::detection_service::Rect* box) {
   ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
   if (message_arena == NULL) {
     delete box_;
@@ -1114,40 +1117,40 @@ inline void Detection::set_allocated_box(::Rect* box) {
     
   }
   box_ = box;
-  // @@protoc_insertion_point(field_set_allocated:Detection.box)
+  // @@protoc_insertion_point(field_set_allocated:detection_service.Detection.box)
 }
 
 // -------------------------------------------------------------------
 
 // Detections
 
-// repeated .Detection detections = 1;
+// repeated .detection_service.Detection detections = 1;
 inline int Detections::detections_size() const {
   return detections_.size();
 }
 inline void Detections::clear_detections() {
   detections_.Clear();
 }
-inline ::Detection* Detections::mutable_detections(int index) {
-  // @@protoc_insertion_point(field_mutable:Detections.detections)
+inline ::detection_service::Detection* Detections::mutable_detections(int index) {
+  // @@protoc_insertion_point(field_mutable:detection_service.Detections.detections)
   return detections_.Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField< ::Detection >*
+inline ::google::protobuf::RepeatedPtrField< ::detection_service::Detection >*
 Detections::mutable_detections() {
-  // @@protoc_insertion_point(field_mutable_list:Detections.detections)
+  // @@protoc_insertion_point(field_mutable_list:detection_service.Detections.detections)
   return &detections_;
 }
-inline const ::Detection& Detections::detections(int index) const {
-  // @@protoc_insertion_point(field_get:Detections.detections)
+inline const ::detection_service::Detection& Detections::detections(int index) const {
+  // @@protoc_insertion_point(field_get:detection_service.Detections.detections)
   return detections_.Get(index);
 }
-inline ::Detection* Detections::add_detections() {
-  // @@protoc_insertion_point(field_add:Detections.detections)
+inline ::detection_service::Detection* Detections::add_detections() {
+  // @@protoc_insertion_point(field_add:detection_service.Detections.detections)
   return detections_.Add();
 }
-inline const ::google::protobuf::RepeatedPtrField< ::Detection >&
+inline const ::google::protobuf::RepeatedPtrField< ::detection_service::Detection >&
 Detections::detections() const {
-  // @@protoc_insertion_point(field_list:Detections.detections)
+  // @@protoc_insertion_point(field_list:detection_service.Detections.detections)
   return detections_;
 }
 
@@ -1165,6 +1168,7 @@ Detections::detections() const {
 
 // @@protoc_insertion_point(namespace_scope)
 
+}  // namespace detection_service
 
 // @@protoc_insertion_point(global_scope)
 

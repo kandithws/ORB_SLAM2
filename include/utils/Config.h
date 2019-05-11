@@ -19,9 +19,11 @@ namespace ORB_SLAM2 {
 namespace Params {
 
 typedef struct {
+    bool use_stat_rm_outlier = true;
     int mean_k = 8;
     double std_dev_mul_th = 0.8;
     bool project_2d_outlier = true;
+    bool use_mask = true;
 } ObjectInitializer;
 
 typedef struct {
@@ -63,6 +65,8 @@ class Config {
     }
 
     void readConfig(std::string cfg_file);
+
+    std::string getLabelName(const int& label_id);
 
     ORB_SLAM2_DEFINE_CONFIG_PARAM(Camera);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(ObjectDetection);

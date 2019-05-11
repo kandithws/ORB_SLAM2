@@ -13,22 +13,36 @@ namespace ORB_SLAM2 {
 
 class PredictedObject {
   public:
-    PredictedObject();
-    PredictedObject(int label, float conf);
-    PredictedObject(int label, float conf, cv::Rect& box);
-    PredictedObject(int label, float conf, std::vector<cv::Point2f>& poly);
-    int _label;
-    float _confidence;
-    void setPolyfromRect(cv::Rect& rect);
-    std::vector<cv::Point2f> _poly;
-    cv::Rect2f& box();
+    enum class MASK_TYPE : int {
+        NO_MASK=-1,
+        CROPPED=0,
+        FULL=1
+    };
+    PredictedObject(const int& label, const float& conf, const cv::Rect& box);
+    PredictedObject(const int& label, const float& conf, const cv::Rect& box,
+                    const cv::Mat &mask, const MASK_TYPE& mask_type=MASK_TYPE::CROPPED);
+
+    const int _label;
+    const float _confidence;
+    const cv::Rect2f _bbox;
+    const cv::Mat _mask;
+    const MASK_TYPE _mask_type;
+
+    // box getters to alias the legacy version
+
+    const cv::Rect2f& box() const;
+
     inline cv::Point2f GetCentroid2D() const {
-        return ( _bbox->tl() + _bbox->br() ) * 0.5;
+        return (_bbox.tl() + _bbox.br()) * 0.5;
     }
 
-  private:
-    void generateBoundingBox();
-    std::shared_ptr<cv::Rect2f> _bbox;
+    friend inline std::ostream& operator<<(std::ostream& os, const PredictedObject& pred){
+        os << "PredObj{  label: " << pred._label << " , conf: "
+           << pred._confidence << "\n   box: ["
+           << pred._bbox << "], mask: " << static_cast<int>(pred._mask_type)
+           << " }";
+        return os;
+    }
 };
 
 class BaseObjectDetector {

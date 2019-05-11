@@ -49,7 +49,7 @@ if (CUDA_FOUND)
 endif ()
 
 # BUILDING PROTOBUF Messages
-set(PROTOS ${CMAKE_CURRENT_SOURCE_DIR}/protos/detection.proto)
+set(PROTOS ${CMAKE_CURRENT_SOURCE_DIR}/protos/detection.proto ${CMAKE_CURRENT_SOURCE_DIR}/protos/detection_v2.proto)
 set(PROTO_SRC_DIR ${PROJECT_SOURCE_DIR}/include/grpc)
 include_directories(${PROTO_SRC_DIR})
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_SRC_DIR} ${PROTOS})
@@ -81,7 +81,8 @@ set(DNN_SRC_FILES
         include/dnn/CVObjectDetector.h
         src/dnn/BaseObjectDetector.cpp
         src/dnn/CVObjectDetector.cpp include/dnn/GrpcObjectDetector.h
-        ${PROTO_SRCS} ${GRPC_SRCS} src/dnn/GrpcObjectDetector.cpp)
+        ${PROTO_SRCS} ${GRPC_SRCS} src/dnn/GrpcObjectDetector.cpp
+        include/dnn/GrpcObjectDetectorV2.h src/dnn/GrpcObjectDetectorV2.cpp)
 
 
 set(OBJECT_INIT_SRC_FILES

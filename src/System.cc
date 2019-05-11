@@ -27,6 +27,10 @@
 #include <iomanip>
 #include "utils/smart_ptr_make_macro.h"
 
+#include "dnn/CVObjectDetector.h"
+#include "dnn/GrpcObjectDetector.h"
+#include "dnn/GrpcObjectDetectorV2.h"
+
 namespace ORB_SLAM2
 {
 
@@ -179,6 +183,14 @@ std::shared_ptr<BaseObjectDetector> System::BuildObjectDetector(string type) {
         // std::shared_ptr<>
         std::shared_ptr<GrpcObjectDetector> pObjDetector =
                 std::make_shared<GrpcObjectDetector>(objectDetectorParam.grpc_url);
+
+        pObjDetector->setLabelMap(objectDetectorParam.label_map);
+
+        pBaseDetector = std::static_pointer_cast<BaseObjectDetector>(pObjDetector);
+    }
+    else if (type == "GRPCV2"){
+        std::shared_ptr<GrpcObjectDetectorV2 > pObjDetector =
+                std::make_shared<GrpcObjectDetectorV2 >(objectDetectorParam.grpc_url);
 
         pObjDetector->setLabelMap(objectDetectorParam.label_map);
 

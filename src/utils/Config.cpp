@@ -96,6 +96,8 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, int, mean_k)
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, std_dev_mul_th)
             ORB_SLAM2_PARSE_BOOL_CONFIG(ObjectInitializer, project_2d_outlier)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(ObjectInitializer, use_mask)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(ObjectInitializer, use_stat_rm_outlier)
         }
     }
     else{
@@ -105,6 +107,15 @@ void Config::parseConfig() {
 
 cv::Mat Config::getCamMatrix() {
     return cam_mat_.clone();
+}
+
+std::string Config::getLabelName(const int &label_id) {
+    try{
+        return mObjectDetectionParam.label_map[label_id];
+    }
+    catch (std::exception &e) {
+        return "Unknown";
+    }
 }
 
 }

@@ -1,0 +1,36 @@
+syntax = "proto3";
+package detection_service_v2;
+
+message Image {
+    uint32 width = 1;
+    uint32 height = 2;
+    uint32 channel = 3;
+    string type = 4; // "uint8", "bool", "float"
+    bytes data = 5;  // the actual image data, in bytes
+    bool rgb = 6; // True: RGB, False: BGR, if channels == 3
+}
+
+message BoundingBox {
+   int32 tlx = 1;
+   int32 tly = 2;
+   int32 brx = 3;
+   int32 bry = 4;
+}
+
+message InstanceDetection {
+    float confidence = 1;
+    uint32 label_id = 2;
+    string label = 3; //optional
+    BoundingBox box = 4;
+    int32 mask_type = 5; // 0: cropped inside bb, 1: full image mask, -1: Empty (Box detection only)
+    Image mask = 6;
+}
+
+message InstanceDetections {
+    repeated InstanceDetection predictions = 1;
+}
+
+service InstanceDetectionService {
+    rpc DetectInstances (Image) returns (InstanceDetections) {} //single image detection
+}
+

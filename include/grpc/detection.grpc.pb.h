@@ -27,45 +27,47 @@ class ServerCompletionQueue;
 class ServerContext;
 }  // namespace grpc
 
+namespace detection_service {
+
 class DetectionService final {
  public:
   static constexpr char const* service_full_name() {
-    return "DetectionService";
+    return "detection_service.DetectionService";
   }
   class StubInterface {
    public:
     virtual ~StubInterface() {}
-    virtual ::grpc::Status ObjectDetection(::grpc::ClientContext* context, const ::Image& request, ::Detections* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Detections>> AsyncObjectDetection(::grpc::ClientContext* context, const ::Image& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Detections>>(AsyncObjectDetectionRaw(context, request, cq));
+    virtual ::grpc::Status ObjectDetection(::grpc::ClientContext* context, const ::detection_service::Image& request, ::detection_service::Detections* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::detection_service::Detections>> AsyncObjectDetection(::grpc::ClientContext* context, const ::detection_service::Image& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::detection_service::Detections>>(AsyncObjectDetectionRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Detections>> PrepareAsyncObjectDetection(::grpc::ClientContext* context, const ::Image& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Detections>>(PrepareAsyncObjectDetectionRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::detection_service::Detections>> PrepareAsyncObjectDetection(::grpc::ClientContext* context, const ::detection_service::Image& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::detection_service::Detections>>(PrepareAsyncObjectDetectionRaw(context, request, cq));
     }
     class experimental_async_interface {
      public:
       virtual ~experimental_async_interface() {}
-      virtual void ObjectDetection(::grpc::ClientContext* context, const ::Image* request, ::Detections* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void ObjectDetection(::grpc::ClientContext* context, const ::detection_service::Image* request, ::detection_service::Detections* response, std::function<void(::grpc::Status)>) = 0;
     };
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
   private:
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Detections>* AsyncObjectDetectionRaw(::grpc::ClientContext* context, const ::Image& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Detections>* PrepareAsyncObjectDetectionRaw(::grpc::ClientContext* context, const ::Image& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::detection_service::Detections>* AsyncObjectDetectionRaw(::grpc::ClientContext* context, const ::detection_service::Image& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::detection_service::Detections>* PrepareAsyncObjectDetectionRaw(::grpc::ClientContext* context, const ::detection_service::Image& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
-    ::grpc::Status ObjectDetection(::grpc::ClientContext* context, const ::Image& request, ::Detections* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Detections>> AsyncObjectDetection(::grpc::ClientContext* context, const ::Image& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Detections>>(AsyncObjectDetectionRaw(context, request, cq));
+    ::grpc::Status ObjectDetection(::grpc::ClientContext* context, const ::detection_service::Image& request, ::detection_service::Detections* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::detection_service::Detections>> AsyncObjectDetection(::grpc::ClientContext* context, const ::detection_service::Image& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::detection_service::Detections>>(AsyncObjectDetectionRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Detections>> PrepareAsyncObjectDetection(::grpc::ClientContext* context, const ::Image& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Detections>>(PrepareAsyncObjectDetectionRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::detection_service::Detections>> PrepareAsyncObjectDetection(::grpc::ClientContext* context, const ::detection_service::Image& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::detection_service::Detections>>(PrepareAsyncObjectDetectionRaw(context, request, cq));
     }
     class experimental_async final :
       public StubInterface::experimental_async_interface {
      public:
-      void ObjectDetection(::grpc::ClientContext* context, const ::Image* request, ::Detections* response, std::function<void(::grpc::Status)>) override;
+      void ObjectDetection(::grpc::ClientContext* context, const ::detection_service::Image* request, ::detection_service::Detections* response, std::function<void(::grpc::Status)>) override;
      private:
       friend class Stub;
       explicit experimental_async(Stub* stub): stub_(stub) { }
@@ -77,8 +79,8 @@ class DetectionService final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class experimental_async async_stub_{this};
-    ::grpc::ClientAsyncResponseReader< ::Detections>* AsyncObjectDetectionRaw(::grpc::ClientContext* context, const ::Image& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::Detections>* PrepareAsyncObjectDetectionRaw(::grpc::ClientContext* context, const ::Image& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::detection_service::Detections>* AsyncObjectDetectionRaw(::grpc::ClientContext* context, const ::detection_service::Image& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::detection_service::Detections>* PrepareAsyncObjectDetectionRaw(::grpc::ClientContext* context, const ::detection_service::Image& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_ObjectDetection_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
@@ -87,7 +89,7 @@ class DetectionService final {
    public:
     Service();
     virtual ~Service();
-    virtual ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::Image* request, ::Detections* response);
+    virtual ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::detection_service::Image* request, ::detection_service::Detections* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_ObjectDetection : public BaseClass {
@@ -101,11 +103,11 @@ class DetectionService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::Image* request, ::Detections* response) override {
+    ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::detection_service::Image* request, ::detection_service::Detections* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestObjectDetection(::grpc::ServerContext* context, ::Image* request, ::grpc::ServerAsyncResponseWriter< ::Detections>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestObjectDetection(::grpc::ServerContext* context, ::detection_service::Image* request, ::grpc::ServerAsyncResponseWriter< ::detection_service::Detections>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -117,10 +119,10 @@ class DetectionService final {
    public:
     ExperimentalWithCallbackMethod_ObjectDetection() {
       ::grpc::Service::experimental().MarkMethodCallback(0,
-        new ::grpc::internal::CallbackUnaryHandler< ::Image, ::Detections>(
+        new ::grpc::internal::CallbackUnaryHandler< ::detection_service::Image, ::detection_service::Detections>(
           [this](::grpc::ServerContext* context,
-                 const ::Image* request,
-                 ::Detections* response,
+                 const ::detection_service::Image* request,
+                 ::detection_service::Detections* response,
                  ::grpc::experimental::ServerCallbackRpcController* controller) {
                    return this->ObjectDetection(context, request, response, controller);
                  }));
@@ -129,11 +131,11 @@ class DetectionService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::Image* request, ::Detections* response) override {
+    ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::detection_service::Image* request, ::detection_service::Detections* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual void ObjectDetection(::grpc::ServerContext* context, const ::Image* request, ::Detections* response, ::grpc::experimental::ServerCallbackRpcController* controller) { controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "")); }
+    virtual void ObjectDetection(::grpc::ServerContext* context, const ::detection_service::Image* request, ::detection_service::Detections* response, ::grpc::experimental::ServerCallbackRpcController* controller) { controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "")); }
   };
   typedef ExperimentalWithCallbackMethod_ObjectDetection<Service > ExperimentalCallbackService;
   template <class BaseClass>
@@ -148,7 +150,7 @@ class DetectionService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::Image* request, ::Detections* response) override {
+    ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::detection_service::Image* request, ::detection_service::Detections* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -165,7 +167,7 @@ class DetectionService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::Image* request, ::Detections* response) override {
+    ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::detection_service::Image* request, ::detection_service::Detections* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -192,7 +194,7 @@ class DetectionService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::Image* request, ::Detections* response) override {
+    ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::detection_service::Image* request, ::detection_service::Detections* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -205,23 +207,25 @@ class DetectionService final {
    public:
     WithStreamedUnaryMethod_ObjectDetection() {
       ::grpc::Service::MarkMethodStreamed(0,
-        new ::grpc::internal::StreamedUnaryHandler< ::Image, ::Detections>(std::bind(&WithStreamedUnaryMethod_ObjectDetection<BaseClass>::StreamedObjectDetection, this, std::placeholders::_1, std::placeholders::_2)));
+        new ::grpc::internal::StreamedUnaryHandler< ::detection_service::Image, ::detection_service::Detections>(std::bind(&WithStreamedUnaryMethod_ObjectDetection<BaseClass>::StreamedObjectDetection, this, std::placeholders::_1, std::placeholders::_2)));
     }
     ~WithStreamedUnaryMethod_ObjectDetection() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::Image* request, ::Detections* response) override {
+    ::grpc::Status ObjectDetection(::grpc::ServerContext* context, const ::detection_service::Image* request, ::detection_service::Detections* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedObjectDetection(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::Image,::Detections>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedObjectDetection(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::detection_service::Image,::detection_service::Detections>* server_unary_streamer) = 0;
   };
   typedef WithStreamedUnaryMethod_ObjectDetection<Service > StreamedUnaryService;
   typedef Service SplitStreamedService;
   typedef WithStreamedUnaryMethod_ObjectDetection<Service > StreamedService;
 };
+
+}  // namespace detection_service
 
 
 #endif  // GRPC_detection_2eproto__INCLUDED

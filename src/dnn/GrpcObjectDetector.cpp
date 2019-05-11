@@ -4,6 +4,8 @@
 
 #include "dnn/GrpcObjectDetector.h"
 
+using namespace detection_service;
+
 namespace ORB_SLAM2 {
 
 GrpcObjectDetector::GrpcObjectDetector(std::string url, bool verbose)

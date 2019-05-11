@@ -108,6 +108,11 @@ public:
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r) const;
     std::vector<MapPoint*> GetMapPointsInBoundingBox(const cv::Rect2f& bb);
+    std::vector<MapPoint*> GetMapPointsInMask(const cv::Rect2f& bb, const cv::Mat& mask,
+            const PredictedObject::MASK_TYPE& mask_type);
+
+    void DrawDebugPointsInMask(cv::Mat &draw, const cv::Rect2f& bb, const cv::Mat& mask,
+                               const PredictedObject::MASK_TYPE& mask_type);
 
     cv::Mat UnprojectStereo(int i);
 
