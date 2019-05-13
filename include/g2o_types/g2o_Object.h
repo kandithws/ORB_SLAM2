@@ -16,6 +16,7 @@ namespace g2o {
 using namespace ORB_SLAM2;
 using namespace ORB_SLAM2::utils;
 
+
 class VertexCuboid : public BaseVertex<9, Cuboid>  // NOTE  this vertex stores object pose to world
 {
 public:
@@ -114,6 +115,45 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 public:
     Eigen::Matrix3d Kalib;
+};
+
+// MapPoint which should be included in cuboid
+class EdgeCuboidMapPoint : public BaseBinaryEdge<3, Eigen::Vector3d, VertexSBAPointXYZ, VertexCuboid> {
+  public:
+    EdgeCuboidMapPoint() = default;
+
+    inline bool read(std::istream& is) override
+    {
+        return true;
+    };
+
+    inline bool write(std::ostream& os) const override
+    {
+        return os.good();
+    };
+
+    inline void computeError() override
+    {
+        const auto* pointVertex = dynamic_cast<const VertexSBAPointXYZ*>(_vertices[0]);
+        const auto* cuboidVertex = dynamic_cast<const VertexCuboid*>(_vertices[1]);
+        const auto& cuboid = cuboidVertex->estimate();
+        const auto cuboid_pose_inv = cuboid.mPose.inverse().to_homogeneous_matrix();
+
+        const auto  p_o = homo_to_real_coord_vec<double>(
+                cuboid_pose_inv * real_to_homo_coord_vec<double>(pointVertex->estimate())
+                        );
+        // TODO -- Assume no measurement for now (use map point vertex as a measurement)
+        const auto& dm = cuboid.mScale;
+
+        _error = Eigen::Vector3d({
+           std::max<double>(std::abs(p_o[0]) - dm[0], 0.0),
+           std::max<double>(std::abs(p_o[1]) - dm[1], 0.0),
+           std::max<double>(std::abs(p_o[2]) - dm[2], 0.0)
+        });
+    }
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
 };
 
 }

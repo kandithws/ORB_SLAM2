@@ -94,10 +94,20 @@ void MapObject::EraseObservation(ORB_SLAM2::KeyFrame *pKF) {
     throw std::runtime_error("NOT IMPLEMENTED");
 }
 
+void MapObject::AddObservation(ORB_SLAM2::MapPoint *pMP) {
+    unique_lock<mutex> lock(mMutexObservations);
+    mspMPObservations.insert(pMP);
+}
+
 map<KeyFrame*, size_t> MapObject::GetObservations()
 {
     unique_lock<mutex> lock(mMutexObservations);
     return mObservations;
+}
+
+std::vector<MapPoint*> MapObject::GetMapPoints() {
+    unique_lock<mutex> lock(mMutexObservations);
+    return std::vector<MapPoint*>(mspMPObservations.begin(), mspMPObservations.end());
 }
 
 //std::vector<KeyFrame*> MapObject::GetObservingKeyFrames() {

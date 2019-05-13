@@ -34,6 +34,8 @@ class PointCloudObjectInitializer : public IObjectInitializer {
     }
 
     Cuboid CuboidFromPointCloud(pcl::PointCloud<PCLConverter::PCLPointT>::Ptr cloud);
+    void FilterMapPointsSOR(const std::vector<MapPoint *> &vObjMapPoints,
+            std::vector<MapPoint *> &vFilteredMapPoints, bool bProject2D = false, KeyFrame* pKeyFrame= static_cast<KeyFrame*>(NULL));
 
 
 };

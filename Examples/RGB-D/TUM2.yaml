@@ -3,7 +3,7 @@
 # Object Detection parameters
 #--------------------------------------------------
 object_detection:
-  type: GRPCV2
+  type: CV
   model_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.weights
   config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.cfg
   label_map_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/coco.names
@@ -22,7 +22,7 @@ object_initialization:
   mean_k: 8
   std_dev_mul_th: 0.65
   project_2d_outlier: 0 # DO NOT USE FOR NOW
-  use_mask: 1
+  use_mask: 0
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!

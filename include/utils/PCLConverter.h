@@ -13,6 +13,7 @@ namespace ORB_SLAM2 {
 class PCLConverter{
   public:
     typedef pcl::PointXYZRGBL PCLPointT;
+    static pcl::PointCloud<PCLPointT>::Ptr toPointCloud(std::vector<MapPoint*>& vMp);
     static pcl::PointCloud<PCLPointT>::Ptr toPointCloud(const std::vector<MapPoint*>& vMp);
 
     template <typename T>

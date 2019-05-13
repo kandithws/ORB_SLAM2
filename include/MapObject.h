@@ -13,6 +13,7 @@
 
 #include <boost/thread/locks.hpp>
 #include <boost/thread/shared_mutex.hpp>
+#include <unordered_set>
 
 namespace ORB_SLAM2 {
 // TODO: Mimic pattern from MapPoint
@@ -36,9 +37,13 @@ class MapObject {
     void AddObservation(KeyFrame *pKF, size_t idx);
     void EraseObservation(KeyFrame *pKF);
 
+    void AddObservation(MapPoint *pMP);
+
     std::map<KeyFrame *, size_t> GetObservations();
     //std::vector<KeyFrame*> GetObservingKeyFrames();
     int Observations();
+
+    std::vector<MapPoint*> GetMapPoints(); // TODO -- add counts
 
     cv::Mat GetCentroid();
     cv::Point2f GetProjectedCentroid(KeyFrame *pTargetKF);
@@ -75,7 +80,7 @@ class MapObject {
     int nObs = 0;
 
     // Object has_many map points, map point belongs to one object at a time
-    std::set<MapPoint *> mspMapPoints;
+    std::set<MapPoint *> mspMPObservations;
 
     KeyFrame* mpRefKeyframe;
     Map *mpMap;

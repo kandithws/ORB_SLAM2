@@ -64,6 +64,54 @@ Cuboid PointCloudObjectInitializer::CuboidFromPointCloud(pcl::PointCloud<PointT>
     return cuboid;
 }
 
+void PointCloudObjectInitializer::FilterMapPointsSOR(const vector<ORB_SLAM2::MapPoint *> &vObjMapPoints,
+                                                     vector<ORB_SLAM2::MapPoint *> &vFilteredMapPoints,
+                                                     bool bProject2D,
+                                                     KeyFrame* pKeyFrame) {
+    auto cloudObject = PCLConverter::toPointCloud(vObjMapPoints);
+    // -  PreProcessing, i.e. select only a maingroup of pointcloud (no need other processing)
+    if (bProject2D) {
+        assert(pKeyFrame);
+        // Instead of performming SOR on global frame
+        // we present points onto ZX plane so that SOR would find outliers
+        // In 2D perspective along the camera observation ray (not 3D)
+        // This would help to keep inliers for large tall that may have sparse
+        // point cloud along its height direction + outliers group vs object pointgroup would be more clutered
+        // TODO -- Optimize this!
+        // Transform all points to local frame
+        auto kf_tf_mat = pKeyFrame->GetPose();
+        Eigen::Affine3f kf_tf;
+        PCLConverter::makeAffineTf(kf_tf_mat, kf_tf);
+        // projection
+        auto end = cloudObject->end();
+        for (auto it = cloudObject->begin(); it != end; it++) {
+            // For each point compute relative tf
+            Eigen::Vector3f tmp = { it->x, it->y, it->z};
+            Eigen::Vector3f out;
+            pcl::transformPoint(tmp, out, kf_tf);
+            it->x = out[0];
+            it->y = 0; // Onto ZX plane
+            it->z = out[2];
+        }
+    }
+    pcl::PointCloud<PointT>::Ptr cloudSegmented(new pcl::PointCloud<PointT>);
+    std::vector<int> vFilteredMapPointsIndices;
+    mCloudSORFilter.setInputCloud(cloudObject);
+    mCloudSORFilter.setNegative(false); // ensure
+    auto start_time = utils::time::time_now();
+    //mCloudSORFilter.filter(*cloudSegmented);
+    mCloudSORFilter.filter(vFilteredMapPointsIndices);
+    SPDLOG_DEBUG("Filtering time {}s", utils::time::time_diff_from_now_second(start_time));
+    // try to filter, if it is fails on positive, try to get negative
+    if (vFilteredMapPointsIndices.empty()) {
+        SPDLOG_WARN("Set Negative Filter");
+        mCloudSORFilter.setNegative(true); // ensure
+        vFilteredMapPoints.clear();
+        mCloudSORFilter.filter(vFilteredMapPointsIndices);
+    }
+    PCLConverter::filterVector<MapPoint *>(vFilteredMapPointsIndices, vObjMapPoints, vFilteredMapPoints);
+}
+
 void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pMap) {
 
     auto vPredictedObjects = pKeyframe->GetObjectPredictions();
@@ -74,6 +122,52 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
     // ------------- Object Association -------------------
     const vector<KeyFrame *> vpNeighKFs = pKeyframe->GetBestCovisibilityKeyFrames(nn);
 
+
+    std::vector< std::shared_ptr< std::vector<MapPoint*> > > vPredictionMPs(vPredictedObjects.size());
+    // Preprocessing Measurements
+    for (size_t i = 0; i < vPredictedObjects.size(); i++) {
+        auto &pred = *vPredictedObjects[i];
+        const auto box = pred.box();
+        int bboxSizeThresh = min(pKeyframe->mnMaxX - pKeyframe->mnMinX, pKeyframe->mnMaxY - pKeyframe->mnMinY) / 10;
+
+        if (box.width < bboxSizeThresh || box.height < bboxSizeThresh){
+            continue;
+        }
+
+        // if the keyframe does not have object then continue
+        if(mbUseMask && pred._mask_type == PredictedObject::MASK_TYPE::NO_MASK)
+            SPDLOG_WARN("Configure to use mask, but no mask provided");
+
+        auto vObjMapPoints = mbUseMask && (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK) ?
+                             pKeyframe->GetMapPointsInMask(box, pred._mask, pred._mask_type) : pKeyframe->GetMapPointsInBoundingBox(box);
+
+//        if (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK){
+//            std::string outdebug = "debug/mask_"+ Config::getInstance().getLabelName(pred._label)
+//                    + "kf_" + std::to_string(pKeyframe->mnId) + "obj_" + std::to_string(i) + ".png";
+//
+//            cv::Mat drawn_mask;
+//            SPDLOG_INFO("I AM HERE!!!!!!");
+//            pKeyframe->DrawDebugPointsInMask(drawn_mask, box, pred._mask, pred._mask_type);
+//            cv::imwrite(outdebug, drawn_mask);
+//        }
+        SPDLOG_DEBUG("Obj {}: Total Point {}", i, vObjMapPoints.size());
+
+        if (vObjMapPoints.size() < 10) {
+            continue; // Too few points for calculation, TODO: Set as parameters
+        }
+
+
+        if (mbUseStatRemoveOutlier) {
+            std::shared_ptr< std::vector<MapPoint *> > pvFilteredMapPoints = std::make_shared< std::vector<MapPoint *> >();
+            FilterMapPointsSOR(vObjMapPoints, *pvFilteredMapPoints, mbProject2d, pKeyframe);
+            vPredictionMPs[i] = pvFilteredMapPoints;
+        }
+        else{
+            std::shared_ptr<std::vector<MapPoint*> > ptr(&vObjMapPoints);
+            vPredictionMPs[i] = ptr;
+        }
+    }
+
     for (vector<KeyFrame *>::const_iterator vit_kf = vpNeighKFs.begin(), vend_kf = vpNeighKFs.end();
          vit_kf != vend_kf; vit_kf++) {
 
@@ -83,6 +177,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
 
         std::vector<bool> vCovisKFAssociatedFound(vPredictedObjects.size(), false);
         std::vector<MapObject*> vpMapObjects = (*vit_kf)->mvpMapObjects; // TODO -- MUTEX
+
 
         for(size_t obj_idx=0; obj_idx < vpMapObjects.size(); obj_idx++) {
             MapObject* pMO = vpMapObjects[obj_idx];
@@ -142,100 +237,63 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         if (vAssociatedCount[i] > 0)
             continue;
 
-        auto &pred = *vPredictedObjects[i];
-        const auto box = pred.box();
-        int bboxSizeThresh = min(pKeyframe->mnMaxX - pKeyframe->mnMinX, pKeyframe->mnMaxY - pKeyframe->mnMinY) / 10;
-
-        if (box.width < bboxSizeThresh || box.height < bboxSizeThresh){
+        if (!vPredictionMPs[i])
             continue;
-        }
+        auto &pred = *vPredictedObjects[i];
 
-        // if the keyframe does not have object then continue
-        if(mbUseMask && pred._mask_type == PredictedObject::MASK_TYPE::NO_MASK)
-            SPDLOG_WARN("Configure to use mask, but no mask provided");
-
-        auto vObjMapPoints = mbUseMask && (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK) ?
-                pKeyframe->GetMapPointsInMask(box, pred._mask, pred._mask_type) : pKeyframe->GetMapPointsInBoundingBox(box);
-
-//        if (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK){
-//            std::string outdebug = "debug/mask_"+ Config::getInstance().getLabelName(pred._label)
-//                    + "kf_" + std::to_string(pKeyframe->mnId) + "obj_" + std::to_string(i) + ".png";
+//        auto &pred = *vPredictedObjects[i];
+//        const auto box = pred.box();
+//        int bboxSizeThresh = min(pKeyframe->mnMaxX - pKeyframe->mnMinX, pKeyframe->mnMaxY - pKeyframe->mnMinY) / 10;
 //
-//            cv::Mat drawn_mask;
-//            SPDLOG_INFO("I AM HERE!!!!!!");
-//            pKeyframe->DrawDebugPointsInMask(drawn_mask, box, pred._mask, pred._mask_type);
-//            cv::imwrite(outdebug, drawn_mask);
+//        if (box.width < bboxSizeThresh || box.height < bboxSizeThresh){
+//            continue;
 //        }
-        SPDLOG_DEBUG("Obj {}: Total Point {}", i, vObjMapPoints.size());
-
-        if (vObjMapPoints.size() < 8) {
-            continue; // Too few points for calculation, TODO: Set as parameters
-        }
-
-
-        for (auto &pMP : vObjMapPoints) {
-            pMP->SetPointColor(0x00FF0000); // For Debuging
-        }
-
-        std::vector<MapPoint *> vFilteredMapPoints;
-        if (mbUseStatRemoveOutlier) {
-            auto cloudObject = PCLConverter::toPointCloud(vObjMapPoints);
-            // -  PreProcessing, i.e. select only a maingroup of pointcloud (no need other processing)
-            if (mbProject2d) {
-                // Instead of performming SOR on global frame
-                // we present points onto ZX plane so that SOR would find outliers
-                // In 2D perspective along the camera observation ray (not 3D)
-                // This would help to keep inliers for large tall that may have sparse
-                // point cloud along its height direction + outliers group vs object pointgroup would be more clutered
-                // TODO -- Optimize this!
-                // Transform all points to local frame
-                auto kf_tf_mat = pKeyframe->GetPose();
-                Eigen::Affine3f kf_tf;
-                PCLConverter::makeAffineTf(kf_tf_mat, kf_tf);
-                // projection
-                auto end = cloudObject->end();
-                for (auto it = cloudObject->begin(); it != end; it++) {
-                    // For each point compute relative tf
-                    Eigen::Vector3f tmp = { it->x, it->y, it->z};
-                    Eigen::Vector3f out;
-                    pcl::transformPoint(tmp, out, kf_tf);
-                    it->x = out[0];
-                    it->y = 0; // Onto ZX plane
-                    it->z = out[2];
-                }
-            }
-            pcl::PointCloud<PointT>::Ptr cloudSegmented(new pcl::PointCloud<PointT>);
-            std::vector<int> vFilteredMapPointsIndices;
-            mCloudSORFilter.setInputCloud(cloudObject);
-            mCloudSORFilter.setNegative(false); // ensure
-            auto start_time = utils::time::time_now();
-            //mCloudSORFilter.filter(*cloudSegmented);
-            mCloudSORFilter.filter(vFilteredMapPointsIndices);
-            SPDLOG_DEBUG("Filtering time {}s", utils::time::time_diff_from_now_second(start_time));
-            // try to filter, if it is fails on positive, try to get negative
-            if (vFilteredMapPointsIndices.empty()) {
-                SPDLOG_WARN("Set Negative Filter");
-                mCloudSORFilter.setNegative(true); // ensure
-                vFilteredMapPoints.clear();
-                mCloudSORFilter.filter(vFilteredMapPointsIndices);
-            }
-            PCLConverter::filterVector<MapPoint *>(vFilteredMapPointsIndices, vObjMapPoints, vFilteredMapPoints);
-        }
-        else{
-            vFilteredMapPoints = vObjMapPoints;
-        }
-
-
+//
+//        // if the keyframe does not have object then continue
+//        if(mbUseMask && pred._mask_type == PredictedObject::MASK_TYPE::NO_MASK)
+//            SPDLOG_WARN("Configure to use mask, but no mask provided");
+//
+//        auto vObjMapPoints = mbUseMask && (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK) ?
+//                pKeyframe->GetMapPointsInMask(box, pred._mask, pred._mask_type) : pKeyframe->GetMapPointsInBoundingBox(box);
+//
+////        if (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK){
+////            std::string outdebug = "debug/mask_"+ Config::getInstance().getLabelName(pred._label)
+////                    + "kf_" + std::to_string(pKeyframe->mnId) + "obj_" + std::to_string(i) + ".png";
+////
+////            cv::Mat drawn_mask;
+////            SPDLOG_INFO("I AM HERE!!!!!!");
+////            pKeyframe->DrawDebugPointsInMask(drawn_mask, box, pred._mask, pred._mask_type);
+////            cv::imwrite(outdebug, drawn_mask);
+////        }
+//        SPDLOG_DEBUG("Obj {}: Total Point {}", i, vObjMapPoints.size());
+//
+//        if (vObjMapPoints.size() < 8) {
+//            continue; // Too few points for calculation, TODO: Set as parameters
+//        }
+//
+//
+//        for (auto &pMP : vObjMapPoints) {
+//            pMP->SetPointColor(0x00FF0000); // For Debuging
+//        }
+//
+//        std::vector<MapPoint *> vFilteredMapPoints;
+//        if (mbUseStatRemoveOutlier) {
+//            FilterMapPointsSOR(vObjMapPoints, vFilteredMapPoints, mbProject2d, pKeyframe);
+//        }
+//        else{
+//            vFilteredMapPoints = vObjMapPoints;
+//        }
 
         // - Calculate Cuboid parameters
-        auto inliers = PCLConverter::toPointCloud(vFilteredMapPoints);
+        auto vFilteredMapPoints = vPredictionMPs[i];
+        auto inliers = PCLConverter::toPointCloud(*vFilteredMapPoints);
         auto cuboid = CuboidFromPointCloud(inliers);
 
         uint32_t color = (static_cast<uint32_t>(std::rand() % 255) << 16) |
                          (static_cast<uint32_t>(std::rand() % 255) << 8) |
                          (static_cast<uint32_t>(std::rand() % 255));
 
-        for (auto &pMP : vFilteredMapPoints) {
+        for (auto &pMP : *vFilteredMapPoints) {
             pMP->SetPointColor(color); // For Debuging
         }
 
