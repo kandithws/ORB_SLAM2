@@ -44,10 +44,10 @@ public:
     void SetCurrentCameraPose(const cv::Mat &Tcw);
     void SetReferenceKeyFrame(KeyFrame *pKF);
     void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M);
-
     void DrawObjects(const bool bDrawObj, const bool bDrawGraph);
 
 private:
+    void GenerateColorMap(int N=256);
 
     float mKeyFrameSize;
     float mKeyFrameLineWidth;
@@ -56,6 +56,7 @@ private:
     float mCameraSize;
     float mCameraLineWidth;
     float mMapObjectLineWidth = 3;
+    std::vector<std::array<float, 3>> mLabelColorMap;
 
     cv::Mat mCameraPose;
 

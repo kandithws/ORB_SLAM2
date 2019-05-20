@@ -38,7 +38,34 @@ MapDrawer::MapDrawer(Map* pMap, const string &strSettingPath):mpMap(pMap)
     mPointSize = fSettings["Viewer.PointSize"];
     mCameraSize = fSettings["Viewer.CameraSize"];
     mCameraLineWidth = fSettings["Viewer.CameraLineWidth"];
+    GenerateColorMap(); // TODO -- read size from Label names!
 
+}
+
+// From python's VOC Labelmap
+void MapDrawer::GenerateColorMap(int N) {
+    auto bitget = [](int &byteval, int idx){
+        return ((byteval & (1 << idx)) != 0);
+    };
+
+    mLabelColorMap.clear();
+    mLabelColorMap.resize(N);
+
+    for (int i=0; i < N; i++){
+        uint8_t r=0, g=0, b=0;
+        int c = i;
+
+        for (int j=0; j < 8; j++){
+            r = r | ( (bitget(c, 0) << 7) -j );
+            g = g | ( (bitget(c, 1) << 7) -j );
+            b = b | ( (bitget(c, 2) << 7) -j );
+            c = c >> 3;
+        }
+
+        mLabelColorMap[i][0] = r / 255.0f;
+        mLabelColorMap[i][1] = g / 255.0f;
+        mLabelColorMap[i][2] = b / 255.0f;
+    }
 }
 
 void MapDrawer::DrawMapPoints()
@@ -191,7 +218,9 @@ void MapDrawer::DrawObjects(const bool bDrawObj, const bool bDrawGraph) {
 
 
             glLineWidth(mMapObjectLineWidth);
-            glColor3f(1.0f,0.0f,0.0f);
+            auto& color = mLabelColorMap[pObj->mLabel];
+            glColor3f(color[0],color[1],color[2]);
+            // glColor3f(1.0f,0.0f,0.0f);
             glBegin(GL_LINES);
 
             glVertex3f(x,-y,-z);

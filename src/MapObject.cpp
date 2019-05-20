@@ -99,6 +99,13 @@ void MapObject::AddObservation(ORB_SLAM2::MapPoint *pMP) {
     mspMPObservations.insert(pMP);
 }
 
+void MapObject::AddObservations(vector<ORB_SLAM2::MapPoint *> &vpMP) {
+    unique_lock<mutex> lock(mMutexObservations);
+    for (auto& pMP : vpMP){
+        mspMPObservations.insert(pMP);
+    }
+}
+
 map<KeyFrame*, size_t> MapObject::GetObservations()
 {
     unique_lock<mutex> lock(mMutexObservations);

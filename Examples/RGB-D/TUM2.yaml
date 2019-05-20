@@ -3,7 +3,7 @@
 # Object Detection parameters
 #--------------------------------------------------
 object_detection:
-  type: CV
+  type: GRPCV2
   model_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.weights
   config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.cfg
   label_map_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/coco.names

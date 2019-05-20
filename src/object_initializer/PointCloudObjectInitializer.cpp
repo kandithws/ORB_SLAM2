@@ -196,7 +196,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
                 // TODO -- Q? should bb box center limited inside image or actual? (could be outside)
                 cv::Point2f bb_center = (bb.tl() + bb.br()) * 0.5;
                 for (size_t i = 0; i < vPredictedObjects.size(); i++) {
-                    if (vCovisKFAssociatedFound[i]){
+                    if (vCovisKFAssociatedFound[i] || !vPredictionMPs[i] ){
                         // Skip matched objects in the current co-visibility keyframe
                         continue;
                     }
@@ -223,6 +223,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
                     //        (*vit_kf)->mnId,
                     //        pMO->mnId);
                     pMO->AddObservation(pKeyframe, min_dist_idx);
+                    pMO->AddObservations(*vPredictionMPs[min_dist_idx]);
                     pKeyframe->AddMapObject(pMO, min_dist_idx);
                     pMap->AddMapObject(pMO);
                 }
@@ -239,51 +240,8 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
 
         if (!vPredictionMPs[i])
             continue;
+
         auto &pred = *vPredictedObjects[i];
-
-//        auto &pred = *vPredictedObjects[i];
-//        const auto box = pred.box();
-//        int bboxSizeThresh = min(pKeyframe->mnMaxX - pKeyframe->mnMinX, pKeyframe->mnMaxY - pKeyframe->mnMinY) / 10;
-//
-//        if (box.width < bboxSizeThresh || box.height < bboxSizeThresh){
-//            continue;
-//        }
-//
-//        // if the keyframe does not have object then continue
-//        if(mbUseMask && pred._mask_type == PredictedObject::MASK_TYPE::NO_MASK)
-//            SPDLOG_WARN("Configure to use mask, but no mask provided");
-//
-//        auto vObjMapPoints = mbUseMask && (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK) ?
-//                pKeyframe->GetMapPointsInMask(box, pred._mask, pred._mask_type) : pKeyframe->GetMapPointsInBoundingBox(box);
-//
-////        if (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK){
-////            std::string outdebug = "debug/mask_"+ Config::getInstance().getLabelName(pred._label)
-////                    + "kf_" + std::to_string(pKeyframe->mnId) + "obj_" + std::to_string(i) + ".png";
-////
-////            cv::Mat drawn_mask;
-////            SPDLOG_INFO("I AM HERE!!!!!!");
-////            pKeyframe->DrawDebugPointsInMask(drawn_mask, box, pred._mask, pred._mask_type);
-////            cv::imwrite(outdebug, drawn_mask);
-////        }
-//        SPDLOG_DEBUG("Obj {}: Total Point {}", i, vObjMapPoints.size());
-//
-//        if (vObjMapPoints.size() < 8) {
-//            continue; // Too few points for calculation, TODO: Set as parameters
-//        }
-//
-//
-//        for (auto &pMP : vObjMapPoints) {
-//            pMP->SetPointColor(0x00FF0000); // For Debuging
-//        }
-//
-//        std::vector<MapPoint *> vFilteredMapPoints;
-//        if (mbUseStatRemoveOutlier) {
-//            FilterMapPointsSOR(vObjMapPoints, vFilteredMapPoints, mbProject2d, pKeyframe);
-//        }
-//        else{
-//            vFilteredMapPoints = vObjMapPoints;
-//        }
-
         // - Calculate Cuboid parameters
         auto vFilteredMapPoints = vPredictionMPs[i];
         auto inliers = PCLConverter::toPointCloud(*vFilteredMapPoints);
@@ -300,6 +258,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         // Create new MapObject -- pattern from LocalMapping.cc MapPoint!
         MapObject *pMO = new MapObject(cuboid, pred._label, pKeyframe, pMap);
         pMO->AddObservation(pKeyframe, i);
+        pMO->AddObservations(*vPredictionMPs[i]);
         pKeyframe->AddMapObject(pMO, i);
         pMap->AddMapObject(pMO);
     }

@@ -38,6 +38,7 @@ class MapObject {
     void EraseObservation(KeyFrame *pKF);
 
     void AddObservation(MapPoint *pMP);
+    void AddObservations(std::vector<MapPoint*> &vpMP);
 
     std::map<KeyFrame *, size_t> GetObservations();
     //std::vector<KeyFrame*> GetObservingKeyFrames();
