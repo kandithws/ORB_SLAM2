@@ -56,9 +56,9 @@ void MapDrawer::GenerateColorMap(int N) {
         int c = i;
 
         for (int j=0; j < 8; j++){
-            r = r | ( (bitget(c, 0) << 7) -j );
-            g = g | ( (bitget(c, 1) << 7) -j );
-            b = b | ( (bitget(c, 2) << 7) -j );
+            r = r | ( bitget(c, 0) << (7-j) );
+            g = g | ( bitget(c, 1) << (7-j) );
+            b = b | ( bitget(c, 2) << (7-j) );
             c = c >> 3;
         }
 
@@ -263,6 +263,15 @@ void MapDrawer::DrawObjects(const bool bDrawObj, const bool bDrawGraph) {
             glEnd();
 
             glPopMatrix();
+
+            glPointSize(mPointSize * 2.0);
+            glBegin(GL_POINTS);
+            for (auto& pMP : pObj->GetMapPoints()){
+                cv::Mat pos = pMP->GetWorldPos();
+                glVertex3f(pos.at<float>(0),pos.at<float>(1),pos.at<float>(2));
+            }
+
+            glEnd();
         }
     }
 
