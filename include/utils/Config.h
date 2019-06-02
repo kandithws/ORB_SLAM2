@@ -20,6 +20,8 @@ namespace Params {
 
 typedef struct {
     bool use_stat_rm_outlier = true;
+    int outlier_filter_type = 0; // 0: PCLSOR, 1: local euclidean, 2: local std
+    double outlier_threshold = 0.2; // for type 1, 2
     int mean_k = 8;
     double std_dev_mul_th = 0.8;
     bool project_2d_outlier = true;

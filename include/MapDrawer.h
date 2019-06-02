@@ -21,12 +21,12 @@
 #ifndef MAPDRAWER_H
 #define MAPDRAWER_H
 
-#include"Map.h"
-#include"MapPoint.h"
-#include"KeyFrame.h"
-#include<pangolin/pangolin.h>
+#include "Map.h"
+#include "MapPoint.h"
+#include "KeyFrame.h"
+#include <pangolin/pangolin.h>
 
-#include<mutex>
+#include <mutex>
 
 namespace ORB_SLAM2
 {

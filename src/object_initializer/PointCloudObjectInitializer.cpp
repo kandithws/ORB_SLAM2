@@ -18,6 +18,8 @@ PointCloudObjectInitializer::PointCloudObjectInitializer() {
     mbProject2d = Config::getInstance().ObjectInitializerParams().project_2d_outlier;
     mbUseMask = Config::getInstance().ObjectInitializerParams().use_mask;
     mbUseStatRemoveOutlier = Config::getInstance().ObjectInitializerParams().use_stat_rm_outlier;
+    mOutlierFilterType = Config::getInstance().ObjectInitializerParams().outlier_filter_type;
+    mOutlierFilterThreshold = Config::getInstance().ObjectInitializerParams().outlier_threshold;
     //mbUseMask = true;
 }
 
@@ -112,6 +114,134 @@ void PointCloudObjectInitializer::FilterMapPointsSOR(const vector<ORB_SLAM2::Map
     PCLConverter::filterVector<MapPoint *>(vFilteredMapPointsIndices, vObjMapPoints, vFilteredMapPoints);
 }
 
+void PointCloudObjectInitializer::FilterMapPointsDistFromCentroid(const vector<ORB_SLAM2::MapPoint *> &vObjMapPoints,
+                                                                  vector<ORB_SLAM2::MapPoint *> &vFilteredMapPoints,
+                                                                  ORB_SLAM2::KeyFrame *pKeyFrame,
+                                                                  double dist_threshold) {
+    auto Rcw = pKeyFrame->GetRotation();
+    auto tcw = pKeyFrame->GetTranslation();
+
+    // keep track of the original point & convert to camera local frame
+    std::vector<cv::Mat> vPointsLocal(vObjMapPoints.size());
+    std::vector< std::pair<MapPoint*, double> > vCentroidDist(vObjMapPoints.size());
+
+    cv::Mat centroid(3,1, CV_32F);
+
+    for (int i=0; i < vObjMapPoints.size(); i++){
+        vPointsLocal[i] = Rcw * vObjMapPoints[i]->GetWorldPos() + tcw;
+        centroid = centroid + vPointsLocal[i];
+    }
+
+    centroid = centroid / (double)vObjMapPoints.size();
+
+    for (int i=0; i < vObjMapPoints.size(); i++){
+        vCentroidDist[i].first = vObjMapPoints[i];
+        // TODO -- generalized dist calculation
+        vCentroidDist[i].second = std::abs(vPointsLocal[i].at<float>(2) - centroid.at<float>(2)); // z axis only, todo: generalized this
+    }
+
+    std::sort(vCentroidDist.begin(), vCentroidDist.end(), [](const std::pair<MapPoint*, double> &a,
+            const std::pair<MapPoint*, double> &b){
+        return a.second < b.second;
+    });
+
+    int idx=1;
+
+    for (; idx < vCentroidDist.size(); idx++){
+      if ( (vCentroidDist[idx].second - vCentroidDist[idx-1].second) >  dist_threshold)
+          break;
+    }
+
+    vFilteredMapPoints.resize(idx);
+
+    for (int i=0; i< idx; i++){
+        vFilteredMapPoints[i] = vCentroidDist[i].first;
+    }
+}
+
+void PointCloudObjectInitializer::FilterMapPointsDistFromCentroidNormalized(
+        const vector<ORB_SLAM2::MapPoint *> &vObjMapPoints, vector<ORB_SLAM2::MapPoint *> &vFilteredMapPoints,
+        ORB_SLAM2::KeyFrame *pKeyFrame, double std_threshold) {
+
+    auto Rcw = pKeyFrame->GetRotation();
+    auto tcw = pKeyFrame->GetTranslation();
+
+    // keep track of the original point & convert to camera local frame
+    std::vector<cv::Mat> vPointsLocal(vObjMapPoints.size());
+    std::vector< std::pair<MapPoint*, double> > vCentroidDist(vObjMapPoints.size());
+
+    cv::Mat centroid(3,1, CV_32F);
+    //static int filenum = 0;
+    //std::ofstream myfile;
+    //myfile.open("debug/points_" + std::to_string(filenum++) + ".csv");
+
+    for (int i=0; i < vObjMapPoints.size(); i++){
+        vPointsLocal[i] = Rcw * vObjMapPoints[i]->GetWorldPos() + tcw;
+        centroid = centroid + vPointsLocal[i];
+        //myfile << vPointsLocal[i].at<float>(0) << ','
+        //        << vPointsLocal[i].at<float>(1) << ',' << vPointsLocal[i].at<float>(2) << '\n';
+    }
+    //myfile.close();
+
+
+    centroid = centroid / (double)vObjMapPoints.size();
+
+    double sigma_dist = 0, mu_dist = 0;
+
+    for (int i=0; i < vObjMapPoints.size(); i++){
+        vCentroidDist[i].first = vObjMapPoints[i];
+        // TODO -- generalized dist calculation
+        vCentroidDist[i].second = std::abs(vPointsLocal[i].at<float>(2) - centroid.at<float>(2)); // z axis only, todo: generalized this
+        mu_dist += vCentroidDist[i].second;
+    }
+
+    mu_dist /= (double)vObjMapPoints.size();
+
+    for (int i=0; i < vCentroidDist.size(); i++){
+        auto d = vCentroidDist[i].second - mu_dist;
+        sigma_dist += d * d;
+    }
+
+    sigma_dist = std::sqrt(sigma_dist / vCentroidDist.size());
+    // normalized Z-Score values in vCentroidDist
+    for (int i=0; i < vCentroidDist.size(); i++){
+        vCentroidDist[i].second = (vCentroidDist[i].second - mu_dist) / sigma_dist;
+    }
+
+
+    std::sort(vCentroidDist.begin(), vCentroidDist.end(), [](const std::pair<MapPoint*, double> &a,
+                                                             const std::pair<MapPoint*, double> &b){
+        return a.second < b.second;
+    });
+
+    // Compute std cache vector
+    double std_acc=0, mu_acc=0; // linear time
+    std::vector<double> std_acc_cache(vCentroidDist.size());
+
+    for (int i=0; i < std_acc_cache.size(); i++){
+        mu_acc += vCentroidDist[i].second;
+        auto N = (double)(i+1);
+        auto d = vCentroidDist[i].second - mu_acc / N;
+        std_acc += d*d;
+        std_acc_cache[i] = std::sqrt(std_acc / N);
+    }
+
+
+    int idx=1;
+
+    for (; idx < vCentroidDist.size(); idx++){
+        if ( (std_acc_cache[idx] - std_acc_cache[idx-1]) >  std_threshold)
+            break;
+    }
+
+    vFilteredMapPoints.resize(idx);
+
+    for (int i=0; i< idx; i++){
+        vFilteredMapPoints[i] = vCentroidDist[i].first;
+    }
+
+}
+
 void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pMap) {
 
     auto vPredictedObjects = pKeyframe->GetObjectPredictions();
@@ -159,7 +289,17 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
 
         if (mbUseStatRemoveOutlier) {
             std::shared_ptr< std::vector<MapPoint *> > pvFilteredMapPoints = std::make_shared< std::vector<MapPoint *> >();
-            FilterMapPointsSOR(vObjMapPoints, *pvFilteredMapPoints, mbProject2d, pKeyframe);
+
+            if (mOutlierFilterType == 0)
+                FilterMapPointsSOR(vObjMapPoints, *pvFilteredMapPoints, mbProject2d, pKeyframe);
+            else if (mOutlierFilterType == 1)
+                FilterMapPointsDistFromCentroid(vObjMapPoints, *pvFilteredMapPoints, pKeyframe, mOutlierFilterThreshold);
+            else if (mOutlierFilterType == 2)
+                FilterMapPointsDistFromCentroidNormalized(vObjMapPoints,
+                        *pvFilteredMapPoints, pKeyframe, mOutlierFilterThreshold);
+            else
+                throw std::runtime_error("OUTLIER FILTER TYPE NOT IMPLEMENTED");
+
             vPredictionMPs[i] = pvFilteredMapPoints;
         }
         else{

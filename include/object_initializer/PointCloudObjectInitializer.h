@@ -28,6 +28,8 @@ class PointCloudObjectInitializer : public IObjectInitializer {
     bool mbProject2d;
     bool mbUseMask;
     bool mbUseStatRemoveOutlier;
+    int mOutlierFilterType;
+    double mOutlierFilterThreshold;
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGBL> mCloudSORFilter;
     inline double Point2DDistance(const cv::Point2f& p1, const cv::Point2f& p2){
         return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
@@ -37,7 +39,12 @@ class PointCloudObjectInitializer : public IObjectInitializer {
     void FilterMapPointsSOR(const std::vector<MapPoint *> &vObjMapPoints,
             std::vector<MapPoint *> &vFilteredMapPoints, bool bProject2D = false, KeyFrame* pKeyFrame= static_cast<KeyFrame*>(NULL));
 
+    void FilterMapPointsDistFromCentroid(const std::vector<MapPoint *> &vObjMapPoints,
+            std::vector<MapPoint *> &vFilteredMapPoints, KeyFrame* pKeyFrame, double dist_threshold=0.2);
 
+    void FilterMapPointsDistFromCentroidNormalized(const std::vector<MapPoint *> &vObjMapPoints,
+                                                   std::vector<MapPoint *> &vFilteredMapPoints,
+                                                   KeyFrame* pKeyFrame, double std_threshold=0.2);
 };
 }
 
