@@ -202,7 +202,7 @@ void PointCloudObjectInitializer::FilterMapPointsDistFromCentroidNormalized(
         sigma_dist += d * d;
     }
 
-    sigma_dist = std::sqrt(sigma_dist / vCentroidDist.size());
+    sigma_dist = std::sqrt(sigma_dist / (double)vCentroidDist.size());
     // normalized Z-Score values in vCentroidDist
     for (int i=0; i < vCentroidDist.size(); i++){
         vCentroidDist[i].second = (vCentroidDist[i].second - mu_dist) / sigma_dist;
@@ -216,21 +216,22 @@ void PointCloudObjectInitializer::FilterMapPointsDistFromCentroidNormalized(
 
     // Compute std cache vector
     double std_acc=0, mu_acc=0; // linear time
-    std::vector<double> std_acc_cache(vCentroidDist.size());
+    std::vector<double> std_acc_cache(vCentroidDist.size(), 0);
 
     for (int i=0; i < std_acc_cache.size(); i++){
         mu_acc += vCentroidDist[i].second;
         auto N = (double)(i+1);
-        auto d = vCentroidDist[i].second - mu_acc / N;
+        auto d = vCentroidDist[i].second - (mu_acc / N);
         std_acc += d*d;
         std_acc_cache[i] = std::sqrt(std_acc / N);
     }
-
-
+    
     int idx=1;
 
     for (; idx < vCentroidDist.size(); idx++){
-        if ( (std_acc_cache[idx] - std_acc_cache[idx-1]) >  std_threshold)
+        auto diff = (std_acc_cache[idx] - std_acc_cache[idx-1]);
+        assert(!std::isnan(diff));
+        if (  diff >  std_threshold)
             break;
     }
 
