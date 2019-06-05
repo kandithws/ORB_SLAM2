@@ -645,8 +645,6 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         }
     }
 
-    // TODO -- add object-map point constraint here!
-
     for (auto pKFi : lFixedCameras) {
         // TODO -- should this be fixed ???
         // add g2o camera-object measurement edges, if there is
@@ -688,6 +686,9 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
                 edgeMP->setVertex(0, optimizer.vertex(pMP->mnId + maxKFId + maxLandmarkId + 2));
                 edgeMP->setVertex(1, optimizer.vertex(landmark_id));
                 edgeMP->setInformation(Eigen::Matrix3d::Identity());
+                auto* rk = new g2o::RobustKernelHuber;
+                edgeMP->setRobustKernel(rk);
+                rk->setDelta(1.0);
                 optimizer.addEdge(edgeMP);
             }
         }
@@ -733,6 +734,9 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
                 edgeMP->setVertex(0, optimizer.vertex(pMP->mnId + maxKFId + maxLandmarkId + 2));
                 edgeMP->setVertex(1, optimizer.vertex(landmark_id));
                 edgeMP->setInformation(Eigen::Matrix3d::Identity());
+                auto* rk = new g2o::RobustKernelHuber;
+                edgeMP->setRobustKernel(rk);
+                rk->setDelta(1.0);
                 optimizer.addEdge(edgeMP);
             }
         }

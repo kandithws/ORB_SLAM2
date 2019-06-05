@@ -225,7 +225,7 @@ void PointCloudObjectInitializer::FilterMapPointsDistFromCentroidNormalized(
         std_acc += d*d;
         std_acc_cache[i] = std::sqrt(std_acc / N);
     }
-    
+
     int idx=1;
 
     for (; idx < vCentroidDist.size(); idx++){
