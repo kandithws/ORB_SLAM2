@@ -207,6 +207,9 @@ void MapDrawer::DrawObjects(const bool bDrawObj, const bool bDrawGraph) {
 
     if (bDrawObj){
         for (auto &pObj : vMapObjects){
+            if(!pObj->IsReady())
+                continue;
+
             cv::Mat Twc = pObj->GetPose().t();
             cv::Mat scale = pObj->GetScale();
             float x, y, z;
@@ -282,6 +285,9 @@ void MapDrawer::DrawObjects(const bool bDrawObj, const bool bDrawGraph) {
         glBegin(GL_LINES);
 
         for (auto &pObj : vMapObjects){
+            if(!pObj->IsReady())
+                continue;
+
             cv::Mat Twc = pObj->GetPose();
 
             auto mapObservations = pObj->GetObservations();

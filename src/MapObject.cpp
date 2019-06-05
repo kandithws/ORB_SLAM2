@@ -96,14 +96,26 @@ void MapObject::EraseObservation(ORB_SLAM2::KeyFrame *pKF) {
 
 void MapObject::AddObservation(ORB_SLAM2::MapPoint *pMP) {
     unique_lock<mutex> lock(mMutexObservations);
-    mspMPObservations.insert(pMP);
+    if ( mmapMPObservations.find(pMP) != mmapMPObservations.end() ){
+        ++mmapMPObservations[pMP];
+    }
+    else{
+        mmapMPObservations[pMP] = 1;
+    }
 }
 
 void MapObject::AddObservations(vector<ORB_SLAM2::MapPoint *> &vpMP) {
     unique_lock<mutex> lock(mMutexObservations);
     for (auto& pMP : vpMP){
-        mspMPObservations.insert(pMP);
+        //mspMPObservations.insert(pMP);
+        if ( mmapMPObservations.find(pMP) != mmapMPObservations.end() ){
+            ++mmapMPObservations[pMP];
+        }
+        else{
+            mmapMPObservations[pMP] = 1;
+        }
     }
+
 }
 
 map<KeyFrame*, size_t> MapObject::GetObservations()
@@ -114,7 +126,33 @@ map<KeyFrame*, size_t> MapObject::GetObservations()
 
 std::vector<MapPoint*> MapObject::GetMapPoints() {
     unique_lock<mutex> lock(mMutexObservations);
-    return std::vector<MapPoint*>(mspMPObservations.begin(), mspMPObservations.end());
+    std::vector<MapPoint*> ret;
+    ret.reserve(mmapMPObservations.size());
+    for (auto const& pair: mmapMPObservations){
+            ret.push_back(pair.first);
+    }
+    return ret;
+}
+
+std::vector< std::pair<MapPoint*, double> > MapObject::GetMapPointsWithScore() {
+    unique_lock<mutex> lock(mMutexObservations);
+    std::vector< std::pair<MapPoint*, double> > obs;
+    GetMPObservationsWithScoreNoLock(obs);
+    return obs;
+}
+
+void MapObject::GetMPObservationsWithScoreNoLock(vector< pair<ORB_SLAM2::MapPoint *, double> > &obs) {
+    obs.reserve(mmapMPObservations.size());
+    int max_count = 0;
+    // Find max count
+    for (auto const& p: mmapMPObservations) {
+        if (p.second > max_count)
+            max_count = p.second;
+    }
+    // Store normalized value
+    for (auto const& p: mmapMPObservations) {
+        obs.push_back( std::pair<ORB_SLAM2::MapPoint *, double>(p.first, (double)p.second / (double)max_count ) );
+    }
 }
 
 //std::vector<KeyFrame*> MapObject::GetObservingKeyFrames() {
@@ -202,6 +240,16 @@ bool MapObject::IsPositiveToKeyFrame(ORB_SLAM2::KeyFrame *pTargetKF) {
     cv::Mat centroid_w = GetCentroid(); // 3x1 x,y,z point
     cv::Mat centroid_c = Tcw.rowRange(0, 3).colRange(0, 3) * centroid_w + Tcw.rowRange(0, 3).col(3);
     return centroid_c.at<float>(2) > 0;
+}
+
+bool MapObject::IsReady() {
+    std::unique_lock<std::mutex> lock(mMutexReady);
+    return mbReady;
+}
+
+void MapObject::SetReady() {
+    std::unique_lock<std::mutex> lock(mMutexReady);
+    mbReady = true;
 }
 
 }

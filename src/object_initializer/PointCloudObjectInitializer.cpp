@@ -363,10 +363,14 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
                     //        min_dist_idx,
                     //        (*vit_kf)->mnId,
                     //        pMO->mnId);
+
                     pMO->AddObservation(pKeyframe, min_dist_idx);
                     pMO->AddObservations(*vPredictionMPs[min_dist_idx]);
                     pKeyframe->AddMapObject(pMO, min_dist_idx);
                     pMap->AddMapObject(pMO);
+
+                    if(!pMO->IsReady())
+                        pMO->SetReady();
                 }
             }
         }

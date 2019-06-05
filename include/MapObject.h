@@ -45,12 +45,16 @@ class MapObject {
     int Observations();
 
     std::vector<MapPoint*> GetMapPoints(); // TODO -- add counts
+    std::vector< std::pair<MapPoint*, double> > GetMapPointsWithScore();
 
     cv::Mat GetCentroid();
     cv::Point2f GetProjectedCentroid(KeyFrame *pTargetKF);
     // if check centroid = true, will check if the centroid is in image, otherwise any corner
     bool GetProjectedBoundingBox(KeyFrame *pTargetKF, cv::Rect& bb, bool check_centroid=true);
     bool IsPositiveToKeyFrame(KeyFrame *pTargetKF);
+
+    bool IsReady();
+    void SetReady();
 
   public:
     uint32_t mnId;
@@ -63,8 +67,13 @@ class MapObject {
     const int mLabel;
 
   protected:
+
+    bool mbReady = false;
+    std::mutex mMutexReady;
     //Copy from Cuboid
     Eigen::Vector4d ProjectOntoImageRect(const SE3Quat& campose_cw, const Eigen::Matrix3d& Kalib);
+
+    void GetMPObservationsWithScoreNoLock(std::vector< std::pair<MapPoint*, double> >& obs);
 
     // Bad flag (we do not currently erase MapObject from memory)
     bool mbBad;
@@ -81,7 +90,8 @@ class MapObject {
     int nObs = 0;
 
     // Object has_many map points, map point belongs to one object at a time
-    std::set<MapPoint *> mspMPObservations;
+    //std::set<MapPoint *> mspMPObservations;
+    std::map<MapPoint *, int> mmapMPObservations;
 
     KeyFrame* mpRefKeyframe;
     Map *mpMap;

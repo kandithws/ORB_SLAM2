@@ -424,6 +424,9 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         auto objects = pKFi->GetMapObjects();
         for (auto& obj : objects){
             if (obj){
+                if(!obj->IsReady())
+                    continue;
+
                 if (sLandmarkIds.find(obj->mnId) == sLandmarkIds.end()) {
                     sLandmarkIds.insert(obj->mnId);
                     lLocalLandmarks.push_back(obj);
@@ -445,10 +448,12 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
 
     // Set Fixed KeyFrame vertices
     for (auto pKFi : lFixedCameras) {
-
         auto objects = pKFi->GetMapObjects();
         for (auto& obj : objects){
+
             if (obj){
+                if(!obj->IsReady())
+                    continue;
                 // Not in both fixed and non-fixed landmarks
                 if (sLandmarkIds.find(obj->mnId) == sLandmarkIds.end()) {
                     sLandmarkIds.insert(obj->mnId);
@@ -467,6 +472,9 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
     }
 
     for (const auto& pMO : lLocalLandmarks) {
+        if(!pMO->IsReady())
+            continue;
+
         Cuboid pInitCuboidGlobalPose;
         pMO->GetCuboid(pInitCuboidGlobalPose);
         auto* vCuboid = new g2o::VertexCuboid();
@@ -479,6 +487,9 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
     }
 
     for (const auto& pMO : lLocalLandmarksFixed) {
+        if(!pMO->IsReady())
+            continue;
+
         Cuboid pInitCuboidGlobalPose;
         pMO->GetCuboid(pInitCuboidGlobalPose);
         auto* vCuboid = new g2o::VertexCuboid();
@@ -657,8 +668,11 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
             if (vObservationsMap.find(pMO) == vObservationsMap.end())
                 continue;
 
-            auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj(K);
+            if(!pMO->IsReady())
+                continue;
+
             unsigned long landmark_id = maxKFId + 1 + pMO->mnId;
+            auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj(K);
             edgeSE3CuboidProj->setVertex(0, optimizer.vertex(pKFi->mnId));
             edgeSE3CuboidProj->setVertex(1, optimizer.vertex(landmark_id));
             auto obs = vObservations[vObservationsMap[pMO]];
@@ -686,11 +700,30 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
                 edgeMP->setVertex(0, optimizer.vertex(pMP->mnId + maxKFId + maxLandmarkId + 2));
                 edgeMP->setVertex(1, optimizer.vertex(landmark_id));
                 edgeMP->setInformation(Eigen::Matrix3d::Identity());
-                auto* rk = new g2o::RobustKernelHuber;
-                edgeMP->setRobustKernel(rk);
-                rk->setDelta(1.0);
                 optimizer.addEdge(edgeMP);
             }
+
+
+//            auto vMapPointObservations = pMO->GetMapPointsWithScore();
+//            for (auto& pMPpair : vMapPointObservations){
+//                if (!optimizer.vertex(pMPpair.first->mnId + maxKFId + maxLandmarkId + 2)){
+//                    // create vertex if doesn't exist
+//                    auto* vPoint = new g2o::VertexSBAPointXYZ();
+//                    vPoint->setEstimate(Converter::toVector3d(pMPpair.first->GetWorldPos()));
+//                    unsigned long id = pMPpair.first->mnId + maxKFId + maxLandmarkId + 2;
+//                    vPoint->setId(id);
+//                    vPoint->setMarginalized(true);
+//                    vPoint->setFixed(true); // TODO -- recheck this
+//                    optimizer.addVertex(vPoint);
+//                }
+//
+//                // Add mappoint constraint!
+//                auto* edgeMP = new g2o::EdgeCuboidMapPoint();
+//                edgeMP->setVertex(0, optimizer.vertex(pMPpair.first->mnId + maxKFId + maxLandmarkId + 2));
+//                edgeMP->setVertex(1, optimizer.vertex(landmark_id));
+//                edgeMP->setInformation(Eigen::Matrix3d::Identity() * pMPpair.second);
+//                optimizer.addEdge(edgeMP);
+//            }
         }
     }
 
@@ -705,8 +738,10 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
             if (vObservationsMap.find(pMO) == vObservationsMap.end())
                 continue;
 
-            auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj(K);
+            if(!pMO->IsReady())
+                continue;
             unsigned long landmark_id = maxKFId + 1 + pMO->mnId;
+            auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj(K);
             edgeSE3CuboidProj->setVertex(0, optimizer.vertex(pKFi->mnId));
             edgeSE3CuboidProj->setVertex(1, optimizer.vertex(landmark_id));
             auto obs = vObservations[vObservationsMap[pMO]];
@@ -734,11 +769,29 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
                 edgeMP->setVertex(0, optimizer.vertex(pMP->mnId + maxKFId + maxLandmarkId + 2));
                 edgeMP->setVertex(1, optimizer.vertex(landmark_id));
                 edgeMP->setInformation(Eigen::Matrix3d::Identity());
-                auto* rk = new g2o::RobustKernelHuber;
-                edgeMP->setRobustKernel(rk);
-                rk->setDelta(1.0);
                 optimizer.addEdge(edgeMP);
             }
+
+//            auto vMapPointObservations = pMO->GetMapPointsWithScore();
+//            for (auto& pMPpair : vMapPointObservations){
+//                if (!optimizer.vertex(pMPpair.first->mnId + maxKFId + maxLandmarkId + 2)){
+//                    // create vertex if doesn't exist
+//                    auto* vPoint = new g2o::VertexSBAPointXYZ();
+//                    vPoint->setEstimate(Converter::toVector3d(pMPpair.first->GetWorldPos()));
+//                    unsigned long id = pMPpair.first->mnId + maxKFId + maxLandmarkId + 2;
+//                    vPoint->setId(id);
+//                    vPoint->setMarginalized(true);
+//                    vPoint->setFixed(true); // TODO -- recheck this
+//                    optimizer.addVertex(vPoint);
+//                }
+//
+//                // Add mappoint constraint!
+//                auto* edgeMP = new g2o::EdgeCuboidMapPoint();
+//                edgeMP->setVertex(0, optimizer.vertex(pMPpair.first->mnId + maxKFId + maxLandmarkId + 2));
+//                edgeMP->setVertex(1, optimizer.vertex(landmark_id));
+//                edgeMP->setInformation(Eigen::Matrix3d::Identity() * pMPpair.second);
+//                optimizer.addEdge(edgeMP);
+//            }
         }
     }
 
