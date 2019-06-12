@@ -76,12 +76,11 @@ void LocalMapping::Run()
             {
                 // Find more matches in neighbor keyframes and fuse point duplications
                 SearchInNeighbors();
+
+                // Initialize Object stuff when mappoints are stable
+                if(mbUseObject)
+                    InitializeCurrentKeyFrameObjects();
             }
-
-
-            // Initialize Object stuff when mappoints are stable
-            if(mbUseObject)
-                InitializeCurrentKeyFrameObjects();
 
             mbAbortBA = false;
 
@@ -792,8 +791,11 @@ void LocalMapping::InitializeCurrentKeyFrameObjects() {
     // Requirements
     // 1. Init all predicted object t
     // 2. Add object to the keyframe
-    if (mpCurrentKeyFrame->mnId == 0) // Skipping initial keyframe
+    if ( (KeyFrame::nInitId == -1) || (mpCurrentKeyFrame->mnId < KeyFrame::nInitId) )
         return;
+
+//    if (mpCurrentKeyFrame->mnId == 0) // Skipping initial keyframe
+//        return;
 
     SPDLOG_DEBUG("INIT objects for KF {}", mpCurrentKeyFrame->mnId);
     auto start_time = utils::time::time_now();

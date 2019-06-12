@@ -49,7 +49,6 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     // Read global configuration
     Config::getInstance().readConfig(strSettingsFile);
 
-
     std::string sensor_str;
     if(mSensor==MONOCULAR)
         sensor_str = "Monocular";

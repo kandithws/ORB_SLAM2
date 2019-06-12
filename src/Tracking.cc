@@ -312,6 +312,7 @@ void Tracking::Track()
 
     if(mState==NOT_INITIALIZED)
     {
+        std::cout << "I AM HERE" << std::endl;
         if(mSensor==System::STEREO || mSensor==System::RGBD)
             StereoInitialization();
         else
@@ -605,6 +606,7 @@ void Tracking::StereoInitialization()
         if(mpPCLViewer)
             mpPCLViewer->setCurrentCameraPose(mCurrentFrame.mTcw);
 
+        KeyFrame::nInitId = pKFini->mnId;
         mState=OK;
     }
 }
@@ -686,9 +688,16 @@ void Tracking::MonocularInitialization()
 void Tracking::CreateInitialMapMonocular()
 {
     // Create KeyFrames
-    KeyFrame* pKFini = new KeyFrame(mInitialFrame,mpMap,mpKeyFrameDB);
-    KeyFrame* pKFcur = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
-
+    KeyFrame* pKFini;
+    KeyFrame* pKFcur;
+    if (mbUseObject){
+        pKFini = new KeyFrame(mInitialFrame,mpMap,mpKeyFrameDB, mImColor, mImGray);
+        pKFcur = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB, mImColor, mImGray);
+    }
+    else {
+        pKFini = new KeyFrame(mInitialFrame,mpMap,mpKeyFrameDB);
+        pKFcur = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+    }
 
     pKFini->ComputeBoW();
     pKFcur->ComputeBoW();
@@ -785,6 +794,7 @@ void Tracking::CreateInitialMapMonocular()
 
     mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
+    KeyFrame::nInitId = pKFcur->mnId;
     mState=OK;
 }
 
@@ -1124,9 +1134,11 @@ void Tracking::CreateNewKeyFrame()
         else
             pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB); // TODO: Stereo Vision support
 
-        // Make a copy of current imcolor;
-        cv::Mat ImColor = mImColor.clone();
-        QueueDetectionThread(pKF,  ImColor);
+        if (mState == OK){
+            // Make a copy of current imcolor;
+            cv::Mat ImColor = mImColor.clone();
+            QueueDetectionThread(pKF,  ImColor);
+        }
     }
     else{
         pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
@@ -1616,10 +1628,12 @@ void Tracking::Reset()
     if(mpViewer)
         mpViewer->Release();
 
-    if(mtCleanDetectionThread){
-        mcvDetectionThreads.notify_all();
-        if(mtCleanDetectionThread->joinable())
-            mtCleanDetectionThread->join();
+    if (mqDetectionThreads.size() > 0){
+        if(mtCleanDetectionThread){
+            mcvDetectionThreads.notify_all();
+            if(mtCleanDetectionThread->joinable())
+                mtCleanDetectionThread->join();
+        }
     }
 }
 

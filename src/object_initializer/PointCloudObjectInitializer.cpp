@@ -248,7 +248,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
     auto vPredictedObjects = pKeyframe->GetObjectPredictions();
     // Retrieve neighbor keyframes in covisibility graph
     std::vector<int> vAssociatedCount(vPredictedObjects.size(), 0); // use int for debuging
-    int nn = 10;
+    int nn = 20;
 
     // ------------- Object Association -------------------
     const vector<KeyFrame *> vpNeighKFs = pKeyframe->GetBestCovisibilityKeyFrames(nn);
