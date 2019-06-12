@@ -182,6 +182,7 @@ private:
     std::mutex mMutexMode;
     bool mbActivateLocalizationMode;
     bool mbDeactivateLocalizationMode;
+    bool mbUseObject = false;
 
     // Tracking state
     int mTrackingState;

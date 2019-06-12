@@ -101,6 +101,10 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, int, outlier_filter_type)
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, outlier_threshold)
         }
+
+        ORB_SLAM2_PARSE_CONFIG_SCOPE("system") {
+            ORB_SLAM2_PARSE_BOOL_CONFIG(System, use_object)
+        }
     }
     else{
         SPDLOG_CRITICAL("Config is not open");

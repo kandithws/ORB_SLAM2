@@ -167,6 +167,7 @@ Tracking::Tracking(System *pSys,
 {
     mpObjectDetector = pObjectDetector;
     mpPCLViewer = pPCLViewer;
+    mbUseObject = Config::getInstance().SystemParams().use_object;
 }
 
 Tracking::~Tracking(){
@@ -312,7 +313,6 @@ void Tracking::Track()
 
     if(mState==NOT_INITIALIZED)
     {
-        std::cout << "I AM HERE" << std::endl;
         if(mSensor==System::STEREO || mSensor==System::RGBD)
             StereoInitialization();
         else
@@ -606,7 +606,7 @@ void Tracking::StereoInitialization()
         if(mpPCLViewer)
             mpPCLViewer->setCurrentCameraPose(mCurrentFrame.mTcw);
 
-        KeyFrame::nInitId = pKFini->mnId;
+        //KeyFrame::nInitId = pKFini->mnId;
         mState=OK;
     }
 }
@@ -794,7 +794,7 @@ void Tracking::CreateInitialMapMonocular()
 
     mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
-    KeyFrame::nInitId = pKFcur->mnId;
+    //KeyFrame::nInitId = pKFcur->mnId;
     mState=OK;
 }
 
@@ -1129,16 +1129,23 @@ void Tracking::CreateNewKeyFrame()
 
     KeyFrame* pKF;
     if (mbUseObject){
-        if((mSensor!=System::MONOCULAR) || (mSensor!=System::RGBD))
+        if((mSensor!=System::MONOCULAR) || (mSensor!=System::RGBD)){
             pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB, mImColor, mImGray);
-        else
-            pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB); // TODO: Stereo Vision support
-
-        if (mState == OK){
-            // Make a copy of current imcolor;
-            cv::Mat ImColor = mImColor.clone();
-            QueueDetectionThread(pKF,  ImColor);
         }
+
+        else{
+            pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB); // TODO: Stereo Vision support
+        }
+
+
+        if (KeyFrame::nInitId < 0){
+            KeyFrame::nInitId = pKF->mnId; // First KF to consider objects
+        }
+
+        // Make a copy of current imcolor;
+        cv::Mat ImColor = mImColor.clone();
+        QueueDetectionThread(pKF,  ImColor);
+
     }
     else{
         pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
@@ -1628,13 +1635,18 @@ void Tracking::Reset()
     if(mpViewer)
         mpViewer->Release();
 
-    if (mqDetectionThreads.size() > 0){
-        if(mtCleanDetectionThread){
-            mcvDetectionThreads.notify_all();
-            if(mtCleanDetectionThread->joinable())
-                mtCleanDetectionThread->join();
+    if (mbUseObject){
+        if (mqDetectionThreads.size() > 0){
+            if(mtCleanDetectionThread){
+                mcvDetectionThreads.notify_all();
+                if(mtCleanDetectionThread->joinable())
+                    mtCleanDetectionThread->join();
+            }
         }
+
+        KeyFrame::nInitId = -1;
     }
+
 }
 
 void Tracking::ChangeCalibration(const string &strSettingPath)
@@ -1677,7 +1689,7 @@ void Tracking::InformOnlyTracking(const bool &flag)
 
 void Tracking::DetectObjectInKeyFrame(KeyFrame *pKeyFrame, const cv::Mat& ImColor) {
     SPDLOG_DEBUG("DetectionThread Invoked! KeyframeID={}", pKeyFrame->mnId);
-
+    auto time_point = utils::time::time_now();
     {
         std::lock_guard<std::mutex> lock(pKeyFrame->mMutexObject);
         mpObjectDetector->detectObject(ImColor,pKeyFrame->mvObjectPrediction, false);
@@ -1695,7 +1707,10 @@ void Tracking::DetectObjectInKeyFrame(KeyFrame *pKeyFrame, const cv::Mat& ImColo
         mpFrameDrawer->UpdateObjectFrame(ImColor, pKeyFrame);
 
     mcvDetectionThreads.notify_all();
-    SPDLOG_DEBUG("Detect {} Objects in KeyframeID={}", pKeyFrame->mvObjectPrediction.size(), pKeyFrame->mnId);
+    SPDLOG_DEBUG("Detect {} Objects in KeyframeID={}, time={}",
+            pKeyFrame->mvObjectPrediction.size(),
+            pKeyFrame->mnId,
+            utils::time::time_diff_from_now_second(time_point));
 }
 
 void Tracking::QueueDetectionThread(KeyFrame *pKeyframe, const cv::Mat& ImColor) {

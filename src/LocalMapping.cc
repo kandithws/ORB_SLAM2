@@ -33,6 +33,8 @@ LocalMapping::LocalMapping(Map *pMap, const float bMonocular):
     mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
     mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true)
 {
+    mbUseObject = Config::getInstance().SystemParams().use_object;
+
     if(mbUseObject)
         mpObjInitializer = std::make_shared<PointCloudObjectInitializer>();
 }
@@ -93,7 +95,6 @@ void LocalMapping::Run()
                         Optimizer::LocalBundleAdjustmentWithObjects(mpCurrentKeyFrame,&mbAbortBA, mpMap);
                         // Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
                     }
-
                     else
                         Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
                 }

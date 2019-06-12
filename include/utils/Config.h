@@ -42,6 +42,10 @@ typedef struct {
 } Camera;
 
 typedef struct {
+    bool use_object = true;
+} System;
+
+typedef struct {
     std::vector<std::string> label_map;
     std::string type; // CV, GRPC
     std::string config_path;
@@ -53,7 +57,6 @@ typedef struct {
     // For GRPC
     std::string grpc_url;
 } ObjectDetection;
-
 
 }
 
@@ -73,6 +76,7 @@ class Config {
     ORB_SLAM2_DEFINE_CONFIG_PARAM(Camera);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(ObjectDetection);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(ObjectInitializer);
+    ORB_SLAM2_DEFINE_CONFIG_PARAM(System);
 
     cv::Mat getCamMatrix();
 

@@ -38,11 +38,22 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../../cmake_modules)
 #   endif()
 #endif()
 
+find_package(OpenCV 3.4.4 REQUIRED)
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
+find_package(VTK 6 REQUIRED)
 find_package(PCL 1.9 REQUIRED)
-find_package(OpenCV 3.4.4 REQUIRED)
-find_package(Boost COMPONENTS system filesystem REQUIRED)
+
+find_package(Protobuf REQUIRED)
+find_package(GRPC REQUIRED)
+
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+# Temporary fix for CUDA dep, need to remove CUDA from OpenCV + PANGOLIN + PCL later
+find_package(CUDA)
+if (CUDA_FOUND)
+   include_directories(${CUDA_INCLUDE_DIRS})
+endif ()
 
 
 
@@ -88,33 +99,33 @@ target_link_libraries(Mono
 ${LIBS}
 )
 
-# Node for monocular camera (Augmented Reality Demo)
-rosbuild_add_executable(MonoAR
-src/AR/ros_mono_ar.cc
-src/AR/ViewerAR.h
-src/AR/ViewerAR.cc
-)
-
-target_link_libraries(MonoAR
-${LIBS}
-)
+## Node for monocular camera (Augmented Reality Demo)
+#rosbuild_add_executable(MonoAR
+#src/AR/ros_mono_ar.cc
+#src/AR/ViewerAR.h
+#src/AR/ViewerAR.cc
+#)
+#
+#target_link_libraries(MonoAR
+#${LIBS}
+#)
 
 # Node for stereo camera
-rosbuild_add_executable(Stereo
-src/ros_stereo.cc
-)
-
-target_link_libraries(Stereo
-${LIBS}
-)
-
-# Node for RGB-D camera
-rosbuild_add_executable(RGBD
-src/ros_rgbd.cc
-)
-
-target_link_libraries(RGBD
-${LIBS}
-)
+#rosbuild_add_executable(Stereo
+#src/ros_stereo.cc
+#)
+#
+#target_link_libraries(Stereo
+#${LIBS}
+#)
+#
+## Node for RGB-D camera
+#rosbuild_add_executable(RGBD
+#src/ros_rgbd.cc
+#)
+#
+#target_link_libraries(RGBD
+#${LIBS}
+#)
 
 # Custom test modes

@@ -57,7 +57,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     else if(mSensor==RGBD)
         sensor_str = "RGB-D";
 
-
+    mbUseObject = Config::getInstance().SystemParams().use_object;
     SPDLOG_INFO("Input sensor was set to: {0}", sensor_str);
     //Check settings file
     cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
@@ -87,16 +87,18 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //Create the Map
     mpMap = new Map();
 
-    // Init Object Detector
-    // TODO -- Implement proper object detector factory
-    mpObjectDetector = BuildObjectDetector(Config::getInstance().ObjectDetectionParams().type);
-
     //Create Drawers. These are used by the Viewer
     mpFrameDrawer = new FrameDrawer(mpMap);
-    auto lbmap = mpObjectDetector->getLabelMap();
-    SPDLOG_INFO("Label map size {}", lbmap.size());
-    mpFrameDrawer->SetLabelMap(mpObjectDetector->getLabelMap());
     mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
+
+    // Init Object Detector
+    // TODO -- Implement proper object detector factory
+    if (mbUseObject){
+        mpObjectDetector = BuildObjectDetector(Config::getInstance().ObjectDetectionParams().type);
+        auto lbmap = mpObjectDetector->getLabelMap();
+        SPDLOG_INFO("Label map size {}", lbmap.size());
+        mpFrameDrawer->SetLabelMap(mpObjectDetector->getLabelMap());
+    }
 
 //    if(bUseViewer)
 //    {
@@ -162,7 +164,6 @@ void System::InitLogger() {
 std::shared_ptr<BaseObjectDetector> System::BuildObjectDetector(string type) {
     std::shared_ptr<BaseObjectDetector> pBaseDetector;
     auto objectDetectorParam = Config::getInstance().ObjectDetectionParams();
-    // TODO -- move this to BaseObject Detector
     if(type == "CV"){
         std::shared_ptr<CVObjectDetector> pObjDetector
                 = std::make_shared<CVObjectDetector>(

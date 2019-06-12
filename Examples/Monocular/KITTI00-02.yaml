@@ -1,5 +1,36 @@
 %YAML:1.0
 
+system:
+  use_object: 0
+
+#--------------------------------------------------
+# Object Detection parameters
+#--------------------------------------------------
+object_detection:
+  type: CV
+  model_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.weights
+  config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.cfg
+  label_map_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/coco.names
+  input_size: 416
+  min_confidence: 0.7
+  nms_threshold: 0.5
+  apply_nms: 1
+  grpc_url: "localhost:50051"
+
+
+#--------------------------------------------------
+# Initialization parameters
+#--------------------------------------------------
+object_initialization:
+  use_stat_rm_outlier: 1
+  mean_k: 8
+  std_dev_mul_th: 0.65
+  project_2d_outlier: 0 # DO NOT USE FOR NOW
+  use_mask: 0
+  outlier_filter_type: 1 # 0: PCL SOR, 1: local dist diff, 2: local std diff
+  outlier_threshold: 0.3 # For type 1(recommend: 0.2), 2(recommend: 0.15)
+
+
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!
 #--------------------------------------------------------------------------------------------

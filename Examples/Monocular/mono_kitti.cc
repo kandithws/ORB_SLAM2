@@ -68,6 +68,7 @@ int main(int argc, char **argv)
         im = cv::imread(vstrImageFilenames[ni],CV_LOAD_IMAGE_UNCHANGED);
         double tframe = vTimestamps[ni];
 
+
         if(im.empty())
         {
             cerr << endl << "Failed to load image at: " << vstrImageFilenames[ni] << endl;
@@ -143,7 +144,7 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageFilena
         }
     }
 
-    string strPrefixLeft = strPathToSequence + "/image_0/";
+    string strPrefixLeft = strPathToSequence + "/image_2/";
 
     const int nTimes = vTimestamps.size();
     vstrImageFilenames.resize(nTimes);
