@@ -31,10 +31,12 @@ node = fs_[scope_name]; \
 if (node.begin() != node.end())
 
 #define ORB_SLAM2_PARSE_CONFIG(PARAM_TYPE, ATTR_TYPE, ATTR_NAME) \
+if (!node[#ATTR_NAME].empty()) \
 m##PARAM_TYPE##Param.ATTR_NAME = (ATTR_TYPE) node[#ATTR_NAME];
 
 #define ORB_SLAM2_PARSE_BOOL_CONFIG(PARAM_TYPE, ATTR_NAME) \
-m##PARAM_TYPE##Param.ATTR_NAME = static_cast<bool>((int) node[#ATTR_NAME]) ;
+if (!node[#ATTR_NAME].empty()) \
+m##PARAM_TYPE##Param.ATTR_NAME = static_cast<bool>((int) node[#ATTR_NAME]);
 
 void Config::parseConfig() {
     if(fs_.isOpened()) {
@@ -104,6 +106,40 @@ void Config::parseConfig() {
 
         ORB_SLAM2_PARSE_CONFIG_SCOPE("system") {
             ORB_SLAM2_PARSE_BOOL_CONFIG(System, use_object)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(System, use_imu)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(System, real_time)
+        }
+
+        ORB_SLAM2_PARSE_CONFIG_SCOPE("local_mapping") {
+            ORB_SLAM2_PARSE_CONFIG(LocalMapping, int, window_size)
+        }
+
+        ORB_SLAM2_PARSE_CONFIG_SCOPE("imu") {
+            ORB_SLAM2_PARSE_CONFIG(IMU, double, vins_init_time)
+
+
+            // Legacy Matrix
+            auto tbc_node = node["Tbc"];
+
+            if (!node["Tbc"].empty()){
+                for (int i=0; i < 12; i++){
+                    mIMUParam.Tbc.at<float>(i) = tbc_node[i];
+                }
+
+                auto Rt = mIMUParam.Tbc.rowRange(0,3).colRange(0,3).t();
+                mIMUParam.Tcb.rowRange(0,3).colRange(0,3) =  Rt;
+                mIMUParam.Tcb.rowRange(0,3).col(3) = - Rt * mIMUParam.Tbc.rowRange(0,3).col(3);
+            }
+        }
+
+        ORB_SLAM2_PARSE_CONFIG_SCOPE("runtime"){
+            ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, bagfile)
+            ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, imu_topic)
+            ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, image_topic)
+            ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, log_file_path)
+            ORB_SLAM2_PARSE_CONFIG(Runtime, double , image_delay_to_imu)
+            ORB_SLAM2_PARSE_CONFIG(Runtime, double , discard_time)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(Runtime, multiply_g)
         }
     }
     else{

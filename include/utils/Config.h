@@ -14,7 +14,10 @@ else { SPDLOG_CRITICAL("Config is not read"); throw std::logic_error("Config is 
   protected: Params::PARAM_TYPE m##PARAM_TYPE##Param; \
   public: ORB_SLAM2_DEF_PARAM_GETTER(PARAM_TYPE, m##PARAM_TYPE##Param)
 
+
 namespace ORB_SLAM2 {
+
+class Config;
 
 namespace Params {
 
@@ -43,6 +46,8 @@ typedef struct {
 
 typedef struct {
     bool use_object = true;
+    bool use_imu = false;
+    bool real_time = false;
 } System;
 
 typedef struct {
@@ -57,6 +62,43 @@ typedef struct {
     // For GRPC
     std::string grpc_url;
 } ObjectDetection;
+
+
+typedef struct {
+    int window_size = 10;
+} LocalMapping;
+
+// Made compatible with LearnVIORB
+typedef struct imu {
+  public:
+
+    double g = 9.810;
+    double vins_init_time = 15.0;
+
+    imu() {
+        Tbc = cv::Mat::eye(4,4, CV_32F);
+        Tcb = cv::Mat::eye(4,4, CV_32F);
+    }
+
+    cv::Mat GetTbc() { return Tbc.clone(); }
+    cv::Mat GetTcb() { return Tcb.clone(); }
+  protected:
+    cv::Mat Tbc;
+    cv::Mat Tcb;
+    friend ORB_SLAM2::Config;
+} IMU;
+
+// For "main"
+typedef struct {
+    double image_delay_to_imu = 0.0;
+    std::string log_file_path;
+    // For ROSbag dataset config
+    std::string bagfile;
+    std::string imu_topic;
+    std::string image_topic;
+    bool multiply_g =  false; // _bAccMultiply9p8
+    double discard_time = 0.0;
+} Runtime;
 
 }
 
@@ -77,8 +119,15 @@ class Config {
     ORB_SLAM2_DEFINE_CONFIG_PARAM(ObjectDetection);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(ObjectInitializer);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(System);
+    ORB_SLAM2_DEFINE_CONFIG_PARAM(LocalMapping);
+    ORB_SLAM2_DEFINE_CONFIG_PARAM(IMU);
+    ORB_SLAM2_DEFINE_CONFIG_PARAM(Runtime);
 
     cv::Mat getCamMatrix();
+
+    void SetRealTimeFlag(bool st) {
+        mSystemParam.real_time = st;
+    }
 
   protected:
     Config();

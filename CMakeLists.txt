@@ -88,6 +88,14 @@ set(OBJECT_INIT_SRC_FILES
         include/object_initializer/PointCloudObjectInitializer.h
         src/object_initializer/PointCloudObjectInitializer.cpp)
 
+set(VIORB_SRC_FILES
+        src/imu/g2o_types.cpp
+        src/imu/IMUData.cpp
+        src/imu/IMUPreintegrator.cpp
+        src/imu/NavState.cpp
+        src/imu/so3.cpp
+        )
+
 set(ORBSLAM2_SRC_FILES
         src/System.cc
         src/Tracking.cc
@@ -107,13 +115,15 @@ set(ORBSLAM2_SRC_FILES
         src/KeyFrameDatabase.cc
         src/Sim3Solver.cc
         src/Initializer.cc
-        src/Viewer.cc include/MapObject.h src/MapObject.cpp include/Cuboid.h src/Cuboid.cpp src/ObjectOptimizer.cpp)
+        src/Viewer.cc
+        include/MapObject.h src/MapObject.cpp include/Cuboid.h src/Cuboid.cpp src/ObjectOptimizer.cpp)
 
 add_library(${PROJECT_NAME} SHARED
         ${ORBSLAM2_SRC_FILES}
         ${UTILS_SRC_FILES}
         ${DNN_SRC_FILES}
         ${OBJECT_INIT_SRC_FILES}
+        ${VIORB_SRC_FILES}
         )
 
 #  ${Pangolin_LIBRARIES}
