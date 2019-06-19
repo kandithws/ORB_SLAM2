@@ -31,6 +31,8 @@
 #include "dnn/GrpcObjectDetector.h"
 #include "dnn/GrpcObjectDetectorV2.h"
 
+#include "utils/Config.h"
+
 namespace ORB_SLAM2
 {
 
@@ -100,17 +102,11 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         mpFrameDrawer->SetLabelMap(mpObjectDetector->getLabelMap());
     }
 
-//    if(bUseViewer)
-//    {
-//        mpPCLViewer = STD_MAKE_SHARED(PCLViewer, mpMap, "SLAM Viewer");
-//        mpPCLViewer->run();
-//    }
-
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
                              mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor,
-                             mpObjectDetector, mpPCLViewer);
+                             mpObjectDetector);
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
@@ -406,12 +402,9 @@ void System::Shutdown(bool bShutDownViewer)
             while(!mpViewer->isFinished())
                 usleep(5000);
         }
-#ifndef VIEWER_DISABLE_PANGOLIN
+
         if(mpViewer)
             pangolin::BindToContext("ORB-SLAM2: Map Viewer");
-#endif
-        if(mpPCLViewer)
-            mpPCLViewer->shutdown();
     }
 
 }

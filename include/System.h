@@ -38,7 +38,7 @@
 #include "ORBVocabulary.h"
 #include "Viewer.h"
 #include "spdlog/spdlog.h"
-#include "PCLViewer.h"
+
 
 
 namespace ORB_SLAM2
@@ -165,7 +165,7 @@ private:
 
     // Additional pointers
 
-    std::shared_ptr<PCLViewer> mpPCLViewer;
+
     std::shared_ptr<BaseObjectDetector> mpObjectDetector;
 
     // System threads: Local Mapping, Loop Closing, Viewer.
