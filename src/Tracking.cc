@@ -690,14 +690,17 @@ void Tracking::CreateInitialMapMonocular()
     // Create KeyFrames
     KeyFrame* pKFini;
     KeyFrame* pKFcur;
-    if (mbUseObject){
-        pKFini = new KeyFrame(mInitialFrame,mpMap,mpKeyFrameDB, mImColor, mImGray);
-        pKFcur = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB, mImColor, mImGray);
-    }
-    else {
-        pKFini = new KeyFrame(mInitialFrame,mpMap,mpKeyFrameDB);
-        pKFcur = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
-    }
+//    if (mbUseObject){
+//        pKFini = new KeyFrame(mInitialFrame,mpMap,mpKeyFrameDB, mImColor, mImGray);
+//        pKFcur = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB, mImColor, mImGray);
+//    }
+//    else {
+//        pKFini = new KeyFrame(mInitialFrame,mpMap,mpKeyFrameDB);
+//        pKFcur = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+//    }
+
+    pKFini = new KeyFrame(mInitialFrame,mpMap,mpKeyFrameDB);
+    pKFcur = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
 
     pKFini->ComputeBoW();
     pKFcur->ComputeBoW();
@@ -1024,15 +1027,21 @@ bool Tracking::TrackLocalMap()
         }
     }
 
-    // Decide if the tracking was succesful
+    // Decide if the tracking was successful
     // More restrictive if there was a relocalization recently
-    if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
+    if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50){
+        if (mbUseObject)
+            SPDLOG_WARN("Lost Track: Try to reduce prediction model size");
         return false;
+    }
 
-    if(mnMatchesInliers<30)
+    if(mnMatchesInliers<30){
         return false;
-    else
+    }
+    else{
         return true;
+    }
+
 }
 
 
@@ -1143,8 +1152,8 @@ void Tracking::CreateNewKeyFrame()
         }
 
         // Make a copy of current imcolor;
-        cv::Mat ImColor = mImColor.clone();
-        QueueDetectionThread(pKF,  ImColor);
+        //cv::Mat ImColor = mImColor.clone();
+        QueueDetectionThread(pKF,  pKF->mImColor);
 
     }
     else{

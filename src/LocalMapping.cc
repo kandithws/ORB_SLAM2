@@ -798,7 +798,7 @@ void LocalMapping::InitializeCurrentKeyFrameObjects() {
 //    if (mpCurrentKeyFrame->mnId == 0) // Skipping initial keyframe
 //        return;
 
-    SPDLOG_DEBUG("INIT objects for KF {}", mpCurrentKeyFrame->mnId);
+    SPDLOG_INFO("INIT objects for KF {}", mpCurrentKeyFrame->mnId);
     auto start_time = utils::time::time_now();
 
     while(!mpCurrentKeyFrame->IsObjectsReady()){
@@ -813,6 +813,7 @@ void LocalMapping::InitializeCurrentKeyFrameObjects() {
 
     mpObjInitializer->InitializeObjects(mpCurrentKeyFrame, mpMap);
 
+    SPDLOG_INFO("INIT objects DONE for KF {}", mpCurrentKeyFrame->mnId);
     // StateFlow * Assume that initialize process is fast, (unlike prediction)
     // -- If current keyframe has finished object prediction, Initialize objects (now=wait until finished)
     // -- else store current frame pointer in a queue and continue

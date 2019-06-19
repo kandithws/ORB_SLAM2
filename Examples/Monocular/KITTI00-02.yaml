@@ -1,19 +1,19 @@
 %YAML:1.0
 
 system:
-  use_object: 0
+  use_object: 1
 
 #--------------------------------------------------
 # Object Detection parameters
 #--------------------------------------------------
 object_detection:
   type: CV
-  model_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.weights
-  config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.cfg
+  model_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3-tiny.weights
+  config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3-tiny.cfg
   label_map_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/coco.names
   input_size: 416
-  min_confidence: 0.7
-  nms_threshold: 0.5
+  min_confidence: 0.8
+  nms_threshold: 0.4
   apply_nms: 1
   grpc_url: "localhost:50051"
 
@@ -27,8 +27,8 @@ object_initialization:
   std_dev_mul_th: 0.65
   project_2d_outlier: 0 # DO NOT USE FOR NOW
   use_mask: 0
-  outlier_filter_type: 1 # 0: PCL SOR, 1: local dist diff, 2: local std diff
-  outlier_threshold: 0.3 # For type 1(recommend: 0.2), 2(recommend: 0.15)
+  outlier_filter_type: 2 # 0: PCL SOR, 1: local dist diff, 2: local std diff
+  outlier_threshold: 0.05 # For type 1(recommend: 0.2), 2(recommend: 0.15)
 
 
 #--------------------------------------------------------------------------------------------

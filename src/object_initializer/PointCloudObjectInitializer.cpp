@@ -125,7 +125,7 @@ void PointCloudObjectInitializer::FilterMapPointsDistFromCentroid(const vector<O
     std::vector<cv::Mat> vPointsLocal(vObjMapPoints.size());
     std::vector< std::pair<MapPoint*, double> > vCentroidDist(vObjMapPoints.size());
 
-    cv::Mat centroid(3,1, CV_32F);
+    cv::Mat centroid(3,1, CV_32F, 0.0f);
 
     for (int i=0; i < vObjMapPoints.size(); i++){
         vPointsLocal[i] = Rcw * vObjMapPoints[i]->GetWorldPos() + tcw;
@@ -170,7 +170,7 @@ void PointCloudObjectInitializer::FilterMapPointsDistFromCentroidNormalized(
     std::vector<cv::Mat> vPointsLocal(vObjMapPoints.size());
     std::vector< std::pair<MapPoint*, double> > vCentroidDist(vObjMapPoints.size());
 
-    cv::Mat centroid(3,1, CV_32F);
+    cv::Mat centroid(3,1, CV_32F, 0.0f);
     //static int filenum = 0;
     //std::ofstream myfile;
     //myfile.open("debug/points_" + std::to_string(filenum++) + ".csv");
@@ -245,6 +245,7 @@ void PointCloudObjectInitializer::FilterMapPointsDistFromCentroidNormalized(
 
 void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pMap) {
 
+    SPDLOG_INFO("Preparing Init {}", pKeyframe->mnId);
     auto vPredictedObjects = pKeyframe->GetObjectPredictions();
     // Retrieve neighbor keyframes in covisibility graph
     std::vector<int> vAssociatedCount(vPredictedObjects.size(), 0); // use int for debuging
@@ -253,7 +254,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
     // ------------- Object Association -------------------
     const vector<KeyFrame *> vpNeighKFs = pKeyframe->GetBestCovisibilityKeyFrames(nn);
 
-
+    SPDLOG_INFO("Associate {}", pKeyframe->mnId);
     std::vector< std::shared_ptr< std::vector<MapPoint*> > > vPredictionMPs(vPredictedObjects.size());
     // Preprocessing Measurements
     for (size_t i = 0; i < vPredictedObjects.size(); i++) {
@@ -407,11 +408,13 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         pKeyframe->AddMapObject(pMO, i);
         pMap->AddMapObject(pMO);
     }
+    SPDLOG_DEBUG("----DONE! {} -----", pKeyframe->mnId);
 
     // TODO -- release current KF debugging image
     std::lock_guard<std::mutex> imglock(pKeyframe->mMutexImages);
     pKeyframe->mImGray.release();
     pKeyframe->mImColor.release();
+    SPDLOG_DEBUG("----Release {} -----", pKeyframe->mnId);
 }
 
 }
