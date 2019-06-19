@@ -35,7 +35,7 @@ find_package(OpenCV 3.4.4 REQUIRED)
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 # find_package(VTK 8 REQUIRED)
-find_package(PCL 1.9 REQUIRED)
+find_package(PCL 1.7 REQUIRED)
 
 find_package(Protobuf REQUIRED)
 find_package(GRPC REQUIRED)
@@ -72,9 +72,7 @@ set(UTILS_SRC_FILES src/utils/Config.cpp
         src/utils/PCLConverter.cpp
         include/utils/matrix_utils.h
         src/utils/matrix_utils.cpp)
-set(PCL_EXTENDED_MODULE_SRC_FILES
-        src/pcl_slam_visualizer/pcl_slam_visualizer.cpp
-        src/PCLViewer.cpp)
+
 
 set(DNN_SRC_FILES
         include/dnn/BaseObjectDetector.h
@@ -114,7 +112,6 @@ set(ORBSLAM2_SRC_FILES
 add_library(${PROJECT_NAME} SHARED
         ${ORBSLAM2_SRC_FILES}
         ${UTILS_SRC_FILES}
-        ${PCL_EXTENDED_MODULE_SRC_FILES}
         ${DNN_SRC_FILES}
         ${OBJECT_INIT_SRC_FILES}
         )

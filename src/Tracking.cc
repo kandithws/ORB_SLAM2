@@ -161,12 +161,10 @@ Tracking::Tracking(System *pSys,
                    KeyFrameDatabase *pKFDB,
                    const string &strSettingPath,
                    const int sensor,
-                   const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
-                   const std::shared_ptr<PCLViewer>& pPCLViewer)
+                   const std::shared_ptr<BaseObjectDetector>& pObjectDetector)
         : Tracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB, strSettingPath, sensor)
 {
     mpObjectDetector = pObjectDetector;
-    mpPCLViewer = pPCLViewer;
     mbUseObject = Config::getInstance().SystemParams().use_object;
 }
 
@@ -468,9 +466,6 @@ void Tracking::Track()
 
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
-            if(mpPCLViewer)
-                mpPCLViewer->setCurrentCameraPose(mCurrentFrame.mTcw);
-
             // Clean VO matches
             for(int i=0; i<mCurrentFrame.N; i++)
             {
@@ -603,10 +598,6 @@ void Tracking::StereoInitialization()
 
         mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
-        if(mpPCLViewer)
-            mpPCLViewer->setCurrentCameraPose(mCurrentFrame.mTcw);
-
-        //KeyFrame::nInitId = pKFini->mnId;
         mState=OK;
     }
 }
@@ -791,9 +782,6 @@ void Tracking::CreateInitialMapMonocular()
     mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
     mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());
-
-    if(mpPCLViewer)
-        mpPCLViewer->setCurrentCameraPose(mCurrentFrame.mTcw);
 
     mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 

@@ -37,10 +37,11 @@
 #include "Initializer.h"
 #include "MapDrawer.h"
 #include "System.h"
-#include "PCLViewer.h"
 #include "dnn/BaseObjectDetector.h"
 #include <memory>
 #include <mutex>
+
+#include "utils/Config.h"
 
 namespace ORB_SLAM2
 {
@@ -62,8 +63,7 @@ public:
     Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
              KeyFrameDatabase* pKFDB, const string &strSettingPath,
              const int sensor,
-             const std::shared_ptr<BaseObjectDetector>& pObjectDetector,
-             const std::shared_ptr<PCLViewer>& pPCLViewer);
+             const std::shared_ptr<BaseObjectDetector>& pObjectDetector);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
     cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);
@@ -234,8 +234,6 @@ protected:
     bool mbUseObject = true;
 
     list<MapPoint*> mlpTemporalPoints;
-
-    std::shared_ptr<PCLViewer> mpPCLViewer;
 
     void CleanDetectionThread();
     void QueueDetectionThread(KeyFrame* pKeyframe, const cv::Mat& ImColor);
