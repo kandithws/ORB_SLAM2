@@ -386,7 +386,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
     // Fixed Keyframes. Keyframes that see Local MapPoints but that are not Local Keyframes
     list<KeyFrame*> lFixedCameras;
     for (auto& lLocalMapPoint : lLocalMapPoints) {
-        map<KeyFrame*, size_t> observations = lLocalMapPoint->GetObservations();
+        auto observations = lLocalMapPoint->GetObservations();
         for (auto& observation : observations) {
             KeyFrame* pKFi = observation.first;
 
@@ -589,7 +589,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         const auto observations = pMP->GetObservations();
 
         //Set edges
-        for (auto observation : observations) {
+        for (auto& observation : observations) {
             KeyFrame* pKFi = observation.first;
 
             if (!pKFi->isBad()) {

@@ -37,8 +37,10 @@ find_package(Pangolin REQUIRED)
 # find_package(VTK 8 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 
+# In cmake modules
 find_package(Protobuf REQUIRED)
 find_package(GRPC REQUIRED)
+find_package(Cholmod REQUIRED)
 
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
@@ -62,6 +64,7 @@ include_directories(
         ${EIGEN3_INCLUDE_DIR}
         ${Pangolin_INCLUDE_DIRS}
         ${PCL_INCLUDE_DIRS}
+        ${CHOLMOD_INCLUDE_DIR}
 )
 
 
@@ -94,7 +97,7 @@ set(VIORB_SRC_FILES
         src/imu/IMUPreintegrator.cpp
         src/imu/NavState.cpp
         src/imu/so3.cpp
-        )
+        src/IMUOptimizer.cpp)
 
 set(ORBSLAM2_SRC_FILES
         src/System.cc
@@ -136,6 +139,7 @@ target_link_libraries(${PROJECT_NAME}
         ${PCL_LIBRARIES}
         gRPC::grpc++_reflection
         protobuf::libprotobuf
+        ${CHOLMOD_LIBRARIES}
         )
 
 # Build examples

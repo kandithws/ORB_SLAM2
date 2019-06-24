@@ -90,8 +90,7 @@ cv::Mat System::TrackMonoVI(const cv::Mat &im, const std::vector<ORB_SLAM2::IMUD
         }
     }
 
-    //return mpTracker->GrabImageMonoVI(im,vimu,timestamp);
-    return cv::Mat(); // TODO
+    return mpTracker->GrabImageMonoVI(im,vimu,timestamp);
 }
 
 

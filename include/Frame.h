@@ -32,30 +32,72 @@
 
 #include <opencv2/opencv.hpp>
 
-namespace ORB_SLAM2
-{
+#include <imu/IMUData.h>
+#include <imu/NavState.h>
+#include <imu/IMUPreintegrator.h>
+#include <iomanip>
+
+namespace ORB_SLAM2 {
 #define FRAME_GRID_ROWS 48
 #define FRAME_GRID_COLS 64
 
 class MapPoint;
+
 class KeyFrame;
 
-class Frame
-{
-public:
+class Frame {
+
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    // Constructor for Monocular VI
+    Frame(const cv::Mat &imGray, const double &timeStamp, const std::vector<IMUData> &vimu, ORBextractor *extractor,
+          ORBVocabulary *voc,
+          cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame *pLastKF = NULL);
+
+    void ComputeIMUPreIntSinceLastFrame(const Frame *pLastF, IMUPreintegrator &imupreint) const;
+
+    void UpdatePoseFromNS(const cv::Mat &Tbc);
+
+    void SetInitialNavStateAndBias(const NavState &ns);
+
+    void UpdateNavState(const IMUPreintegrator &imupreint, const Vector3d &gw);
+
+    const NavState &GetNavState(void) const;
+
+    void SetNavState(const NavState &ns);
+
+    void SetNavStateBiasGyr(const Vector3d &bg);
+
+    void SetNavStateBiasAcc(const Vector3d &ba);
+
+    // IMU Data from last Frame to this Frame
+    std::vector<IMUData> mvIMUDataSinceLastFrame;
+
+    // For pose optimization, use as prior and prior information(inverse covariance)
+    Matrix<double, 15, 15> mMargCovInv;
+    NavState mNavStatePrior;
+
+  protected:
+    NavState mNavState;
+  public:
     Frame();
 
     // Copy constructor.
     Frame(const Frame &frame);
 
     // Constructor for stereo cameras.
-    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor *extractorLeft,
+          ORBextractor *extractorRight, ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf,
+          const float &thDepth);
 
     // Constructor for RGB-D cameras.
-    Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+    Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor *extractor,
+          ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
 
     // Constructor for Monocular cameras.
-    Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+    Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor *extractor, ORBVocabulary *voc, cv::Mat &K,
+          cv::Mat &distCoef, const float &bf, const float &thDepth);
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORB(int flag, const cv::Mat &im);
@@ -70,23 +112,24 @@ public:
     void UpdatePoseMatrices();
 
     // Returns the camera center.
-    inline cv::Mat GetCameraCenter(){
+    inline cv::Mat GetCameraCenter() {
         return mOw.clone();
     }
 
     // Returns inverse of rotation
-    inline cv::Mat GetRotationInverse(){
+    inline cv::Mat GetRotationInverse() {
         return mRwc.clone();
     }
 
     // Check if a MapPoint is in the frustum of the camera
     // and fill variables of the MapPoint to be used by the tracking
-    bool isInFrustum(MapPoint* pMP, float viewingCosLimit);
+    bool isInFrustum(MapPoint *pMP, float viewingCosLimit);
 
     // Compute the cell of a keypoint (return false if outside the grid)
     bool PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
 
-    vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1) const;
+    vector<size_t> GetFeaturesInArea(const float &x, const float &y, const float &r, const int minLevel = -1,
+                                     const int maxLevel = -1) const;
 
     // Search a match for each keypoint in the left image to a keypoint in the right image.
     // If there is a match, depth is computed and the right coordinate associated to the left keypoint is stored.
@@ -98,12 +141,12 @@ public:
     // Backprojects a keypoint (if stereo/depth info available) into 3D world coordinates.
     cv::Mat UnprojectStereo(const int &i);
 
-public:
+  public:
     // Vocabulary used for relocalization.
-    ORBVocabulary* mpORBvocabulary;
+    ORBVocabulary *mpORBvocabulary;
 
     // Feature extractor. The right is used only in the stereo case.
-    ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
+    ORBextractor *mpORBextractorLeft, *mpORBextractorRight;
 
     // Frame timestamp.
     double mTimeStamp;
@@ -150,7 +193,7 @@ public:
     cv::Mat mDescriptors, mDescriptorsRight;
 
     // MapPoints associated to keypoints, NULL pointer if no association.
-    std::vector<MapPoint*> mvpMapPoints;
+    std::vector<MapPoint *> mvpMapPoints;
 
     // Flag to identify outlier associations.
     std::vector<bool> mvbOutlier;
@@ -168,7 +211,7 @@ public:
     long unsigned int mnId;
 
     // Reference Keyframe.
-    KeyFrame* mpReferenceKF;
+    KeyFrame *mpReferenceKF;
 
     // Scale pyramid info.
     int mnScaleLevels;
@@ -188,7 +231,7 @@ public:
     static bool mbInitialComputations;
 
 
-private:
+  private:
 
     // Undistort keypoints given OpenCV distortion parameters.
     // Only for the RGB-D case. Stereo must be already rectified!

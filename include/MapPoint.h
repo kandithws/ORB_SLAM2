@@ -35,8 +35,18 @@ class KeyFrame;
 class Map;
 class Frame;
 
+class cmpKeyFrameId{
+  public:
+    bool operator() (const KeyFrame* a, const KeyFrame* b) const ;
+};
+
+typedef std::map<KeyFrame*,size_t,cmpKeyFrameId> mapMapPointObs;
+
 class MapPoint {
     typedef pcl::PointXYZRGBL PointT; // TODO: fix pointtype hardcode with Map::PCLPointT due to forward dec conflict
+  public:
+    void UpdateScale(float scale);
+
   public:
     MapPoint(const cv::Mat &Pos, KeyFrame *pRefKF, Map *pMap);
     MapPoint(const cv::Mat &Pos, Map *pMap, Frame *pFrame, const int &idxF);
@@ -47,7 +57,8 @@ class MapPoint {
     cv::Mat GetNormal();
     KeyFrame *GetReferenceKeyFrame(); // For loop closure
 
-    std::map<KeyFrame *, size_t> GetObservations();
+    // std::map<KeyFrame *, size_t> GetObservations();
+    mapMapPointObs GetObservations();
     int Observations();
 
     void AddObservation(KeyFrame *pKF, size_t idx);
@@ -120,8 +131,8 @@ class MapPoint {
     cv::Mat mWorldPos;
 
     // Keyframes observing the point and associated index in keyframe
-    std::map<KeyFrame *, size_t> mObservations;
-
+    // std::map<KeyFrame *, size_t> mObservations;
+    mapMapPointObs mObservations;
 
     // Mean viewing direction
     cv::Mat mNormalVector;

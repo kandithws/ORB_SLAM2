@@ -3,6 +3,7 @@
 #include <opencv2/core/core.hpp>
 #include <memory>
 #include <spdlog/spdlog.h>
+#include "Converter.h"
 
 #define ORB_SLAM2_CONFIG_RET_MACRO(PARAM) if(is_read_) {return PARAM;} \
 else { SPDLOG_CRITICAL("Config is not read"); throw std::logic_error("Config is not read");}
@@ -80,8 +81,12 @@ typedef struct imu {
         Tcb = cv::Mat::eye(4,4, CV_32F);
     }
 
-    cv::Mat GetTbc() { return Tbc.clone(); }
-    cv::Mat GetTcb() { return Tcb.clone(); }
+    cv::Mat GetMatTbc() const { return Tbc.clone(); }
+    cv::Mat GetMatTcb() const { return Tcb.clone(); }
+    // TODO -- make class attribute with safe allocation (EIGEN_MAKE_ALIGN_OPERATOR_NEW)
+    inline Eigen::Matrix4d GetEigTbc() const { return Converter::toHomogeneous4d(Tbc); }
+    inline Eigen::Matrix4d GetEigTcb() const { return Converter::toHomogeneous4d(Tcb); }
+
   protected:
     cv::Mat Tbc;
     cv::Mat Tcb;

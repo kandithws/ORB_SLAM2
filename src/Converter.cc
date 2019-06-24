@@ -23,6 +23,44 @@
 
 namespace ORB_SLAM2 {
 
+void Converter::updateNS(NavState& ns, const IMUPreintegrator& imupreint, const Vector3d& gw)
+{
+    Matrix3d dR = imupreint.getDeltaR();
+    Vector3d dP = imupreint.getDeltaP();
+    Vector3d dV = imupreint.getDeltaV();
+    double dt = imupreint.getDeltaTime();
+
+    Vector3d Pwbpre = ns.Get_P();
+    Matrix3d Rwbpre = ns.Get_RotMatrix();
+    Vector3d Vwbpre = ns.Get_V();
+
+    Matrix3d Rwb = Rwbpre * dR;
+    Vector3d Pwb = Pwbpre + Vwbpre*dt + 0.5*gw*dt*dt + Rwbpre*dP;
+    Vector3d Vwb = Vwbpre + gw*dt + Rwbpre*dV;
+
+    // Here assume that the pre-integration is re-computed after bias updated, so the bias term is ignored
+    ns.Set_Pos(Pwb);
+    ns.Set_Vel(Vwb);
+    ns.Set_Rot(Rwb);
+
+    // Test log
+    if(ns.Get_dBias_Gyr().norm()>1e-6 || ns.Get_dBias_Acc().norm()>1e-6) std::cerr<<"delta bias in updateNS is not zero"<<ns.Get_dBias_Gyr().transpose()<<", "<<ns.Get_dBias_Acc().transpose()<<std::endl;
+}
+
+cv::Mat Converter::toCvMatInverse(const cv::Mat &Tcw)
+{
+    cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
+    cv::Mat tcw = Tcw.rowRange(0,3).col(3);
+    cv::Mat Rwc = Rcw.t();
+    cv::Mat twc = -Rwc*tcw;
+
+    cv::Mat Twc = cv::Mat::eye(4,4,Tcw.type());
+    Rwc.copyTo(Twc.rowRange(0,3).colRange(0,3));
+    twc.copyTo(Twc.rowRange(0,3).col(3));
+
+    return Twc.clone();
+}
+
 std::vector<cv::Mat> Converter::toDescriptorVector(const cv::Mat &Descriptors) {
     std::vector<cv::Mat> vDesc;
     vDesc.reserve(Descriptors.rows);
@@ -115,6 +153,21 @@ Eigen::Matrix<double, 3, 3> Converter::toMatrix3d(const cv::Mat &cvMat3) {
     M << cvMat3.at<float>(0, 0), cvMat3.at<float>(0, 1), cvMat3.at<float>(0, 2),
             cvMat3.at<float>(1, 0), cvMat3.at<float>(1, 1), cvMat3.at<float>(1, 2),
             cvMat3.at<float>(2, 0), cvMat3.at<float>(2, 1), cvMat3.at<float>(2, 2);
+
+    return M;
+}
+
+Eigen::Matrix<double, 4, 4> Converter::toHomogeneous4d(const cv::Mat &cvTransform) {
+    Eigen::Matrix<double, 4, 4> M;
+    M << cvTransform.at<float>(0, 0),
+            cvTransform.at<float>(0, 1),
+            cvTransform.at<float>(0, 2),
+            cvTransform.at<float>(0, 3),
+            cvTransform.at<float>(1, 0),
+            cvTransform.at<float>(1, 1), cvTransform.at<float>(1,2), cvTransform.at<float>(1,3),
+            cvTransform.at<float>(2, 0),
+            cvTransform.at<float>(2, 1), cvTransform.at<float>(2,2), cvTransform.at<float>(2, 3),
+            0, 0, 0, 1;
 
     return M;
 }

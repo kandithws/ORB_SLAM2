@@ -1,7 +1,7 @@
 %YAML:1.0
 
 system:
-  use_object: 1
+  use_object: 0
 
 #--------------------------------------------------
 # Object Detection parameters

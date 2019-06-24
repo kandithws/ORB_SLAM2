@@ -36,83 +36,193 @@
 #include <condition_variable>
 #include <thread>
 
+#include "imu/IMUData.h"
+#include "imu/NavState.h"
+#include "imu/IMUPreintegrator.h"
 
-namespace ORB_SLAM2
-{
+
+namespace ORB_SLAM2 {
 
 class Map;
+
 class MapPoint;
+
 class Frame;
+
 class KeyFrameDatabase;
+
 class FrameDrawer;
+
 class MapObject;
 
-class KeyFrame
-{
-public:
-    KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB);
-    KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB,
-            const cv::Mat& imColor, const cv::Mat& imGray,
-            bool rgb=false);
+class KeyFrame {
+
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, std::vector<IMUData> vIMUData, KeyFrame *pLastKF = NULL);
+
+    KeyFrame *GetPrevKeyFrame(void);
+
+    KeyFrame *GetNextKeyFrame(void);
+
+    void SetPrevKeyFrame(KeyFrame *pKF);
+
+    void SetNextKeyFrame(KeyFrame *pKF);
+
+    std::vector<IMUData> GetVectorIMUData(void);
+
+    void AppendIMUDataToFront(KeyFrame *pPrevKF);
+
+    void ComputePreInt(void);
+
+    const IMUPreintegrator &GetIMUPreInt(void);
+
+    void UpdateNavStatePVRFromTcw(const cv::Mat &Tcw, const cv::Mat &Tbc);
+
+    void UpdatePoseFromNS(const cv::Mat &Tbc);
+
+    void UpdateNavState(const IMUPreintegrator &imupreint, const Vector3d &gw);
+
+    void SetNavState(const NavState &ns);
+
+    const NavState &GetNavState(void);
+
+    void SetNavStateVel(const Vector3d &vel);
+
+    void SetNavStatePos(const Vector3d &pos);
+
+    void SetNavStateRot(const Matrix3d &rot);
+
+    void SetNavStateRot(const Sophus::SO3 &rot);
+
+    void SetNavStateBiasGyr(const Vector3d &bg);
+
+    void SetNavStateBiasAcc(const Vector3d &ba);
+
+    void SetNavStateDeltaBg(const Vector3d &dbg);
+
+    void SetNavStateDeltaBa(const Vector3d &dba);
+
+    void SetInitialNavStateAndBias(const NavState &ns);
+
+    // Variables used by loop closing
+    NavState mNavStateGBA;       //mTcwGBA
+    NavState mNavStateBefGBA;    //mTcwBefGBA
+
+  protected:
+
+    std::mutex mMutexPrevKF;
+    std::mutex mMutexNextKF;
+    KeyFrame *mpPrevKeyFrame;
+    KeyFrame *mpNextKeyFrame;
+
+    // P, V, R, bg, ba, delta_bg, delta_ba (delta_bx is for optimization update)
+    std::mutex mMutexNavState;
+    NavState mNavState;
+
+    // IMU Data from lask KeyFrame to this KeyFrame
+    std::mutex mMutexIMUData;
+    std::vector<IMUData> mvIMUData;
+    IMUPreintegrator mIMUPreInt;
+
+  public:
+    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB);
+
+    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB,
+             const cv::Mat &imColor, const cv::Mat &imGray,
+             bool rgb = false);
 
     // Pose functions
     void SetPose(const cv::Mat &Tcw);
+
     cv::Mat GetPose();
+
     cv::Mat GetPoseInverse();
+
     cv::Mat GetCameraCenter();
+
     cv::Mat GetStereoCenter();
+
     cv::Mat GetRotation();
+
     cv::Mat GetTranslation();
 
     // Bag of Words Representation
     void ComputeBoW();
 
     // Covisibility graph functions
-    void AddConnection(KeyFrame* pKF, const int &weight);
-    void EraseConnection(KeyFrame* pKF);
+    void AddConnection(KeyFrame *pKF, const int &weight);
+
+    void EraseConnection(KeyFrame *pKF);
+
     void UpdateConnections();
+
     void UpdateBestCovisibles();
+
     std::set<KeyFrame *> GetConnectedKeyFrames();
-    std::vector<KeyFrame* > GetVectorCovisibleKeyFrames();
-    std::vector<KeyFrame*> GetBestCovisibilityKeyFrames(const int &N);
-    std::vector<KeyFrame*> GetCovisiblesByWeight(const int &w);
-    int GetWeight(KeyFrame* pKF);
+
+    std::vector<KeyFrame *> GetVectorCovisibleKeyFrames();
+
+    std::vector<KeyFrame *> GetBestCovisibilityKeyFrames(const int &N);
+
+    std::vector<KeyFrame *> GetCovisiblesByWeight(const int &w);
+
+    int GetWeight(KeyFrame *pKF);
 
     // Spanning tree functions
-    void AddChild(KeyFrame* pKF);
-    void EraseChild(KeyFrame* pKF);
-    void ChangeParent(KeyFrame* pKF);
-    std::set<KeyFrame*> GetChilds();
-    KeyFrame* GetParent();
-    bool hasChild(KeyFrame* pKF);
+    void AddChild(KeyFrame *pKF);
+
+    void EraseChild(KeyFrame *pKF);
+
+    void ChangeParent(KeyFrame *pKF);
+
+    std::set<KeyFrame *> GetChilds();
+
+    KeyFrame *GetParent();
+
+    bool hasChild(KeyFrame *pKF);
 
     // Loop Edges
-    void AddLoopEdge(KeyFrame* pKF);
-    std::set<KeyFrame*> GetLoopEdges();
+    void AddLoopEdge(KeyFrame *pKF);
+
+    std::set<KeyFrame *> GetLoopEdges();
 
     // MapPoint observation functions
-    void AddMapPoint(MapPoint* pMP, const size_t &idx);
+    void AddMapPoint(MapPoint *pMP, const size_t &idx);
+
     void EraseMapPointMatch(const size_t &idx);
-    void EraseMapPointMatch(MapPoint* pMP);
-    void ReplaceMapPointMatch(const size_t &idx, MapPoint* pMP);
-    std::set<MapPoint*> GetMapPoints();
-    std::vector<MapPoint*> GetMapPointMatches();
+
+    void EraseMapPointMatch(MapPoint *pMP);
+
+    void ReplaceMapPointMatch(const size_t &idx, MapPoint *pMP);
+
+    std::set<MapPoint *> GetMapPoints();
+
+    std::vector<MapPoint *> GetMapPointMatches();
+
     int TrackedMapPoints(const int &minObs);
-    MapPoint* GetMapPoint(const size_t &idx);
-    std::vector<MapPoint*> GetMapPointsFromIndices(const std::vector<size_t>& vIdxs);
+
+    MapPoint *GetMapPoint(const size_t &idx);
+
+    std::vector<MapPoint *> GetMapPointsFromIndices(const std::vector<size_t> &vIdxs);
 
     // Object observation functions
-    void AddMapObject(MapObject* pMO, const size_t &idx); //idx of Predicted
-    std::vector<MapObject*> GetMapObjects();
-    std::map<MapObject*, size_t> GetMapObjectObservationsMap();
-    // KeyPoint functions
-    std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r) const;
-    std::vector<MapPoint*> GetMapPointsInBoundingBox(const cv::Rect2f& bb);
-    std::vector<MapPoint*> GetMapPointsInMask(const cv::Rect2f& bb, const cv::Mat& mask,
-            const PredictedObject::MASK_TYPE& mask_type);
+    void AddMapObject(MapObject *pMO, const size_t &idx); //idx of Predicted
+    std::vector<MapObject *> GetMapObjects();
 
-    void DrawDebugPointsInMask(cv::Mat &draw, const cv::Rect2f& bb, const cv::Mat& mask,
-                               const PredictedObject::MASK_TYPE& mask_type);
+    std::map<MapObject *, size_t> GetMapObjectObservationsMap();
+
+    // KeyPoint functions
+    std::vector<size_t> GetFeaturesInArea(const float &x, const float &y, const float &r) const;
+
+    std::vector<MapPoint *> GetMapPointsInBoundingBox(const cv::Rect2f &bb);
+
+    std::vector<MapPoint *> GetMapPointsInMask(const cv::Rect2f &bb, const cv::Mat &mask,
+                                               const PredictedObject::MASK_TYPE &mask_type);
+
+    void DrawDebugPointsInMask(cv::Mat &draw, const cv::Rect2f &bb, const cv::Mat &mask,
+                               const PredictedObject::MASK_TYPE &mask_type);
 
     cv::Mat UnprojectStereo(int i);
 
@@ -121,21 +231,23 @@ public:
 
     // Enable/Disable bad flag changes
     void SetNotErase();
+
     void SetErase();
 
     // Set/check bad flag
     void SetBadFlag();
+
     bool isBad();
 
     // Compute Scene Depth (q=2 median). Used in monocular.
     float ComputeSceneMedianDepth(const int q);
 
-    static bool weightComp( int a, int b){
-        return a>b;
+    static bool weightComp(int a, int b) {
+        return a > b;
     }
 
-    static bool lId(KeyFrame* pKF1, KeyFrame* pKF2){
-        return pKF1->mnId<pKF2->mnId;
+    static bool lId(KeyFrame *pKF1, KeyFrame *pKF2) {
+        return pKF1->mnId < pKF2->mnId;
     }
 
     bool IsObjectsReady();
@@ -143,7 +255,7 @@ public:
     std::vector<std::shared_ptr<PredictedObject> > GetObjectPredictions();
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
-public:
+  public:
 
     static long unsigned int nNextId;
     static int nInitId;
@@ -195,8 +307,8 @@ public:
     // TODO : Migrate this to protected
     std::vector<uint32_t> mvKeysUnColor;
     std::vector<std::shared_ptr<PredictedObject> > mvObjectPrediction;
-    std::vector<MapObject*> mvpMapObjects;
-    std::map<MapObject*, size_t> mvpMapObjectsInverse;
+    std::vector<MapObject *> mvpMapObjects;
+    std::map<MapObject *, size_t> mvpMapObjectsInverse;
 
     //BoW
     DBoW2::BowVector mBowVec;
@@ -228,7 +340,7 @@ public:
     std::mutex mMutexImages;
     cv::Mat mImColor;
     cv::Mat mImGray;
-protected:
+  protected:
 
     // SE3 Pose and camera center
     cv::Mat Tcw;
@@ -238,33 +350,33 @@ protected:
     cv::Mat Cw; // Stereo middel point. Only for visualization
 
     // MapPoints associated to keypoints
-    std::vector<MapPoint*> mvpMapPoints;
+    std::vector<MapPoint *> mvpMapPoints;
 
     // BoW
-    KeyFrameDatabase* mpKeyFrameDB;
-    ORBVocabulary* mpORBvocabulary;
+    KeyFrameDatabase *mpKeyFrameDB;
+    ORBVocabulary *mpORBvocabulary;
 
     // Grid over the image to speed up feature matching
-    std::vector< std::vector <std::vector<size_t> > > mGrid;
+    std::vector<std::vector<std::vector<size_t> > > mGrid;
 
-    std::map<KeyFrame*,int> mConnectedKeyFrameWeights;
-    std::vector<KeyFrame*> mvpOrderedConnectedKeyFrames;
+    std::map<KeyFrame *, int> mConnectedKeyFrameWeights;
+    std::vector<KeyFrame *> mvpOrderedConnectedKeyFrames;
     std::vector<int> mvOrderedWeights;
 
     // Spanning Tree and Loop Edges
     bool mbFirstConnection;
-    KeyFrame* mpParent;
-    std::set<KeyFrame*> mspChildrens;
-    std::set<KeyFrame*> mspLoopEdges;
+    KeyFrame *mpParent;
+    std::set<KeyFrame *> mspChildrens;
+    std::set<KeyFrame *> mspLoopEdges;
 
     // Bad flags
     bool mbNotErase;
     bool mbToBeErased;
-    bool mbBad;    
+    bool mbBad;
 
     float mHalfBaseline; // Only for visualization
 
-    Map* mpMap;
+    Map *mpMap;
 
     std::mutex mMutexPose;
     std::mutex mMutexConnections;
