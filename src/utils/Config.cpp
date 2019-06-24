@@ -114,9 +114,9 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_CONFIG(LocalMapping, int, window_size)
         }
 
+
         ORB_SLAM2_PARSE_CONFIG_SCOPE("imu") {
             ORB_SLAM2_PARSE_CONFIG(IMU, double, vins_init_time)
-
 
             // Legacy Matrix
             auto tbc_node = node["Tbc"];
@@ -129,8 +129,10 @@ void Config::parseConfig() {
                 auto Rt = mIMUParam.Tbc.rowRange(0,3).colRange(0,3).t();
                 mIMUParam.Tcb.rowRange(0,3).colRange(0,3) =  Rt;
                 mIMUParam.Tcb.rowRange(0,3).col(3) = - Rt * mIMUParam.Tbc.rowRange(0,3).col(3);
+                mIMUParam.mbTbcRead = true;
             }
         }
+
 
         ORB_SLAM2_PARSE_CONFIG_SCOPE("runtime"){
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, bagfile)

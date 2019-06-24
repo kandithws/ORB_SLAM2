@@ -68,7 +68,7 @@ class Optimizer {
 
     Vector3d static OptimizeInitialGyroBias(const vector<cv::Mat> &vTwc, const vector<IMUPreintegrator> &vImuPreInt);
 
-    void static
+    void static // with IMU
     LocalBundleAdjustment(KeyFrame *pKF, const std::list<KeyFrame *> &lLocalKeyFrames, bool *pbStopFlag, Map *pMap,
                           LocalMapping *pLM = NULL);
 
@@ -80,7 +80,7 @@ class Optimizer {
     void static GlobalBundleAdjustemnt(Map *pMap, int nIterations = 5, bool *pbStopFlag = NULL,
                                        const unsigned long nLoopKF = 0, const bool bRobust = true);
 
-    void static LocalBundleAdjustment(KeyFrame *pKF, bool *pbStopFlag, Map *pMap);
+    void static LocalBundleAdjustment(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, LocalMapping* pLM=NULL);
 
     void static LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool *pbStopFlag, Map *pMap);
 
@@ -91,7 +91,7 @@ class Optimizer {
                                        const LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
                                        const LoopClosing::KeyFrameAndPose &CorrectedSim3,
                                        const map<KeyFrame *, set<KeyFrame *> > &LoopConnections,
-                                       const bool &bFixScale);
+                                       const bool &bFixScale, LoopClosing* pLC=NULL);
 
     // if bFixScale is true, optimize SE3 (stereo,rgbd), Sim3 otherwise (mono)
     static int OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, std::vector<MapPoint *> &vpMatches1,

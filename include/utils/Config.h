@@ -90,6 +90,7 @@ typedef struct imu {
   protected:
     cv::Mat Tbc;
     cv::Mat Tcb;
+    bool mbTbcRead = false;
     friend ORB_SLAM2::Config;
 } IMU;
 
@@ -132,6 +133,16 @@ class Config {
 
     void SetRealTimeFlag(bool st) {
         mSystemParam.real_time = st;
+    }
+
+    void SetUseIMU(bool st){
+        mSystemParam.use_imu = st;
+        if(mSystemParam.use_imu){
+            if(!mIMUParam.mbTbcRead){
+                SPDLOG_ERROR("IMU data was passed but Tbc is not provided, abort !");
+                exit(1);
+            }
+        }
     }
 
   protected:

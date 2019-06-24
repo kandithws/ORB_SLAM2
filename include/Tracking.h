@@ -68,6 +68,7 @@ class Tracking {
     // Flags for relocalization. Create new KF once bias re-computed & flag for preparation for bias re-compute
     bool mbCreateNewKFAfterReloc;
     bool mbRelocBiasPrepare;
+    //bool mbUseIMU;
 
     void RecomputeIMUBiasAndCurrentNavstate(NavState &nscur);
 
@@ -93,6 +94,8 @@ class Tracking {
     GetIMUPreIntSinceLastKF(Frame *pCurF, KeyFrame *pLastKF, const std::vector<IMUData> &vIMUSInceLastKF);
 
     IMUPreintegrator GetIMUPreIntSinceLastFrame(Frame *pCurF, Frame *pLastF);
+
+    std::shared_ptr<std::thread> mptLocalMappingVIOInit;
 
   public:
     Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap,
