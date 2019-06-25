@@ -1126,7 +1126,7 @@ void Tracking::CreateNewKeyFrame()
 
     KeyFrame* pKF;
     if (mbUseObject){
-        if((mSensor!=System::MONOCULAR) || (mSensor!=System::RGBD)){
+        if((mSensor==System::MONOCULAR) || (mSensor==System::RGBD)){
             pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB, mImColor, mImGray);
         }
 
