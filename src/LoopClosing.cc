@@ -69,6 +69,8 @@ void LoopClosing::Run() {
         if (CheckNewKeyFrames()) {
             // Detect loop candidates and check covisibility consistency
             if (DetectLoop()) {
+                if (Config::getInstance().SystemParams().use_imu && !mpLocalMapper->GetVINSInited())
+                    continue;
                 // Compute similarity transformation [sR|t]
                 // In the stereo/RGBD case s=1
                 if (ComputeSim3()) {
@@ -524,7 +526,11 @@ void LoopClosing::CorrectLoop() {
     Optimizer::OptimizeEssentialGraph(mpMap, mpMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections,
                                       mbFixScale, this);
 
+    // TODO -- Do I need to remove this???
     mpMap->InformNewBigChange();
+
+    // Map updated, set flag for Tracking
+    SetMapUpdateFlagInTracking(true);
 
     // Add loop edge
     mpMatchedKF->AddLoopEdge(mpCurrentKF);
@@ -598,7 +604,14 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF) {
     cout << "Starting Global Bundle Adjustment" << endl;
 
     int idx = mnFullBAIdx;
-    Optimizer::GlobalBundleAdjustemnt(mpMap, 10, &mbStopGBA, nLoopKF, false);
+    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
+    if (bUseIMU){
+        Optimizer::GlobalBundleAdjustmentNavStatePRV(mpMap,mpLocalMapper->GetGravityVec(),10,&mbStopGBA,nLoopKF,false);
+    }
+    else{
+        Optimizer::GlobalBundleAdjustemnt(mpMap, 10, &mbStopGBA, nLoopKF, false);
+
+    }
 
     // Update all MapPoints and KeyFrames
     // Local Mapping was active during BA, that means that there might be new keyframes
@@ -626,6 +639,11 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF) {
             // Correct keyframes starting at map first keyframe
             list<KeyFrame *> lpKFtoCheck(mpMap->mvpKeyFrameOrigins.begin(), mpMap->mvpKeyFrameOrigins.end());
 
+            cv::Mat cvTbc;
+
+            if (bUseIMU)
+                Config::getInstance().IMUParams().GetMatTbc();
+
             while (!lpKFtoCheck.empty()) {
                 KeyFrame *pKF = lpKFtoCheck.front();
                 const set<KeyFrame *> sChilds = pKF->GetChilds();
@@ -637,12 +655,35 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF) {
                         pChild->mTcwGBA = Tchildc * pKF->mTcwGBA;//*Tcorc*pKF->mTcwGBA;
                         pChild->mnBAGlobalForKF = nLoopKF;
 
+                        if (bUseIMU){
+                            // Set NavStateGBA and correct the P/V/R
+                            pChild->mNavStateGBA = pChild->GetNavState();
+                            cv::Mat TwbGBA = Converter::toCvMatInverse(cvTbc*pChild->mTcwGBA);
+                            Matrix3d RwbGBA = Converter::toMatrix3d(TwbGBA.rowRange(0,3).colRange(0,3));
+                            Vector3d PwbGBA = Converter::toVector3d(TwbGBA.rowRange(0,3).col(3));
+                            Matrix3d Rw1 = pChild->mNavStateGBA.Get_RotMatrix();
+                            Vector3d Vw1 = pChild->mNavStateGBA.Get_V();
+                            Vector3d Vw2 = RwbGBA*Rw1.transpose()*Vw1;   // bV1 = bV2 ==> Rwb1^T*wV1 = Rwb2^T*wV2 ==> wV2 = Rwb2*Rwb1^T*wV1
+                            pChild->mNavStateGBA.Set_Pos(PwbGBA);
+                            pChild->mNavStateGBA.Set_Rot(RwbGBA);
+                            pChild->mNavStateGBA.Set_Vel(Vw2);
+                        }
+
                     }
                     lpKFtoCheck.push_back(pChild);
                 }
 
                 pKF->mTcwBefGBA = pKF->GetPose();
-                pKF->SetPose(pKF->mTcwGBA);
+                if (bUseIMU){
+                    pKF->mNavStateBefGBA = pKF->GetNavState();
+                    pKF->SetNavState(pKF->mNavStateGBA);
+                    pKF->UpdatePoseFromNS(cvTbc);
+                }
+                else{
+                    pKF->SetPose(pKF->mTcwGBA);
+                }
+
+
                 lpKFtoCheck.pop_front();
             }
 
