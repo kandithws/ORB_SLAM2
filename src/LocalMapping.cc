@@ -141,7 +141,7 @@ cv::Mat LocalMapping::GetRwiInit() {
 
 void LocalMapping::VINSInitThread() {
     unsigned long initedid = 0;
-    cerr << "start VINSInitThread" << endl;
+    SPDLOG_INFO("START VINS INIT THREAD");
     while (1) {
         //cout << " KeyFrame::nNextId = " << KeyFrame::nNextId << endl;
         if (KeyFrame::nNextId > 2)
@@ -160,7 +160,8 @@ void LocalMapping::VINSInitThread() {
         if (isFinished())
             break;
     }
-    cout << "break VINSInitThread\n";
+    // cout << "break VINSInitThread\n";
+    SPDLOG_INFO("VINS INIT DONE !!");
 }
 
 bool LocalMapping::TryInitVIO(void) {
@@ -1012,6 +1013,9 @@ void LocalMapping::ProcessNewKeyFrame() {
     // Update links in the Covisibility Graph
     mpCurrentKeyFrame->UpdateConnections();
 
+    // Local (Sliding) Window
+    AddToLocalWindow(mpCurrentKeyFrame);
+
     // Insert Keyframe in Map
     mpMap->AddKeyFrame(mpCurrentKeyFrame);
 }
@@ -1457,9 +1461,7 @@ void LocalMapping::KeyFrameCulling() {
         KeyFrame *pOldestLocalKF = mlLocalKeyFrames.front();
         assert(pOldestLocalKF);
         KeyFrame *pPrevLocalKF = pOldestLocalKF->GetPrevKeyFrame();
-        assert(pPrevLocalKF);
         KeyFrame *pNewestLocalKF = mlLocalKeyFrames.back();
-        assert(pPrevLocalKF);
         // Lazy Copy!
 
         for (vector<KeyFrame *>::iterator vit = vpLocalKeyFrames.begin(), vend = vpLocalKeyFrames.end();

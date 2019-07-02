@@ -440,16 +440,6 @@ IMUPreintegrator Tracking::GetIMUPreIntSinceLastFrame(Frame *pCurF, Frame *pLast
 }
 
 cv::Mat Tracking::GrabImageMonoVI(const cv::Mat &im, const std::vector<IMUData> &vimu, const double &timestamp) {
-    static bool init = false;
-    if (!init) {
-        Config::getInstance().SetUseIMU(true);
-        mptLocalMappingVIOInit = std::make_shared<std::thread>(
-                &ORB_SLAM2::LocalMapping::VINSInitThread,
-                mpLocalMapper
-        );
-        init = true;
-        SPDLOG_INFO("ORBSLAM with IMU !");
-    }
 
     mvIMUSinceLastKF.insert(mvIMUSinceLastKF.end(), vimu.begin(), vimu.end());
     mImGray = im;
@@ -609,11 +599,6 @@ Tracking::~Tracking() {
         if (mtCleanDetectionThread->joinable())
             mtCleanDetectionThread->join();
     }
-
-    if (mptLocalMappingVIOInit){
-        if (mptLocalMappingVIOInit->joinable())
-            mptLocalMappingVIOInit->join();
-    }
 }
 
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper) {
@@ -727,10 +712,10 @@ void Tracking::Track() {
     // Get Map Mutex -> Map cannot be changed
     unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
     //auto lock = Map::CreateUpdateLock(mpMap);
-
+    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
     // Different operation, according to whether the map is updated
     bool bMapUpdated = false;
-    if (Config::getInstance().SystemParams().use_imu) {
+    if (bUseIMU) {
         if (mpLocalMapper->GetMapUpdateFlagForTracking()) {
             bMapUpdated = true;
             mpLocalMapper->SetMapUpdateFlagInTracking(false);
@@ -766,7 +751,7 @@ void Tracking::Track() {
             if (mState == OK) {
                 // Local Mapping might have changed some MapPoints tracked in last frame
                 CheckReplacedInLastFrame();
-                if (Config::getInstance().SystemParams().use_imu) {
+                if (bUseIMU) {
                     // If Visual-Inertial is initialized
                     if (mpLocalMapper->GetVINSInited()) {
                         // 20 Frames after reloc, track with only vision
@@ -862,7 +847,7 @@ void Tracking::Track() {
         // If we have an initial estimation of the camera pose and matching. Track the local map.
         if (!mbOnlyTracking) {
             if (bOK) {
-                if (Config::getInstance().SystemParams().use_imu) {
+                if (bUseIMU) {
                     if (!mpLocalMapper->GetVINSInited())
                         bOK = TrackLocalMap();
                     else {
@@ -881,14 +866,59 @@ void Tracking::Track() {
             // mbVO true means that there are few matches to MapPoints in the map. We cannot retrieve
             // a local map and therefore we do not perform TrackLocalMap(). Once the system relocalizes
             // the camera we will use the local map again.
+            if (bUseIMU){
+                SPDLOG_ERROR("Localization with IMU not supported yet");
+                throw std::runtime_error("Not Implemented");
+            }
+
             if (bOK && !mbVO)
                 bOK = TrackLocalMap();
         }
 
-        if (bOK)
+//        if (bOK)
+//            mState = OK;
+//        else
+//            mState = LOST;
+
+        if (bOK) {
             mState = OK;
-        else
+
+            // Add Frames to re-compute IMU bias after reloc
+            if (bUseIMU && mbRelocBiasPrepare) {
+                mv20FramesReloc.push_back(mCurrentFrame);
+
+                // Before creating new keyframe
+                // Use 20 consecutive frames to re-compute IMU bias
+                if (mCurrentFrame.mnId == mnLastRelocFrameId + 20 - 1) {
+                    NavState nscur;
+                    RecomputeIMUBiasAndCurrentNavstate(nscur);
+                    // Update NavState of CurrentFrame
+                    mCurrentFrame.SetNavState(nscur);
+                    // Clear flag and Frame buffer
+                    mbRelocBiasPrepare = false;
+                    mv20FramesReloc.clear();
+
+                    // Release LocalMapping. To ensure to insert new keyframe.
+                    mpLocalMapper->Release();
+                    // Create new KeyFrame
+                    mbCreateNewKFAfterReloc = true;
+
+                    //Debug log
+                    cout << "NavState recomputed." << endl;
+                    cout << "V:" << mCurrentFrame.GetNavState().Get_V().transpose() << endl;
+                    cout << "bg:" << mCurrentFrame.GetNavState().Get_BiasGyr().transpose() << endl;
+                    cout << "ba:" << mCurrentFrame.GetNavState().Get_BiasAcc().transpose() << endl;
+                    cout << "dbg:" << mCurrentFrame.GetNavState().Get_dBias_Gyr().transpose() << endl;
+                    cout << "dba:" << mCurrentFrame.GetNavState().Get_dBias_Acc().transpose() << endl;
+                }
+            }
+        } else {
             mState = LOST;
+
+            // Clear Frame vectors for reloc bias computation
+            if (bUseIMU && mv20FramesReloc.size() > 0)
+                mv20FramesReloc.clear();
+        }
 
         // Update drawer
         mpFrameDrawer->Update(this);
@@ -925,8 +955,14 @@ void Tracking::Track() {
             mlpTemporalPoints.clear();
 
             // Check if we need to insert a new keyframe
-            if (NeedNewKeyFrame())
+
+            if (NeedNewKeyFrame() || (bUseIMU && mbCreateNewKFAfterReloc))
                 CreateNewKeyFrame();
+
+
+            // Clear flag
+            if (bUseIMU && mbCreateNewKFAfterReloc)
+                mbCreateNewKFAfterReloc = false;
 
             // We allow points with high innovation (considererd outliers by the Huber Function)
             // pass to the new keyframe, so that bundle adjustment will finally decide
@@ -936,15 +972,24 @@ void Tracking::Track() {
                 if (mCurrentFrame.mvpMapPoints[i] && mCurrentFrame.mvbOutlier[i])
                     mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
             }
+
+
+            // Clear First-Init flag
+            if (bUseIMU && mpLocalMapper->GetFirstVINSInited()) {
+                mpLocalMapper->SetFirstVINSInited(false);
+            }
         }
 
         // Reset if the camera get lost soon after initialization
         if (mState == LOST) {
-            if (mpMap->KeyFramesInMap() <= 5) {
+            auto cond = bUseIMU ? !mpLocalMapper->GetVINSInited() : mpMap->KeyFramesInMap() <= 5;
+
+            if (cond) {
                 cout << "Track lost soon after initialisation, reseting..." << endl;
                 mpSystem->Reset();
                 return;
             }
+
         }
 
         if (!mCurrentFrame.mpReferenceKF)
@@ -967,10 +1012,6 @@ void Tracking::Track() {
         mlFrameTimes.push_back(mlFrameTimes.back());
         mlbLost.push_back(mState == LOST);
     }
-
-    // TODO -- Maybe no need to notify
-    //mpMap->NotifyMapUpdated();
-
 }
 
 

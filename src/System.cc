@@ -33,6 +33,11 @@
 
 #include "utils/Config.h"
 
+bool has_suffix(const std::string &str, const std::string &suffix) {
+    std::size_t index = str.find(suffix, str.size() - suffix.size());
+    return (index != std::string::npos);
+}
+
 namespace ORB_SLAM2
 {
 
@@ -97,6 +102,18 @@ cv::Mat System::TrackMonoVI(const cv::Mat &im, const std::vector<ORB_SLAM2::IMUD
     {
         cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular." << endl;
         exit(-1);
+    }
+
+    // Check for Initialization
+    static bool init = false;
+    if (!init) {
+        Config::getInstance().SetUseIMU(true);
+        mptLocalMappingVIOInit = std::make_shared<std::thread>(
+                &ORB_SLAM2::LocalMapping::VINSInitThread,
+                mpLocalMapper
+        );
+        init = true;
+        SPDLOG_INFO("ORBSLAM with IMU !");
     }
 
     // Check mode change
@@ -178,7 +195,12 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
 
     mpVocabulary = new ORBVocabulary();
-    bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
+    //bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
+    bool bVocLoad = false; // chose loading method based on file extension
+    if (has_suffix(strVocFile, ".txt"))
+        bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
+    else
+        bVocLoad = mpVocabulary->loadFromBinaryFile(strVocFile);
     if(!bVocLoad)
     {
         SPDLOG_CRITICAL("Wrong path to vocabulary. Failed to open file at: {0}", strVocFile);
@@ -236,6 +258,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
+    // Moved VINS-Init thread to TrackMONOVI
 }
 
 System::~System() {
@@ -508,6 +531,11 @@ void System::Shutdown(bool bShutDownViewer)
 
         if(mpViewer)
             pangolin::BindToContext("ORB-SLAM2: Map Viewer");
+    }
+
+    if (mptLocalMappingVIOInit){
+        if (mptLocalMappingVIOInit->joinable())
+            mptLocalMappingVIOInit->join();
     }
 
 }
