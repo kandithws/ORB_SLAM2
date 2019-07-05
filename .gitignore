@@ -10,7 +10,7 @@ Examples/ROS/ORB_SLAM2/RGBD
 Examples/ROS/ORB_SLAM2/Stereo
 Examples/ROS/ORB_SLAM2/build/
 Examples/ROS/VIORB/build/
-Examples/ROS/VIORB/VIORB
+Examples/ROS/VIORB/viorb_euroc
 Examples/Stereo/stereo_euroc
 Examples/Stereo/stereo_kitti
 KeyFrameTrajectory.txt
