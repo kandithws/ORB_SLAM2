@@ -23,6 +23,7 @@
 #include "ORBmatcher.h"
 #include "Optimizer.h"
 #include "utils/time.h"
+#include "utils/vector_utils.h"
 
 #include<mutex>
 
@@ -39,7 +40,8 @@ class KeyFrameInit {
     KeyFrameInit *mpPrevKeyFrame;
     cv::Mat Twc;
     IMUPreintegrator mIMUPreInt;
-    std::vector<IMUData> mvIMUData;
+    //std::vector<IMUData> mvIMUData;
+    utils::eigen_aligned_vector<IMUData> mvIMUData;
     Vector3d bg;
 
 
@@ -218,7 +220,7 @@ bool LocalMapping::TryInitVIO(void) {
     int N = vScaleGravityKF.size();
     KeyFrame *pNewestKF = vScaleGravityKF[N - 1];
     vector<cv::Mat> vTwc;
-    vector<IMUPreintegrator> vIMUPreInt;
+    utils::eigen_aligned_vector<IMUPreintegrator> vIMUPreInt;
     // Store initialization-required KeyFrame data
     vector<KeyFrameInit *> vKFInit;
 
@@ -603,8 +605,8 @@ bool LocalMapping::TryInitVIO(void) {
                 //pMP->SetWorldPos(pMP->GetWorldPos()*scale);
                 pMP->UpdateScale(scale);
             }
-            std::cout << std::endl << "... Map scale updated ..." << std::endl << std::endl;
-
+            //std::cout << std::endl << "... Map scale updated ..." << std::endl << std::endl;
+            SPDLOG_INFO("\n ... Map scale updated ... \n");
             // Update NavStates
             if (pNewestKF != mpCurrentKeyFrame) {
                 KeyFrame *pKF;
@@ -679,8 +681,8 @@ bool LocalMapping::TryInitVIO(void) {
 
             }
 
-            std::cout << std::endl << "... Map NavState updated ..." << std::endl << std::endl;
-
+           // std::cout << std::endl << "... Map NavState updated ..." << std::endl << std::endl;
+            SPDLOG_INFO("\n ... Map NavState updated ... \n");
             SetFirstVINSInited(true);
             SetVINSInited(true);
         }
@@ -690,6 +692,7 @@ bool LocalMapping::TryInitVIO(void) {
             Release();
         }
 
+        SPDLOG_DEBUG("----RUNNING GLOBAL BA------");
         // Run global BA after inited
         unsigned long nGBAKF = mpCurrentKeyFrame->mnId;
         //Optimizer::GlobalBundleAdjustmentNavState(mpMap,mGravityVec,10,NULL,nGBAKF,false);
@@ -786,8 +789,8 @@ bool LocalMapping::TryInitVIO(void) {
                     }
                 }
 
-                cout << "Map updated!" << endl;
-
+                // cout << "Map updated!" << endl;
+                SPDLOG_DEBUG("MAP UPDATED!");
                 // Map updated, set flag for Tracking
                 SetMapUpdateFlagInTracking(true);
 

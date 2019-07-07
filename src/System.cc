@@ -96,7 +96,7 @@ void System::SaveKeyFrameTrajectoryNavState(const string &filename)
 }
 
 
-cv::Mat System::TrackMonoVI(const cv::Mat &im, const std::vector<ORB_SLAM2::IMUData> &vimu, const double &timestamp)
+cv::Mat System::TrackMonoVI(const cv::Mat &im, const utils::eigen_aligned_vector<ORB_SLAM2::IMUData> &vimu, const double &timestamp)
 {
     if(mSensor!=MONOCULAR)
     {

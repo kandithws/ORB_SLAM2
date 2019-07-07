@@ -86,7 +86,7 @@ void KeyFrame::SetNextKeyFrame(KeyFrame* pKF)
     mpNextKeyFrame = pKF;
 }
 
-std::vector<IMUData> KeyFrame::GetVectorIMUData(void)
+utils::eigen_aligned_vector<IMUData> KeyFrame::GetVectorIMUData(void)
 {
     unique_lock<mutex> lock(mMutexIMUData);
     return mvIMUData;
@@ -94,7 +94,7 @@ std::vector<IMUData> KeyFrame::GetVectorIMUData(void)
 
 void KeyFrame::AppendIMUDataToFront(KeyFrame* pPrevKF)
 {
-    std::vector<IMUData> vimunew = pPrevKF->GetVectorIMUData();
+    auto vimunew = pPrevKF->GetVectorIMUData();
     {
         unique_lock<mutex> lock(mMutexIMUData);
         vimunew.insert(vimunew.end(), mvIMUData.begin(), mvIMUData.end());
@@ -267,7 +267,7 @@ void KeyFrame::ComputePreInt(void)
     //cout<<"pre-int delta time: "<<mIMUPreInt.getDeltaTime()<<", deltaR:"<<endl<<mIMUPreInt.getDeltaR()<<endl;
 }
 
-KeyFrame::KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB, std::vector<IMUData>& vIMUData, KeyFrame* pPrevKF):
+KeyFrame::KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB, utils::eigen_aligned_vector<IMUData>& vIMUData, KeyFrame* pPrevKF):
         mnFrameId(F.mnId),  mTimeStamp(F.mTimeStamp), mnGridCols(FRAME_GRID_COLS), mnGridRows(FRAME_GRID_ROWS),
         mfGridElementWidthInv(F.mfGridElementWidthInv), mfGridElementHeightInv(F.mfGridElementHeightInv),
         mnTrackReferenceForFrame(0), mnFuseTargetForKF(0), mnBALocalForKF(0), mnBAFixedForKF(0),

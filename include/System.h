@@ -93,7 +93,7 @@ class System {
     cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp);
 
     // Track Visual Inertial SLAM
-    cv::Mat TrackMonoVI(const cv::Mat &im, const std::vector<IMUData> &vimu, const double &timestamp);
+    cv::Mat TrackMonoVI(const cv::Mat &im, const utils::eigen_aligned_vector<IMUData> &vimu, const double &timestamp);
 
     // This stops local mapping thread (map building) and performs only camera tracking.
     void ActivateLocalizationMode();

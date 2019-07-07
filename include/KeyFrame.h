@@ -39,6 +39,7 @@
 #include "imu/IMUData.h"
 #include "imu/NavState.h"
 #include "imu/IMUPreintegrator.h"
+#include "utils/vector_utils.h"
 
 
 namespace ORB_SLAM2 {
@@ -60,7 +61,8 @@ class KeyFrame {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, std::vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
+    //KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, std::vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
+    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, utils::eigen_aligned_vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
 
     KeyFrame *GetPrevKeyFrame(void);
 
@@ -70,7 +72,8 @@ class KeyFrame {
 
     void SetNextKeyFrame(KeyFrame *pKF);
 
-    std::vector<IMUData> GetVectorIMUData(void);
+    //std::vector<IMUData> GetVectorIMUData(void);
+    utils::eigen_aligned_vector<IMUData> GetVectorIMUData(void);
 
     void AppendIMUDataToFront(KeyFrame *pPrevKF);
 
@@ -123,7 +126,7 @@ class KeyFrame {
 
     // IMU Data from lask KeyFrame to this KeyFrame
     std::mutex mMutexIMUData;
-    std::vector<IMUData> mvIMUData;
+    utils::eigen_aligned_vector<IMUData> mvIMUData;
     IMUPreintegrator mIMUPreInt;
 
   public:

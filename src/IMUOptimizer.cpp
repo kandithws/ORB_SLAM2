@@ -2807,7 +2807,8 @@ Vector3d Optimizer::OptimizeInitialGyroBias(const std::vector<KeyFrame *> &vpKFs
     return vBgEst->estimate();
 }
 
-Vector3d Optimizer::OptimizeInitialGyroBias(const vector<cv::Mat> &vTwc, const vector<IMUPreintegrator> &vImuPreInt) {
+//Vector3d Optimizer::OptimizeInitialGyroBias(const vector<cv::Mat> &vTwc, const vector<IMUPreintegrator> &vImuPreInt) {
+Vector3d Optimizer::OptimizeInitialGyroBias(const vector<cv::Mat> &vTwc, const utils::eigen_aligned_vector<IMUPreintegrator> &vImuPreInt) {
     int N = vTwc.size();
     if (vTwc.size() != vImuPreInt.size()) cerr << "vTwc.size()!=vImuPreInt.size()" << endl;
     Matrix4d Tbc = Config::getInstance().IMUParams().GetEigTbc();

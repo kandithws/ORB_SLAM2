@@ -44,6 +44,7 @@
 #include "utils/Config.h"
 #include <iomanip>
 #include "imu/IMUData.h"
+#include "utils/vector_utils.h"
 //#include "IMU/configparam.h"
 
 namespace ORB_SLAM2 {
@@ -84,14 +85,14 @@ class Tracking {
 
     bool TrackLocalMapWithIMU(bool bMapUpdated = false);
 
-    cv::Mat GrabImageMonoVI(const cv::Mat &im, const std::vector<IMUData> &vimu, const double &timestamp);
+    cv::Mat GrabImageMonoVI(const cv::Mat &im, const utils::eigen_aligned_vector<IMUData> &vimu, const double &timestamp);
 
     // IMU Data since last KF. Append when new data is provided
     // Should be cleared in 1. initialization beginning, 2. new keyframe created.
-    std::vector<IMUData> mvIMUSinceLastKF;
+    utils::eigen_aligned_vector<IMUData> mvIMUSinceLastKF;
 
     IMUPreintegrator
-    GetIMUPreIntSinceLastKF(Frame *pCurF, KeyFrame *pLastKF, const std::vector<IMUData> &vIMUSInceLastKF);
+    GetIMUPreIntSinceLastKF(Frame *pCurF, KeyFrame *pLastKF, const utils::eigen_aligned_vector<IMUData> &vIMUSInceLastKF);
 
     IMUPreintegrator GetIMUPreIntSinceLastFrame(Frame *pCurF, Frame *pLastF);
 

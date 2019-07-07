@@ -14,6 +14,7 @@
 
 #include "../../include/imu/IMUData.h"
 #include "../../include/utils/Config.h"
+#include "../../include/utils/vector_utils.h"
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
@@ -91,7 +92,7 @@ int main(int argc, char **argv) {
         double timestamp_camera = std::stod(stimestamp) / 1e9;
         image = cv::imread(fn[i]);
 
-        std::vector<ORB_SLAM2::IMUData> vimuData;
+        ORB_SLAM2::utils::eigen_aligned_vector<ORB_SLAM2::IMUData> vimuData;
 
         while (imu.good()) {
             getline(imu, getval, ',');

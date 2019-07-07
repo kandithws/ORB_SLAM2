@@ -382,7 +382,7 @@ bool Tracking::TrackWithIMU(bool bMapUpdated) {
 }
 
 IMUPreintegrator
-Tracking::GetIMUPreIntSinceLastKF(Frame *pCurF, KeyFrame *pLastKF, const std::vector<IMUData> &vIMUSInceLastKF) {
+Tracking::GetIMUPreIntSinceLastKF(Frame *pCurF, KeyFrame *pLastKF, const utils::eigen_aligned_vector<IMUData> &vIMUSInceLastKF) {
     // Reset pre-integrator first
     IMUPreintegrator IMUPreInt;
     IMUPreInt.reset();
@@ -439,7 +439,7 @@ IMUPreintegrator Tracking::GetIMUPreIntSinceLastFrame(Frame *pCurF, Frame *pLast
     return IMUPreInt;
 }
 
-cv::Mat Tracking::GrabImageMonoVI(const cv::Mat &im, const std::vector<IMUData> &vimu, const double &timestamp) {
+cv::Mat Tracking::GrabImageMonoVI(const cv::Mat &im, const utils::eigen_aligned_vector<IMUData> &vimu, const double &timestamp) {
 
     mvIMUSinceLastKF.insert(mvIMUSinceLastKF.end(), vimu.begin(), vimu.end());
     mImGray = im;
@@ -1140,7 +1140,7 @@ void Tracking::MonocularInitialization() {
 void Tracking::CreateInitialMapMonocular() {
 
     // The first imu package include 2 parts for KF1 and KF2
-    vector<IMUData> vimu1, vimu2;
+    utils::eigen_aligned_vector<IMUData> vimu1, vimu2;
     for (size_t i = 0; i < mvIMUSinceLastKF.size(); i++) {
         IMUData imu = mvIMUSinceLastKF[i];
         if (imu._t < mInitialFrame.mTimeStamp)

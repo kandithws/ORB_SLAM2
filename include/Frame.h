@@ -36,6 +36,7 @@
 #include <imu/NavState.h>
 #include <imu/IMUPreintegrator.h>
 #include <iomanip>
+#include "utils/vector_utils.h"
 
 namespace ORB_SLAM2 {
 #define FRAME_GRID_ROWS 48
@@ -51,7 +52,7 @@ class Frame {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     // Constructor for Monocular VI
-    Frame(const cv::Mat &imGray, const double &timeStamp, const std::vector<IMUData> &vimu, ORBextractor *extractor,
+    Frame(const cv::Mat &imGray, const double &timeStamp, const utils::eigen_aligned_vector<IMUData> &vimu, ORBextractor *extractor,
           ORBVocabulary *voc,
           cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame *pLastKF = NULL);
 
@@ -72,8 +73,8 @@ class Frame {
     void SetNavStateBiasAcc(const Vector3d &ba);
 
     // IMU Data from last Frame to this Frame
-    std::vector<IMUData> mvIMUDataSinceLastFrame;
-
+    // std::vector<IMUData> mvIMUDataSinceLastFrame;
+    utils::eigen_aligned_vector<IMUData> mvIMUDataSinceLastFrame;
     // For pose optimization, use as prior and prior information(inverse covariance)
     Matrix<double, 15, 15> mMargCovInv;
     NavState mNavStatePrior;

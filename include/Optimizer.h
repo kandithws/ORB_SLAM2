@@ -28,7 +28,7 @@
 #include "Frame.h"
 
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
-
+#include "utils/vector_utils.h"
 
 namespace ORB_SLAM2 {
 
@@ -66,7 +66,7 @@ class Optimizer {
 
     Vector3d static OptimizeInitialGyroBias(const std::vector<Frame> &vFrames);
 
-    Vector3d static OptimizeInitialGyroBias(const vector<cv::Mat> &vTwc, const vector<IMUPreintegrator> &vImuPreInt);
+    Vector3d static OptimizeInitialGyroBias(const vector<cv::Mat> &vTwc, const utils::eigen_aligned_vector<IMUPreintegrator> &vImuPreInt);
 
     void static // with IMU
     LocalBundleAdjustment(KeyFrame *pKF, const std::list<KeyFrame *> &lLocalKeyFrames, bool *pbStopFlag, Map *pMap,

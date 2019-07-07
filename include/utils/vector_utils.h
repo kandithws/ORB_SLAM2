@@ -7,9 +7,14 @@
 
 #include <sstream>
 #include <vector>
+#include <Eigen/StdVector>
 
 namespace ORB_SLAM2 {
+
 namespace utils {
+
+template <typename T>
+using eigen_aligned_vector = std::vector< T, Eigen::aligned_allocator<T> >;
 
 template <typename T>
 static std::string VectorToString(std::vector<T> vect, std::string delim=","){
