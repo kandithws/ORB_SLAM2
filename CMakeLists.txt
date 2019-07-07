@@ -32,7 +32,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 
 find_package(OpenCV 3.4.4 REQUIRED)
-find_package(Eigen3 3.1.0 REQUIRED)
+find_package(Eigen3 3.2.10 REQUIRED)
 find_package(Pangolin REQUIRED)
 # find_package(VTK 8 REQUIRED)
 find_package(PCL 1.7 REQUIRED)

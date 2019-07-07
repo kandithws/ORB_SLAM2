@@ -103,7 +103,7 @@ cv::Mat System::TrackMonoVI(const cv::Mat &im, const std::vector<ORB_SLAM2::IMUD
         cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular." << endl;
         exit(-1);
     }
-
+    
     // Check mode change
     {
         unique_lock<mutex> lock(mMutexMode);

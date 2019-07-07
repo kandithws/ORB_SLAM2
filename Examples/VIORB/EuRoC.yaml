@@ -11,7 +11,7 @@ runtime:
 
 system:
   use_object: 0
-  real_time: 0
+  real_time: 1
 
 imu:
   vins_init_time: 15.0

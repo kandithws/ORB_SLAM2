@@ -161,7 +161,7 @@ void LocalMapping::VINSInitThread() {
             break;
     }
     // cout << "break VINSInitThread\n";
-    SPDLOG_INFO("VINS INIT DONE !!");
+    SPDLOG_INFO("VINS INIT DONE from Thread!!");
 }
 
 bool LocalMapping::TryInitVIO(void) {
