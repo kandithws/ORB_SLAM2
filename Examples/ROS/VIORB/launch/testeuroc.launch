@@ -1,5 +1,4 @@
 <launch>
-
  	<node pkg="VIORB" type="VIORB" name="VIORB"
 		  args="$(find VIORB)/../../../Vocabulary/ORBvoc.txt $(find VIORB)/config/EuRoC.yaml"
 		  cwd="node" output="screen">

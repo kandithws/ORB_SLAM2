@@ -1013,8 +1013,10 @@ void LocalMapping::ProcessNewKeyFrame() {
     // Update links in the Covisibility Graph
     mpCurrentKeyFrame->UpdateConnections();
 
-    // Local (Sliding) Window
-    AddToLocalWindow(mpCurrentKeyFrame);
+    if (Config::getInstance().SystemParams().use_imu){
+        // Local (Sliding) Window
+        AddToLocalWindow(mpCurrentKeyFrame);
+    }
 
     // Insert Keyframe in Map
     mpMap->AddKeyFrame(mpCurrentKeyFrame);

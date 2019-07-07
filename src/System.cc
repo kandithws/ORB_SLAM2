@@ -104,18 +104,6 @@ cv::Mat System::TrackMonoVI(const cv::Mat &im, const std::vector<ORB_SLAM2::IMUD
         exit(-1);
     }
 
-    // Check for Initialization
-    static bool init = false;
-    if (!init) {
-        Config::getInstance().SetUseIMU(true);
-        mptLocalMappingVIOInit = std::make_shared<std::thread>(
-                &ORB_SLAM2::LocalMapping::VINSInitThread,
-                mpLocalMapper
-        );
-        init = true;
-        SPDLOG_INFO("ORBSLAM with IMU !");
-    }
-
     // Check mode change
     {
         unique_lock<mutex> lock(mMutexMode);
@@ -148,6 +136,17 @@ cv::Mat System::TrackMonoVI(const cv::Mat &im, const std::vector<ORB_SLAM2::IMUD
             mpTracker->Reset();
             mbReset = false;
         }
+    }
+
+    static bool init = false;
+    if (!init) {
+        Config::getInstance().SetUseIMU(true);
+        mptLocalMappingVIOInit = std::make_shared<std::thread>(
+                &ORB_SLAM2::LocalMapping::VINSInitThread,
+                mpLocalMapper
+        );
+        init = true;
+        SPDLOG_INFO("ORBSLAM with IMU !");
     }
 
     return mpTracker->GrabImageMonoVI(im,vimu,timestamp);
@@ -201,6 +200,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
     else
         bVocLoad = mpVocabulary->loadFromBinaryFile(strVocFile);
+
     if(!bVocLoad)
     {
         SPDLOG_CRITICAL("Wrong path to vocabulary. Failed to open file at: {0}", strVocFile);
@@ -537,7 +537,6 @@ void System::Shutdown(bool bShutDownViewer)
         if (mptLocalMappingVIOInit->joinable())
             mptLocalMappingVIOInit->join();
     }
-
 }
 
 void System::SaveTrajectoryTUM(const string &filename)
