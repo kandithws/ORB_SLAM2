@@ -857,6 +857,37 @@ void KeyFrame::SetBadFlag()
         mbBad = true;
     }
 
+    if (Config::getInstance().SystemParams().use_imu){
+        // Update Prev/Next KeyFrame for prev/next
+        KeyFrame* pPrevKF = GetPrevKeyFrame();
+        KeyFrame* pNextKF = GetNextKeyFrame();
+        if(pPrevKF)
+            pPrevKF->SetNextKeyFrame(pNextKF);
+        if(pNextKF)
+            pNextKF->SetPrevKeyFrame(pPrevKF);
+        SetPrevKeyFrame(NULL);
+        SetNextKeyFrame(NULL);
+        // TODO: this happend once. Log: Current id = 1.
+        // Test log.
+        if(!pPrevKF) SPDLOG_DEBUG("It's culling the first KF? pPrevKF=NULL. Current id: {}", mnId);
+        if(!pNextKF) SPDLOG_DEBUG("It's culling the latest KF? pNextKF=NULL. Current id: {}", mnId);
+        // TODO
+        if(pPrevKF && pNextKF)
+        {
+            if(pPrevKF->isBad()) SPDLOG_DEBUG("Prev KF isbad in setbad. previd: {}, current id: {}", pPrevKF->mnId, mnId);
+            if(pNextKF->isBad()) SPDLOG_DEBUG("Next KF isbad in setbad. previd: {}, current id: {}", pNextKF->mnId, mnId);
+
+            //Debug log, compare the bias of culled KF and the replaced one
+            //cout<<"culled KF bg/ba: "<<mNavState.Get_BiasGyr().transpose()<<", "<<mNavState.Get_BiasAcc().transpose()<<endl;
+            //cout<<"next KF bg/ba: "<<pNextKF->GetNavState().Get_BiasGyr().transpose()<<", "<<pNextKF->GetNavState().Get_BiasAcc().transpose()<<endl;
+
+            // Update IMUData for NextKF
+            pNextKF->AppendIMUDataToFront(this);
+            // Re-compute pre-integrator
+            pNextKF->ComputePreInt();
+        }
+    }
+
 
     mpMap->EraseKeyFrame(this);
     mpKeyFrameDB->erase(this);
