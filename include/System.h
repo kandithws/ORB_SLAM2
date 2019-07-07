@@ -189,6 +189,7 @@ class System {
     std::thread *mptLocalMapping;
     std::thread *mptLoopClosing;
     std::thread *mptViewer;
+    std::shared_ptr<std::thread> mptLocalMappingVIOInit;
 
     // Reset flag
     std::mutex mMutexReset;

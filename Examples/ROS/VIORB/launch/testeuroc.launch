@@ -1,6 +1,8 @@
 <launch>
 
- 	<node pkg="ORB_VIO" type="VIO" name="VIO"  args="$(find ORB_VIO)/../../../Vocabulary/ORBvoc.bin $(find ORB_VIO)/../../../config/euroc.yaml" cwd="node" output="screen">
+	<node pkg="VIORB" type="VIORB" name="VIORB"
+		  args="$(find VIORB)/../../../Vocabulary/ORBvoc.txt $(find VIORB)/config/EuRoC.yaml"
+		  cwd="node" output="screen">
 	</node>
 
 </launch>

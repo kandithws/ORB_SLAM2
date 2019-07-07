@@ -95,8 +95,6 @@ class Tracking {
 
     IMUPreintegrator GetIMUPreIntSinceLastFrame(Frame *pCurF, Frame *pLastF);
 
-    std::shared_ptr<std::thread> mptLocalMappingVIOInit;
-
   public:
     Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap,
              KeyFrameDatabase *pKFDB, const string &strSettingPath, const int sensor);
