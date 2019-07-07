@@ -175,3 +175,9 @@ target_link_libraries(mono_kitti ${PROJECT_NAME} ${PCL_LIBRARIES})
 #  Examples/Monocular/mono_euroc.cc)
 #target_link_libraries(mono_euroc ${PROJECT_NAME} ${PCL_LIBRARIES})
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/VIORB)
+
+add_executable(viorb_euroc
+        Examples/VIORB/viorb_euroc.cpp)
+target_link_libraries(viorb_euroc ${PROJECT_NAME} ${PCL_LIBRARIES})
+
