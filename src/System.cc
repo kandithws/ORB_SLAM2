@@ -258,6 +258,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
+    // Moved VINS-Init thread to TrackMONOVI
 }
 
 System::~System() {
@@ -532,13 +533,10 @@ void System::Shutdown(bool bShutDownViewer)
             pangolin::BindToContext("ORB-SLAM2: Map Viewer");
     }
 
-
     if (mptLocalMappingVIOInit){
         if (mptLocalMappingVIOInit->joinable())
             mptLocalMappingVIOInit->join();
     }
-
-
 }
 
 void System::SaveTrajectoryTUM(const string &filename)

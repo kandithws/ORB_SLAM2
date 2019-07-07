@@ -440,16 +440,6 @@ IMUPreintegrator Tracking::GetIMUPreIntSinceLastFrame(Frame *pCurF, Frame *pLast
 }
 
 cv::Mat Tracking::GrabImageMonoVI(const cv::Mat &im, const std::vector<IMUData> &vimu, const double &timestamp) {
-//    static bool init = false;
-//    if (!init) {
-//        Config::getInstance().SetUseIMU(true);
-//        mptLocalMappingVIOInit = std::make_shared<std::thread>(
-//                &ORB_SLAM2::LocalMapping::VINSInitThread,
-//                mpLocalMapper
-//        );
-//        init = true;
-//        SPDLOG_INFO("ORBSLAM with IMU !");
-//    }
 
     mvIMUSinceLastKF.insert(mvIMUSinceLastKF.end(), vimu.begin(), vimu.end());
     mImGray = im;

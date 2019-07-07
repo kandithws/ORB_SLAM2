@@ -888,7 +888,6 @@ void KeyFrame::SetBadFlag()
         }
     }
 
-
     mpMap->EraseKeyFrame(this);
     mpKeyFrameDB->erase(this);
 }
