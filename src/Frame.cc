@@ -39,19 +39,21 @@ float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 void Frame::ComputeIMUPreIntSinceLastFrame(const Frame* pLastF, IMUPreintegrator& IMUPreInt) const
 {
     // Reset pre-integrator first
+    SPDLOG_DEBUG("TEST1");
     IMUPreInt.reset();
 
     const auto& vIMUSInceLastFrame = mvIMUDataSinceLastFrame;
 
     Vector3d bg = pLastF->GetNavState().Get_BiasGyr();
     Vector3d ba = pLastF->GetNavState().Get_BiasAcc();
-
+    SPDLOG_DEBUG("TEST2");
     // remember to consider the gap between the last KF and the first IMU
     {
         const IMUData& imu = vIMUSInceLastFrame.front();
         double dt = imu._t - pLastF->mTimeStamp;
+        SPDLOG_DEBUG("TEST2: Updating");
         IMUPreInt.update(imu._g - bg, imu._a - ba, dt);
-
+        SPDLOG_DEBUG("TEST2: Update done");
         // Test log
         if(dt < 0)
         {
@@ -59,6 +61,7 @@ void Frame::ComputeIMUPreIntSinceLastFrame(const Frame* pLastF, IMUPreintegrator
             std::cerr.unsetf ( std::ios::showbase );                // deactivate showbase
         }
     }
+    SPDLOG_DEBUG("TEST3");
     // integrate each imu
     for(size_t i=0; i<vIMUSInceLastFrame.size(); i++)
     {
@@ -81,6 +84,8 @@ void Frame::ComputeIMUPreIntSinceLastFrame(const Frame* pLastF, IMUPreintegrator
             std::cerr.unsetf ( std::ios::showbase );                // deactivate showbase
         }
     }
+
+    SPDLOG_DEBUG("TEST4");
 }
 
 void Frame::UpdatePoseFromNS(const cv::Mat &Tbc)
