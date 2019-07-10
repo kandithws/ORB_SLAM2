@@ -1015,6 +1015,8 @@ void LocalMapping::ProcessNewKeyFrame() {
     mpCurrentKeyFrame->UpdateConnections();
 
     if (Config::getInstance().SystemParams().use_imu){
+        // Delete bad KF in LocalWindow
+        DeleteBadInLocalWindow();
         // Local (Sliding) Window
         AddToLocalWindow(mpCurrentKeyFrame);
     }
@@ -1465,7 +1467,12 @@ void LocalMapping::KeyFrameCulling() {
         assert(pOldestLocalKF);
         KeyFrame *pPrevLocalKF = pOldestLocalKF->GetPrevKeyFrame();
         KeyFrame *pNewestLocalKF = mlLocalKeyFrames.back();
-        // Lazy Copy!
+
+        if (pOldestLocalKF->isBad()) cerr << "pOldestLocalKF is bad, check 1. id: " << pOldestLocalKF->mnId << endl;
+        if (pPrevLocalKF)
+            if (pPrevLocalKF->isBad())
+                cerr << "pPrevLocalKF is bad, check 1. id: " << pPrevLocalKF->mnId << endl;
+        if (pNewestLocalKF->isBad()) cerr << "pNewestLocalKF is bad, check 1. id: " << pNewestLocalKF->mnId << endl;
 
         for (vector<KeyFrame *>::iterator vit = vpLocalKeyFrames.begin(), vend = vpLocalKeyFrames.end();
              vit != vend; vit++) {

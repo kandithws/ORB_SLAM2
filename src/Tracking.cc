@@ -476,7 +476,8 @@ Tracking::Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer,
                    KeyFrameDatabase *pKFDB, const string &strSettingPath, const int sensor) :
         mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
         mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer *>(NULL)), mpSystem(pSys), mpViewer(NULL),
-        mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0) {
+        mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0),
+        mbCreateNewKFAfterReloc(false), mbRelocBiasPrepare(false) {
     // Load camera parameters from settings file
 
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
@@ -1753,6 +1754,7 @@ void Tracking::UpdateLocalPoints() {
 
 
 void Tracking::UpdateLocalKeyFrames() {
+    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
     // Each map point vote for the keyframes in which it has been observed
     map<KeyFrame *, int> keyframeCounter;
     for (int i = 0; i < mCurrentFrame.N; i++) {
@@ -1835,11 +1837,12 @@ void Tracking::UpdateLocalKeyFrames() {
             if (pParent->mnTrackReferenceForFrame != mCurrentFrame.mnId) {
                 mvpLocalKeyFrames.push_back(pParent);
                 pParent->mnTrackReferenceForFrame = mCurrentFrame.mnId;
-                break;
+                if (!bUseIMU)
+                    break;
             }
         }
 
-        if (Config::getInstance().SystemParams().use_imu) {
+        if (bUseIMU) {
             KeyFrame *pPrevKF = pKF->GetPrevKeyFrame();
             if (pPrevKF) {
                 if (pPrevKF->isBad()) cerr << "pPrevKF is bad in UpdateLocalKeyFrames()?????" << endl;

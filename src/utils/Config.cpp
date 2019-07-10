@@ -106,7 +106,7 @@ void Config::parseConfig() {
 
         ORB_SLAM2_PARSE_CONFIG_SCOPE("system") {
             ORB_SLAM2_PARSE_BOOL_CONFIG(System, use_object)
-            ORB_SLAM2_PARSE_BOOL_CONFIG(System, use_imu)
+            // ORB_SLAM2_PARSE_BOOL_CONFIG(System, use_imu)
             ORB_SLAM2_PARSE_BOOL_CONFIG(System, real_time)
         }
 
@@ -129,20 +129,41 @@ void Config::parseConfig() {
                 auto Rt = mIMUParam.Tbc.rowRange(0,3).colRange(0,3).t();
                 mIMUParam.Tcb.rowRange(0,3).colRange(0,3) =  Rt;
                 mIMUParam.Tcb.rowRange(0,3).col(3) = - Rt * mIMUParam.Tbc.rowRange(0,3).col(3);
+//                SPDLOG_INFO("Tbc= ");
+//                std::cout << Converter::toHomogeneous4d(mIMUParam.Tbc) << std::endl;
+//                SPDLOG_INFO("Tcb= ");
+//                std::cout << Converter::toHomogeneous4d(mIMUParam.Tcb) << std::endl;
+//                SPDLOG_INFO("Tbc * Tcb= (Should be eye(4,4) )");
+//                std::cout << Converter::toHomogeneous4d(mIMUParam.Tbc * mIMUParam.Tcb) << std::endl;
                 mIMUParam.mbTbcRead = true;
             }
         }
 
 
-        ORB_SLAM2_PARSE_CONFIG_SCOPE("runtime"){
+        ORB_SLAM2_PARSE_CONFIG_SCOPE("runtime") {
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, bagfile)
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, imu_topic)
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, image_topic)
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, log_file_path)
-            ORB_SLAM2_PARSE_CONFIG(Runtime, double , image_delay_to_imu)
-            ORB_SLAM2_PARSE_CONFIG(Runtime, double , discard_time)
+            ORB_SLAM2_PARSE_CONFIG(Runtime, double, image_delay_to_imu)
+            ORB_SLAM2_PARSE_CONFIG(Runtime, double, discard_time)
             ORB_SLAM2_PARSE_BOOL_CONFIG(Runtime, multiply_g)
         }
+        SPDLOG_INFO("\n-------Config Summary------\n"
+                    "System:\n"
+                    "\tuse_object: {}\n"
+                    "\treal_time: {}\n"
+                    "Runtime:\n"
+                    "\tbagfile/dataset: {}\n"
+                    "\tlogfilepath: {}",
+                    mSystemParam.use_object,
+                    mSystemParam.real_time,
+                    mRuntimeParam.bagfile,
+                    mRuntimeParam.log_file_path
+                    );
+
+
+        // TODO-- Config Summary
     }
     else{
         SPDLOG_CRITICAL("Config is not open");
