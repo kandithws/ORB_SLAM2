@@ -235,6 +235,7 @@ bool LoopClosing::ComputeSim3() {
     vbDiscarded.resize(nInitialCandidates);
 
     int nCandidates = 0; //candidates with enough matches
+    static const int nmatches_th = Config::getInstance().SystemParams().use_imu ? 15 : 20;
 
     for (int i = 0; i < nInitialCandidates; i++) {
         KeyFrame *pKF = mvpEnoughConsistentCandidates[i];
@@ -249,7 +250,7 @@ bool LoopClosing::ComputeSim3() {
 
         int nmatches = matcher.SearchByBoW(mpCurrentKF, pKF, vvpMapPointMatches[i]);
 
-        if (nmatches < 20) {
+        if (nmatches < nmatches_th) {
             vbDiscarded[i] = true;
             continue;
         } else {
@@ -526,8 +527,8 @@ void LoopClosing::CorrectLoop() {
     Optimizer::OptimizeEssentialGraph(mpMap, mpMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections,
                                       mbFixScale, this);
 
-    // TODO -- Do I need to remove this???
-    mpMap->InformNewBigChange();
+    if (!Config::getInstance().SystemParams().use_imu)
+        mpMap->InformNewBigChange();
 
     // Map updated, set flag for Tracking
     SetMapUpdateFlagInTracking(true);
@@ -642,7 +643,7 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF) {
             cv::Mat cvTbc;
 
             if (bUseIMU)
-                Config::getInstance().IMUParams().GetMatTbc();
+                cvTbc = Config::getInstance().IMUParams().GetMatTbc();
 
             while (!lpKFtoCheck.empty()) {
                 KeyFrame *pKF = lpKFtoCheck.front();
@@ -720,11 +721,15 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF) {
                 }
             }
 
-            mpMap->InformNewBigChange();
+            if (!bUseIMU)
+                mpMap->InformNewBigChange();
 
             mpLocalMapper->Release();
 
             cout << "Map updated!" << endl;
+
+            if (!bUseIMU)
+                SetMapUpdateFlagInTracking(true);
         }
 
         mbFinishedGBA = true;
