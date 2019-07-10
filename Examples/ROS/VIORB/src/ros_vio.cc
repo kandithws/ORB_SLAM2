@@ -28,6 +28,7 @@
 #include<opencv2/core/core.hpp>
 
 #include <System.h>
+#include <utils/vector_utils.h>
 #include "MsgSync/MsgSynchronizer.h"
 #include <imu/IMUData.h>
 #include <utils/Config.h>
@@ -137,7 +138,7 @@ int main(int argc, char **argv) {
                         bool bdata = msgsync.getRecentMsgs(imageMsg, vimuMsg);
 
                         if (bdata) {
-                            std::vector<ORB_SLAM2::IMUData> vimuData;
+                            ORB_SLAM2::utils::eigen_aligned_vector<ORB_SLAM2::IMUData> vimuData;
                             //ROS_INFO("image time: %.3f",imageMsg->header.stamp.toSec());
                             for (unsigned int i = 0; i < vimuMsg.size(); i++) {
                                 sensor_msgs::ImuConstPtr imuMsg = vimuMsg[i];
@@ -205,7 +206,7 @@ int main(int argc, char **argv) {
             bool bdata = msgsync.getRecentMsgs(imageMsg, vimuMsg);
 
             if (bdata) {
-                std::vector<ORB_SLAM2::IMUData> vimuData;
+                ORB_SLAM2::utils::eigen_aligned_vector<ORB_SLAM2::IMUData> vimuData;
                 //ROS_INFO("image time: %.3f",imageMsg->header.stamp.toSec());
                 for (unsigned int i = 0; i < vimuMsg.size(); i++) {
                     sensor_msgs::ImuConstPtr imuMsg = vimuMsg[i];

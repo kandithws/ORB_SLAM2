@@ -1729,6 +1729,11 @@ bool Tracking::NeedNewKeyFrame() {
     if (mCurrentFrame.mnId < mnLastRelocFrameId + mMaxFrames && nKFs > mMaxFrames)
         return false;
 
+
+    // Do not insert keyframes if bias is not computed in VINS mode
+    if (bUseIMU && mbRelocBiasPrepare/* && mpLocalMapper->GetVINSInited()*/)
+        return false;
+
     // Tracked MapPoints in the reference keyframe
     int nMinObs = 3;
     if (nKFs <= 2)
@@ -1777,6 +1782,7 @@ bool Tracking::NeedNewKeyFrame() {
 
     // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
     const bool c1a = mCurrentFrame.mnId >= mnLastKeyFrameId + mMaxFrames;
+    //const bool c1a = mCurrentFrame.mTimeStamp >= mpLastKeyFrame->mTimeStamp + 3.0;
     // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
     const bool c1b = (mCurrentFrame.mnId >= mnLastKeyFrameId + mMinFrames && bLocalMappingIdle);
     //Condition 1c: tracking is weak
@@ -1804,50 +1810,18 @@ bool Tracking::NeedNewKeyFrame() {
 }
 
 void Tracking::CreateNewKeyFrame() {
+    cout << "CreateNewKeyFrame\n";
     if (!mpLocalMapper->SetNotStop(true))
         return;
 
     //TODO: is it necessary to clear IMU buffers if this is the first KeyFrame after relocalization (also no prevKF)?
-    KeyFrame *pKF;
-    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
-    if (mbUseObject) {
-
-        // TODO
-        if (bUseIMU) {
-            SPDLOG_ERROR("Use object + IMU is not yet implemented");
-            throw std::runtime_error("NOT IMPLEMENTED YET");
-        } else {
-            if ((mSensor == System::MONOCULAR) || (mSensor == System::RGBD)) {
-                pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mImColor, mImGray);
-            } else {
-                pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB); // TODO: Stereo Vision support
-            }
-        }
-
-        if (KeyFrame::nInitId < 0) {
-            KeyFrame::nInitId = pKF->mnId; // First KF to consider objects
-        }
-
-        // Make a copy of current imcolor;
-        //cv::Mat ImColor = mImColor.clone();
-        QueueDetectionThread(pKF, pKF->mImColor);
-
-    } else {
-        if (bUseIMU) {
-            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mvIMUSinceLastKF, mpLastKeyFrame);
-            // Set initial NavState for KeyFrame
-            pKF->SetInitialNavStateAndBias(mCurrentFrame.GetNavState());
-            // Compute pre-integrator
-            pKF->ComputePreInt();
-            // Clear IMUData buffer
-            mvIMUSinceLastKF.clear();
-        } else {
-            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
-        }
-    }
-
-    // TODO -- Add Keypoint Color Rendering (or perform as a Thread)
-    // AddColorToKeyPoints(pKF);
+    KeyFrame *pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mvIMUSinceLastKF, mpLastKeyFrame);
+    // Set initial NavState for KeyFrame
+    pKF->SetInitialNavStateAndBias(mCurrentFrame.GetNavState());
+    // Compute pre-integrator
+    pKF->ComputePreInt();
+    // Clear IMUData buffer
+    mvIMUSinceLastKF.clear();
 
     mpReferenceKF = pKF;
     mCurrentFrame.mpReferenceKF = pKF;
@@ -1912,6 +1886,116 @@ void Tracking::CreateNewKeyFrame() {
     mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame = pKF;
 }
+
+//void Tracking::CreateNewKeyFrame() {
+//    if (!mpLocalMapper->SetNotStop(true))
+//        return;
+//
+//    //TODO: is it necessary to clear IMU buffers if this is the first KeyFrame after relocalization (also no prevKF)?
+//    KeyFrame *pKF;
+//    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
+//    if (mbUseObject) {
+//
+//        // TODO
+//        if (bUseIMU) {
+//            SPDLOG_ERROR("Use object + IMU is not yet implemented");
+//            throw std::runtime_error("NOT IMPLEMENTED YET");
+//        } else {
+//            if ((mSensor == System::MONOCULAR) || (mSensor == System::RGBD)) {
+//                pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mImColor, mImGray);
+//            } else {
+//                pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB); // TODO: Stereo Vision support
+//            }
+//        }
+//
+//        if (KeyFrame::nInitId < 0) {
+//            KeyFrame::nInitId = pKF->mnId; // First KF to consider objects
+//        }
+//
+//        // Make a copy of current imcolor;
+//        //cv::Mat ImColor = mImColor.clone();
+//        QueueDetectionThread(pKF, pKF->mImColor);
+//
+//    } else {
+//        if (bUseIMU) {
+//            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mvIMUSinceLastKF, mpLastKeyFrame);
+//            // Set initial NavState for KeyFrame
+//            pKF->SetInitialNavStateAndBias(mCurrentFrame.GetNavState());
+//            // Compute pre-integrator
+//            pKF->ComputePreInt();
+//            // Clear IMUData buffer
+//            mvIMUSinceLastKF.clear();
+//        } else {
+//            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+//        }
+//    }
+//
+//    // TODO -- Add Keypoint Color Rendering (or perform as a Thread)
+//    // AddColorToKeyPoints(pKF);
+//
+//    mpReferenceKF = pKF;
+//    mCurrentFrame.mpReferenceKF = pKF;
+//
+//    if (mSensor != System::MONOCULAR) {
+//        mCurrentFrame.UpdatePoseMatrices();
+//
+//        // We sort points by the measured depth by the stereo/RGBD sensor.
+//        // We create all those MapPoints whose depth < mThDepth.
+//        // If there are less than 100 close points we create the 100 closest.
+//        vector<pair<float, int> > vDepthIdx;
+//        vDepthIdx.reserve(mCurrentFrame.N);
+//        for (int i = 0; i < mCurrentFrame.N; i++) {
+//            float z = mCurrentFrame.mvDepth[i];
+//            if (z > 0) {
+//                vDepthIdx.push_back(make_pair(z, i));
+//            }
+//        }
+//
+//        if (!vDepthIdx.empty()) {
+//            sort(vDepthIdx.begin(), vDepthIdx.end());
+//
+//            int nPoints = 0;
+//            for (size_t j = 0; j < vDepthIdx.size(); j++) {
+//                int i = vDepthIdx[j].second;
+//
+//                bool bCreateNew = false;
+//
+//                MapPoint *pMP = mCurrentFrame.mvpMapPoints[i];
+//                if (!pMP)
+//                    bCreateNew = true;
+//                else if (pMP->Observations() < 1) {
+//                    bCreateNew = true;
+//                    mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
+//                }
+//
+//                if (bCreateNew) {
+//                    cv::Mat x3D = mCurrentFrame.UnprojectStereo(i);
+//                    MapPoint *pNewMP = new MapPoint(x3D, pKF, mpMap);
+//                    pNewMP->AddObservation(pKF, i);
+//                    pKF->AddMapPoint(pNewMP, i);
+//                    pNewMP->ComputeDistinctiveDescriptors();
+//                    pNewMP->UpdateNormalAndDepth();
+//                    mpMap->AddMapPoint(pNewMP);
+//
+//                    mCurrentFrame.mvpMapPoints[i] = pNewMP;
+//                    nPoints++;
+//                } else {
+//                    nPoints++;
+//                }
+//
+//                if (vDepthIdx[j].first > mThDepth && nPoints > 100)
+//                    break;
+//            }
+//        }
+//    }
+//
+//    mpLocalMapper->InsertKeyFrame(pKF);
+//
+//    mpLocalMapper->SetNotStop(false);
+//
+//    mnLastKeyFrameId = mCurrentFrame.mnId;
+//    mpLastKeyFrame = pKF;
+//}
 
 void Tracking::SearchLocalPoints() {
     // Do not search map points already matched
