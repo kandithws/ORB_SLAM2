@@ -84,6 +84,8 @@ class Frame {
   public:
     Frame();
 
+
+
     // Copy constructor.
     Frame(const Frame &frame);
 

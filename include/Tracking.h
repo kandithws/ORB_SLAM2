@@ -74,7 +74,7 @@ class Tracking {
     void RecomputeIMUBiasAndCurrentNavstate(NavState &nscur);
 
     // 20 Frames are used to compute bias
-    vector<Frame> mv20FramesReloc;
+    utils::eigen_aligned_vector<Frame> mv20FramesReloc;
 
     // Predict the NavState of Current Frame by IMU
     void PredictNavStateByIMU(bool bMapUpdated);

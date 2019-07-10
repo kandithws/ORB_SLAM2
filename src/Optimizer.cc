@@ -1001,6 +1001,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
 
     unique_lock<mutex> lock(pMap->mMutexMapUpdate);
     //auto lock = Map::CreateUpdateLock(pMap);
+    auto Tbc = Config::getInstance().IMUParams().GetMatTbc();
 
     // SE3 Pose Recovering. Sim3:[sR t;0 1] -> SE3:[R t/s;0 1]
     for(size_t i=0;i<vpKFs.size();i++)
@@ -1021,6 +1022,13 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
         cv::Mat Tiw = Converter::toCvSE3(eigR,eigt);
 
         pKFi->SetPose(Tiw);
+
+        // pLC represent Use IMU !
+        if (pLC) {
+            // Update P/V/R in NavState
+            pKFi->UpdateNavStatePVRFromTcw(Tiw,Tbc);
+        }
+
     }
 
     // Correct points. Transform to "non-optimized" reference keyframe pose and transform back with optimized pose

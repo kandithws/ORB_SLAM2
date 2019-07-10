@@ -728,7 +728,7 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF) {
 
             cout << "Map updated!" << endl;
 
-            if (!bUseIMU)
+            if (bUseIMU)
                 SetMapUpdateFlagInTracking(true);
         }
 

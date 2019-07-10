@@ -64,7 +64,8 @@ class Optimizer {
 
     Vector3d static OptimizeInitialGyroBias(const std::vector<KeyFrame *> &vLocalKeyFrames);
 
-    Vector3d static OptimizeInitialGyroBias(const std::vector<Frame> &vFrames);
+    //Vector3d static OptimizeInitialGyroBias(const std::vector<Frame> &vFrames);
+    Vector3d static OptimizeInitialGyroBias(const utils::eigen_aligned_vector<Frame> &vFrames);
 
     Vector3d static OptimizeInitialGyroBias(const vector<cv::Mat> &vTwc, const utils::eigen_aligned_vector<IMUPreintegrator> &vImuPreInt);
 

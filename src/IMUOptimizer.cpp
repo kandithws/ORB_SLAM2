@@ -2673,7 +2673,7 @@ void Optimizer::LocalBundleAdjustmentNavState(KeyFrame *pCurKF, const std::list<
 
 }
 
-Vector3d Optimizer::OptimizeInitialGyroBias(const std::vector<Frame> &vFrames) {
+Vector3d Optimizer::OptimizeInitialGyroBias(const utils::eigen_aligned_vector<Frame> &vFrames) {
     //size_t N = vpKFs.size();
     Matrix4d Tbc = Config::getInstance().IMUParams().GetEigTbc();
     Matrix3d Rcb = Tbc.topLeftCorner(3, 3).transpose();

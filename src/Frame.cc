@@ -204,6 +204,7 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, const utils::eigen_
 Frame::Frame()
 {}
 
+
 //Copy Constructor
 Frame::Frame(const Frame &frame)
     :mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
@@ -224,6 +225,11 @@ Frame::Frame(const Frame &frame)
 
     if(!frame.mTcw.empty())
         SetPose(frame.mTcw);
+
+    mvIMUDataSinceLastFrame = frame.mvIMUDataSinceLastFrame;
+    mNavState = frame.GetNavState();
+    mMargCovInv = frame.mMargCovInv;
+    mNavStatePrior = frame.mNavStatePrior;
 }
 
 
