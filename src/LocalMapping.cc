@@ -868,9 +868,12 @@ void LocalMapping::Run() {
         // Tracking will see that Local Mapping is busy
         SetAcceptKeyFrames(false);
 
+        if (mbUseObject)
+            CleanUpInitializeObjectQueue();
+
         // Check if there are keyframes in the queue
         if (CheckNewKeyFrames()) {
-            // Local Window also updated in below function
+            bool bUseIMU = Config::getInstance().SystemParams().use_imu;
             // BoW conversion and insertion in Map
             ProcessNewKeyFrame();
 
@@ -883,46 +886,75 @@ void LocalMapping::Run() {
             if (!CheckNewKeyFrames()) {
                 // Find more matches in neighbor keyframes and fuse point duplications
                 SearchInNeighbors();
+
+                // Initialize Object stuff when mappoints are stable
+                if (mbUseObject)
+                    InitializeCurrentKeyFrameObjects();
             }
 
             mbAbortBA = false;
 
             if (!CheckNewKeyFrames() && !stopRequested()) {
+
                 // Local BA
                 if (mpMap->KeyFramesInMap() > 2) {
-                    if (!GetVINSInited()) {
-                        //Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, this);
-                        Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap, this);
-                    } else {
-                        //Optimizer::LocalBundleAdjustmentNavStatePRV(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, mGravityVec, this);
-                        Optimizer::LocalBAPRVIDP(mpCurrentKeyFrame, mlLocalKeyFrames, &mbAbortBA, mpMap, mGravityVec,
-                                                 this);
-                    }
-                }
+                    if (bUseIMU) {
+                        if (mbUseObject) {
+                            // TODO!!
+                            throw std::runtime_error("Not Implemented!");
+                        } else {
+                            if (!GetVINSInited()) {
+                                //Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, this);
+                                Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap, this);
+                            } else {
+                                //Optimizer::LocalBundleAdjustmentNavStatePRV(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, mGravityVec, this);
+                                Optimizer::LocalBAPRVIDP(mpCurrentKeyFrame, mlLocalKeyFrames, &mbAbortBA, mpMap,
+                                                         mGravityVec, this);
+                            }
+                        }
 
-                // Visual-Inertial initialization for non-realtime mode
-                if (!Config::getInstance().SystemParams().real_time) {
-                    // Try to initialize VIO, if not inited
-                    if (!GetVINSInited()) {
-                        bool tmpbool = TryInitVIO();
-                        SetVINSInited(tmpbool);
-                        if (tmpbool) {
-                            // Update map scale
-                            mpMap->UpdateScale(mnVINSInitScale);
-                            cout << "... scale updated from localmapping run...\n";
-                            // Set initialization flag
-                            SetFirstVINSInited(true);
+
+                        // Visual-Inertial initialization for non-realtime mode
+                        if (!Config::getInstance().SystemParams().real_time) {
+                            // Try to initialize VIO, if not inited
+                            if (!GetVINSInited()) {
+                                bool tmpbool = TryInitVIO();
+                                SetVINSInited(tmpbool);
+                                if (tmpbool) {
+                                    // Update map scale
+                                    mpMap->UpdateScale(mnVINSInitScale);
+                                    cout << "... scale updated from localmapping run...\n";
+                                    // Set initialization flag
+                                    SetFirstVINSInited(true);
+                                }
+                            }
+                        }
+
+                    } else {
+                        if (mbUseObject) {
+                            Optimizer::LocalBundleAdjustmentWithObjects(mpCurrentKeyFrame, &mbAbortBA, mpMap);
+                            // Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
+                        } else {
+                            Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap);
                         }
                     }
                 }
-
-                // May set bad for KF in LocalWindow
                 // Check redundant local Keyframes
                 KeyFrameCulling();
+
+                if (mbUseObject)
+                    ObjectCulling();
             }
 
-            if (GetFlagInitGBAFinish())
+            if (bUseIMU){
+                if (GetFlagInitGBAFinish())
+                    mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
+            }
+            else{
                 mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
+            }
+
+            // TODO: Insert Object to mpLoopCloser
         } else if (Stop()) {
             // Safe area to stop
             while (isStopped() && !CheckFinish()) {
@@ -945,124 +977,6 @@ void LocalMapping::Run() {
 
     SetFinish();
 }
-
-//void LocalMapping::Run() {
-//
-//    mbFinished = false;
-//
-//    while (1) {
-//        // Tracking will see that Local Mapping is busy
-//        SetAcceptKeyFrames(false);
-//
-//        if (mbUseObject)
-//            CleanUpInitializeObjectQueue();
-//
-//        // Check if there are keyframes in the queue
-//        if (CheckNewKeyFrames()) {
-//            bool bUseIMU = Config::getInstance().SystemParams().use_imu;
-//            // BoW conversion and insertion in Map
-//            ProcessNewKeyFrame();
-//
-//            // Check recent MapPoints
-//            MapPointCulling();
-//
-//            // Triangulate new MapPoints
-//            CreateNewMapPoints();
-//
-//            if (!CheckNewKeyFrames()) {
-//                // Find more matches in neighbor keyframes and fuse point duplications
-//                SearchInNeighbors();
-//
-//                // Initialize Object stuff when mappoints are stable
-//                if (mbUseObject)
-//                    InitializeCurrentKeyFrameObjects();
-//            }
-//
-//            mbAbortBA = false;
-//
-//            if (!CheckNewKeyFrames() && !stopRequested()) {
-//
-//                // Local BA
-//                if (mpMap->KeyFramesInMap() > 2) {
-//                    if (bUseIMU) {
-//                        if (mbUseObject) {
-//                            // TODO!!
-//                            throw std::runtime_error("Not Implemented!");
-//                        } else {
-//                            if (!GetVINSInited()) {
-//                                //Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, this);
-//                                Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap, this);
-//                            } else {
-//                                //Optimizer::LocalBundleAdjustmentNavStatePRV(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, mGravityVec, this);
-//                                Optimizer::LocalBAPRVIDP(mpCurrentKeyFrame, mlLocalKeyFrames, &mbAbortBA, mpMap,
-//                                                         mGravityVec, this);
-//                            }
-//                        }
-//
-//
-//                        // Visual-Inertial initialization for non-realtime mode
-//                        if (!Config::getInstance().SystemParams().real_time) {
-//                            // Try to initialize VIO, if not inited
-//                            if (!GetVINSInited()) {
-//                                bool tmpbool = TryInitVIO();
-//                                SetVINSInited(tmpbool);
-//                                if (tmpbool) {
-//                                    // Update map scale
-//                                    mpMap->UpdateScale(mnVINSInitScale);
-//                                    cout << "... scale updated from localmapping run...\n";
-//                                    // Set initialization flag
-//                                    SetFirstVINSInited(true);
-//                                }
-//                            }
-//                        }
-//
-//                    } else {
-//                        if (mbUseObject) {
-//                            Optimizer::LocalBundleAdjustmentWithObjects(mpCurrentKeyFrame, &mbAbortBA, mpMap);
-//                            // Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
-//                        } else {
-//                            Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap);
-//                        }
-//                    }
-//                }
-//                // Check redundant local Keyframes
-//                KeyFrameCulling();
-//
-//                if (mbUseObject)
-//                    ObjectCulling();
-//            }
-//
-//            if (bUseIMU){
-//                if (GetFlagInitGBAFinish())
-//                    mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
-//            }
-//            else{
-//                mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
-//            }
-//
-//            // TODO: Insert Object to mpLoopCloser
-//        } else if (Stop()) {
-//            // Safe area to stop
-//            while (isStopped() && !CheckFinish()) {
-//                usleep(3000);
-//            }
-//            if (CheckFinish())
-//                break;
-//        }
-//
-//        ResetIfRequested();
-//
-//        // Tracking will see that Local Mapping is busy
-//        SetAcceptKeyFrames(true);
-//
-//        if (CheckFinish())
-//            break;
-//
-//        usleep(3000);
-//    }
-//
-//    SetFinish();
-//}
 
 void LocalMapping::InsertKeyFrame(KeyFrame *pKF) {
     unique_lock<mutex> lock(mMutexNewKFs);
@@ -1540,276 +1454,170 @@ void LocalMapping::InterruptBA() {
     mbAbortBA = true;
 }
 
+
 void LocalMapping::KeyFrameCulling() {
+    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
 
-    if (Config::getInstance().SystemParams().real_time) {
-        if (GetFlagCopyInitKFs())
+    if (bUseIMU) {
+        if (Config::getInstance().SystemParams().real_time && GetFlagCopyInitKFs())
             return;
-    }
-    SetFlagCopyInitKFs(true);
 
+        SetFlagCopyInitKFs(true);
+    }
     // Check redundant keyframes (only local keyframes)
     // A keyframe is considered redundant if the 90% of the MapPoints it sees, are seen
     // in at least other 3 keyframes (in the same or finer scale)
     // We only consider close stereo points
     vector<KeyFrame *> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
 
-    KeyFrame *pOldestLocalKF = mlLocalKeyFrames.front();
-    KeyFrame *pPrevLocalKF = pOldestLocalKF->GetPrevKeyFrame();
-    KeyFrame *pNewestLocalKF = mlLocalKeyFrames.back();
-    // Test log
-    if (pOldestLocalKF->isBad()) cerr << "pOldestLocalKF is bad, check 1. id: " << pOldestLocalKF->mnId << endl;
-    if (pPrevLocalKF)
-        if (pPrevLocalKF->isBad())
-            cerr << "pPrevLocalKF is bad, check 1. id: " << pPrevLocalKF->mnId << endl;
-    if (pNewestLocalKF->isBad()) cerr << "pNewestLocalKF is bad, check 1. id: " << pNewestLocalKF->mnId << endl;
+    if (bUseIMU) {
+        // Visual-Inertial SLAM
+        KeyFrame *pOldestLocalKF = mlLocalKeyFrames.front();
+        assert(pOldestLocalKF);
+        KeyFrame *pPrevLocalKF = pOldestLocalKF->GetPrevKeyFrame();
+        KeyFrame *pNewestLocalKF = mlLocalKeyFrames.back();
 
-    for (vector<KeyFrame *>::iterator vit = vpLocalKeyFrames.begin(), vend = vpLocalKeyFrames.end();
-         vit != vend; vit++) {
-        KeyFrame *pKF = *vit;
-        if (pKF->mnId == 0)
-            continue;
+        if (pOldestLocalKF->isBad()) cerr << "pOldestLocalKF is bad, check 1. id: " << pOldestLocalKF->mnId << endl;
+        if (pPrevLocalKF)
+            if (pPrevLocalKF->isBad())
+                cerr << "pPrevLocalKF is bad, check 1. id: " << pPrevLocalKF->mnId << endl;
+        if (pNewestLocalKF->isBad()) cerr << "pNewestLocalKF is bad, check 1. id: " << pNewestLocalKF->mnId << endl;
 
-        // Don't cull the oldest KF in LocalWindow,
-        // And the KF before this KF
-        if (pKF == pOldestLocalKF || pKF == pPrevLocalKF)
-            continue;
-
-        // Check time between Prev/Next Keyframe, if larger than 0.5s(for local)/3s(others), don't cull
-        // Note, the KF just out of Local is similarly considered as Local
-        KeyFrame *pPrevKF = pKF->GetPrevKeyFrame();
-        KeyFrame *pNextKF = pKF->GetNextKeyFrame();
-        if (pPrevKF && pNextKF && !GetVINSInited()) {
-            if (fabs(pNextKF->mTimeStamp - pPrevKF->mTimeStamp) > /*0.2*/0.5)
+        for (vector<KeyFrame *>::iterator vit = vpLocalKeyFrames.begin(), vend = vpLocalKeyFrames.end();
+             vit != vend; vit++) {
+            KeyFrame *pKF = *vit;
+            if (pKF->mnId == 0)
                 continue;
-        }
-        // Don't drop the KF before current KF
-        if (pKF->GetNextKeyFrame() == mpCurrentKeyFrame)
-            continue;
-        if (pKF->mTimeStamp >= mpCurrentKeyFrame->mTimeStamp - 0.11)
-            continue;
 
-        if (pPrevKF && pNextKF) {
-            double timegap = 0.51;
-            if (GetVINSInited() && pKF->mTimeStamp < mpCurrentKeyFrame->mTimeStamp - 4.0)
-                timegap = 3.01;
-
-            if (fabs(pNextKF->mTimeStamp - pPrevKF->mTimeStamp) > timegap)
+            // Don't cull the oldest KF in LocalWindow,
+            // And the KF before this KF
+            if (pKF == pOldestLocalKF || pKF == pPrevLocalKF)
                 continue;
-        }
 
-        const vector<MapPoint *> vpMapPoints = pKF->GetMapPointMatches();
+            // Check time between Prev/Next Keyframe, if larger than 0.5s(for local)/3s(others), don't cull
+            // Note, the KF just out of Local is similarly considered as Local
+            KeyFrame *pPrevKF = pKF->GetPrevKeyFrame();
+            KeyFrame *pNextKF = pKF->GetNextKeyFrame();
+            if (pPrevKF && pNextKF && !GetVINSInited()) {
+                if (fabs(pNextKF->mTimeStamp - pPrevKF->mTimeStamp) > /*0.2*/0.5)
+                    continue;
+            }
+            // Don't drop the KF before current KF
+            if (pKF->GetNextKeyFrame() == mpCurrentKeyFrame)
+                continue;
+            if (pKF->mTimeStamp >= mpCurrentKeyFrame->mTimeStamp - 0.11)
+                continue;
 
-        int nObs = 3;
-        const int thObs = nObs;
-        int nRedundantObservations = 0;
-        int nMPs = 0;
-        for (size_t i = 0, iend = vpMapPoints.size(); i < iend; i++) {
-            MapPoint *pMP = vpMapPoints[i];
-            if (pMP) {
-                if (!pMP->isBad()) {
-                    if (!mbMonocular) {
-                        if (pKF->mvDepth[i] > pKF->mThDepth || pKF->mvDepth[i] < 0)
-                            continue;
-                    }
+            if (pPrevKF && pNextKF) {
+                double timegap = 0.51;
+                if (GetVINSInited() && pKF->mTimeStamp < mpCurrentKeyFrame->mTimeStamp - 4.0)
+                    timegap = 3.01;
 
-                    nMPs++;
-                    if (pMP->Observations() > thObs) {
-                        const int &scaleLevel = pKF->mvKeysUn[i].octave;
-                        const mapMapPointObs/*map<KeyFrame*, size_t>*/ observations = pMP->GetObservations();
-                        int nObs = 0;
-                        for (mapMapPointObs/*map<KeyFrame*, size_t>*/::const_iterator mit = observations.begin(), mend = observations.end();
-                             mit != mend; mit++) {
-                            KeyFrame *pKFi = mit->first;
-                            if (pKFi == pKF)
+                if (fabs(pNextKF->mTimeStamp - pPrevKF->mTimeStamp) > timegap)
+                    continue;
+            }
+
+            const vector<MapPoint *> vpMapPoints = pKF->GetMapPointMatches();
+
+            int nObs = 3;
+            const int thObs = nObs;
+            int nRedundantObservations = 0;
+            int nMPs = 0;
+            for (size_t i = 0, iend = vpMapPoints.size(); i < iend; i++) {
+                MapPoint *pMP = vpMapPoints[i];
+                if (pMP) {
+                    if (!pMP->isBad()) {
+                        if (!mbMonocular) {
+                            if (pKF->mvDepth[i] > pKF->mThDepth || pKF->mvDepth[i] < 0)
                                 continue;
-                            const int &scaleLeveli = pKFi->mvKeysUn[mit->second].octave;
-
-                            if (scaleLeveli <= scaleLevel + 1) {
-                                nObs++;
-                                if (nObs >= thObs)
-                                    break;
-                            }
                         }
-                        if (nObs >= thObs) {
-                            nRedundantObservations++;
+
+                        nMPs++;
+                        if (pMP->Observations() > thObs) {
+                            const int &scaleLevel = pKF->mvKeysUn[i].octave;
+                            const mapMapPointObs/*map<KeyFrame*, size_t>*/ observations = pMP->GetObservations();
+                            int nObs = 0;
+                            for (mapMapPointObs/*map<KeyFrame*, size_t>*/::const_iterator mit = observations.begin(), mend = observations.end();
+                                 mit != mend; mit++) {
+                                KeyFrame *pKFi = mit->first;
+                                if (pKFi == pKF)
+                                    continue;
+                                const int &scaleLeveli = pKFi->mvKeysUn[mit->second].octave;
+
+                                if (scaleLeveli <= scaleLevel + 1) {
+                                    nObs++;
+                                    if (nObs >= thObs)
+                                        break;
+                                }
+                            }
+                            if (nObs >= thObs) {
+                                nRedundantObservations++;
+                            }
                         }
                     }
                 }
             }
+
+            if (nRedundantObservations > 0.9 * nMPs)
+                pKF->SetBadFlag();
+
+
         }
 
-        if (nRedundantObservations > 0.9 * nMPs)
-            pKF->SetBadFlag();
+        SetFlagCopyInitKFs(false);
+
+    } else {
+        // Typical Visual SLAM
+        for (vector<KeyFrame *>::iterator vit = vpLocalKeyFrames.begin(), vend = vpLocalKeyFrames.end();
+             vit != vend; vit++) {
+            KeyFrame *pKF = *vit;
+            if (pKF->mnId == 0)
+                continue;
+            const vector<MapPoint *> vpMapPoints = pKF->GetMapPointMatches();
+
+            int nObs = 3;
+            const int thObs = nObs;
+            int nRedundantObservations = 0;
+            int nMPs = 0;
+            for (size_t i = 0, iend = vpMapPoints.size(); i < iend; i++) {
+                MapPoint *pMP = vpMapPoints[i];
+                if (pMP) {
+                    if (!pMP->isBad()) {
+                        if (!mbMonocular) {
+                            if (pKF->mvDepth[i] > pKF->mThDepth || pKF->mvDepth[i] < 0)
+                                continue;
+                        }
+
+                        nMPs++;
+                        if (pMP->Observations() > thObs) {
+                            const int &scaleLevel = pKF->mvKeysUn[i].octave;
+                            const auto observations = pMP->GetObservations();
+                            int nObs = 0;
+                            for (auto mit = observations.cbegin(), mend = observations.cend(); mit != mend; mit++) {
+                                KeyFrame *pKFi = mit->first;
+                                if (pKFi == pKF)
+                                    continue;
+                                const int &scaleLeveli = pKFi->mvKeysUn[mit->second].octave;
+
+                                if (scaleLeveli <= scaleLevel + 1) {
+                                    nObs++;
+                                    if (nObs >= thObs)
+                                        break;
+                                }
+                            }
+                            if (nObs >= thObs) {
+                                nRedundantObservations++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (nRedundantObservations > 0.9 * nMPs)
+                pKF->SetBadFlag();
+        }
     }
-
-    SetFlagCopyInitKFs(false);
 }
-
-
-//void LocalMapping::KeyFrameCulling() {
-//    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
-//
-//    if (bUseIMU) {
-//        if (Config::getInstance().SystemParams().real_time && GetFlagCopyInitKFs())
-//            return;
-//
-//        SetFlagCopyInitKFs(true);
-//    }
-//    // Check redundant keyframes (only local keyframes)
-//    // A keyframe is considered redundant if the 90% of the MapPoints it sees, are seen
-//    // in at least other 3 keyframes (in the same or finer scale)
-//    // We only consider close stereo points
-//    vector<KeyFrame *> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
-//
-//    if (bUseIMU) {
-//        // Visual-Inertial SLAM
-//        KeyFrame *pOldestLocalKF = mlLocalKeyFrames.front();
-//        assert(pOldestLocalKF);
-//        KeyFrame *pPrevLocalKF = pOldestLocalKF->GetPrevKeyFrame();
-//        KeyFrame *pNewestLocalKF = mlLocalKeyFrames.back();
-//
-//        if (pOldestLocalKF->isBad()) cerr << "pOldestLocalKF is bad, check 1. id: " << pOldestLocalKF->mnId << endl;
-//        if (pPrevLocalKF)
-//            if (pPrevLocalKF->isBad())
-//                cerr << "pPrevLocalKF is bad, check 1. id: " << pPrevLocalKF->mnId << endl;
-//        if (pNewestLocalKF->isBad()) cerr << "pNewestLocalKF is bad, check 1. id: " << pNewestLocalKF->mnId << endl;
-//
-//        for (vector<KeyFrame *>::iterator vit = vpLocalKeyFrames.begin(), vend = vpLocalKeyFrames.end();
-//             vit != vend; vit++) {
-//            KeyFrame *pKF = *vit;
-//            if (pKF->mnId == 0)
-//                continue;
-//
-//            // Don't cull the oldest KF in LocalWindow,
-//            // And the KF before this KF
-//            if (pKF == pOldestLocalKF || pKF == pPrevLocalKF)
-//                continue;
-//
-//            // Check time between Prev/Next Keyframe, if larger than 0.5s(for local)/3s(others), don't cull
-//            // Note, the KF just out of Local is similarly considered as Local
-//            KeyFrame *pPrevKF = pKF->GetPrevKeyFrame();
-//            KeyFrame *pNextKF = pKF->GetNextKeyFrame();
-//            if (pPrevKF && pNextKF && !GetVINSInited()) {
-//                if (fabs(pNextKF->mTimeStamp - pPrevKF->mTimeStamp) > /*0.2*/0.5)
-//                    continue;
-//            }
-//            // Don't drop the KF before current KF
-//            if (pKF->GetNextKeyFrame() == mpCurrentKeyFrame)
-//                continue;
-//            if (pKF->mTimeStamp >= mpCurrentKeyFrame->mTimeStamp - 0.11)
-//                continue;
-//
-//            if (pPrevKF && pNextKF) {
-//                double timegap = 0.51;
-//                if (GetVINSInited() && pKF->mTimeStamp < mpCurrentKeyFrame->mTimeStamp - 4.0)
-//                    timegap = 3.01;
-//
-//                if (fabs(pNextKF->mTimeStamp - pPrevKF->mTimeStamp) > timegap)
-//                    continue;
-//            }
-//
-//            const vector<MapPoint *> vpMapPoints = pKF->GetMapPointMatches();
-//
-//            int nObs = 3;
-//            const int thObs = nObs;
-//            int nRedundantObservations = 0;
-//            int nMPs = 0;
-//            for (size_t i = 0, iend = vpMapPoints.size(); i < iend; i++) {
-//                MapPoint *pMP = vpMapPoints[i];
-//                if (pMP) {
-//                    if (!pMP->isBad()) {
-//                        if (!mbMonocular) {
-//                            if (pKF->mvDepth[i] > pKF->mThDepth || pKF->mvDepth[i] < 0)
-//                                continue;
-//                        }
-//
-//                        nMPs++;
-//                        if (pMP->Observations() > thObs) {
-//                            const int &scaleLevel = pKF->mvKeysUn[i].octave;
-//                            const mapMapPointObs/*map<KeyFrame*, size_t>*/ observations = pMP->GetObservations();
-//                            int nObs = 0;
-//                            for (mapMapPointObs/*map<KeyFrame*, size_t>*/::const_iterator mit = observations.begin(), mend = observations.end();
-//                                 mit != mend; mit++) {
-//                                KeyFrame *pKFi = mit->first;
-//                                if (pKFi == pKF)
-//                                    continue;
-//                                const int &scaleLeveli = pKFi->mvKeysUn[mit->second].octave;
-//
-//                                if (scaleLeveli <= scaleLevel + 1) {
-//                                    nObs++;
-//                                    if (nObs >= thObs)
-//                                        break;
-//                                }
-//                            }
-//                            if (nObs >= thObs) {
-//                                nRedundantObservations++;
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//
-//            if (nRedundantObservations > 0.9 * nMPs)
-//                pKF->SetBadFlag();
-//
-//
-//        }
-//
-//        SetFlagCopyInitKFs(false);
-//
-//    } else {
-//        // Typical Visual SLAM
-//        for (vector<KeyFrame *>::iterator vit = vpLocalKeyFrames.begin(), vend = vpLocalKeyFrames.end();
-//             vit != vend; vit++) {
-//            KeyFrame *pKF = *vit;
-//            if (pKF->mnId == 0)
-//                continue;
-//            const vector<MapPoint *> vpMapPoints = pKF->GetMapPointMatches();
-//
-//            int nObs = 3;
-//            const int thObs = nObs;
-//            int nRedundantObservations = 0;
-//            int nMPs = 0;
-//            for (size_t i = 0, iend = vpMapPoints.size(); i < iend; i++) {
-//                MapPoint *pMP = vpMapPoints[i];
-//                if (pMP) {
-//                    if (!pMP->isBad()) {
-//                        if (!mbMonocular) {
-//                            if (pKF->mvDepth[i] > pKF->mThDepth || pKF->mvDepth[i] < 0)
-//                                continue;
-//                        }
-//
-//                        nMPs++;
-//                        if (pMP->Observations() > thObs) {
-//                            const int &scaleLevel = pKF->mvKeysUn[i].octave;
-//                            const auto observations = pMP->GetObservations();
-//                            int nObs = 0;
-//                            for (auto mit = observations.cbegin(), mend = observations.cend(); mit != mend; mit++) {
-//                                KeyFrame *pKFi = mit->first;
-//                                if (pKFi == pKF)
-//                                    continue;
-//                                const int &scaleLeveli = pKFi->mvKeysUn[mit->second].octave;
-//
-//                                if (scaleLeveli <= scaleLevel + 1) {
-//                                    nObs++;
-//                                    if (nObs >= thObs)
-//                                        break;
-//                                }
-//                            }
-//                            if (nObs >= thObs) {
-//                                nRedundantObservations++;
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//
-//            if (nRedundantObservations > 0.9 * nMPs)
-//                pKF->SetBadFlag();
-//        }
-//    }
-//}
 
 cv::Mat LocalMapping::SkewSymmetricMatrix(const cv::Mat &v) {
     return (cv::Mat_<float>(3, 3) << 0, -v.at<float>(2), v.at<float>(1),

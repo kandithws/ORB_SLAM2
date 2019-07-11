@@ -61,55 +61,21 @@ void LoopClosing::SetLocalMapper(LocalMapping *pLocalMapper) {
 }
 
 
-//void LoopClosing::Run() {
-//    mbFinished = false;
-//
-//    while (1) {
-//        // Check if there are keyframes in the queue
-//        if (CheckNewKeyFrames()) {
-//            // Detect loop candidates and check covisibility consistency
-//            if (DetectLoop()) {
-//                if (Config::getInstance().SystemParams().use_imu && !mpLocalMapper->GetVINSInited())
-//                    continue;
-//                // Compute similarity transformation [sR|t]
-//                // In the stereo/RGBD case s=1
-//                if (ComputeSim3()) {
-//                    // Perform loop fusion and pose graph optimization
-//                    CorrectLoop();
-//                }
-//            }
-//        }
-//
-//        ResetIfRequested();
-//
-//        if (CheckFinish())
-//            break;
-//
-//        usleep(5000);
-//    }
-//
-//    SetFinish();
-//}
-
 void LoopClosing::Run() {
     mbFinished = false;
 
     while (1) {
         // Check if there are keyframes in the queue
         if (CheckNewKeyFrames()) {
-            cout << "get NewKeyFrames added from local mapping \n";
             // Detect loop candidates and check covisibility consistency
             if (DetectLoop()) {
-                cout << "Loop detected needed to check for VINSinited and compute Sim3 \n";
-                if (mpLocalMapper->GetVINSInited()) {
-                    cout << "VINSInited = true \n";
-                    // Compute similarity transformation [sR|t]
-                    // In the stereo/RGBD case s=1
-                    if (ComputeSim3()) {
-                        cout << "Pass VINSinited and Sim3 conditions start process correcting the loop \n";
-                        // Perform loop fusion and pose graph optimization
-                        CorrectLoop();
-                    }
+                if (Config::getInstance().SystemParams().use_imu && !mpLocalMapper->GetVINSInited())
+                    continue;
+                // Compute similarity transformation [sR|t]
+                // In the stereo/RGBD case s=1
+                if (ComputeSim3()) {
+                    // Perform loop fusion and pose graph optimization
+                    CorrectLoop();
                 }
             }
         }
