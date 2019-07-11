@@ -91,8 +91,8 @@ class Map {
 
   protected:
     std::set<MapPoint *> mspMapPoints;
-    std::set<KeyFrame *> mspKeyFrames;
-    std::set<MapObject *>mspMapObjects;
+    std::set<KeyFrame *, KFIdComapre> mspKeyFrames;
+    std::set<MapObject *> mspMapObjects;
 
     std::vector<MapPoint *> mvpReferenceMapPoints;
 

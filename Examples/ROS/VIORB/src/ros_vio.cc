@@ -99,8 +99,10 @@ int main(int argc, char **argv) {
     ros::Subscriber imusub;
 
     if (realtime_mode) {
-        imagesub = nh.subscribe(ORB_SLAM2::Config::getInstance().RuntimeParams().image_topic, 2, &ORBVIO::MsgSynchronizer::imageCallback, &msgsync);
-        imusub = nh.subscribe(ORB_SLAM2::Config::getInstance().RuntimeParams().imu_topic, 200, &ORBVIO::MsgSynchronizer::imuCallback, &msgsync);
+        imagesub = nh.subscribe(ORB_SLAM2::Config::getInstance().RuntimeParams().image_topic, 2,
+                                &ORBVIO::MsgSynchronizer::imageCallback, &msgsync);
+        imusub = nh.subscribe(ORB_SLAM2::Config::getInstance().RuntimeParams().imu_topic, 200,
+                              &ORBVIO::MsgSynchronizer::imuCallback, &msgsync);
     }
     sensor_msgs::ImageConstPtr imageMsg;
     std::vector<sensor_msgs::ImuConstPtr> vimuMsg;
@@ -261,7 +263,8 @@ int main(int argc, char **argv) {
     //SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
 
 
-    SLAM.SaveKeyFrameTrajectoryNavState(ORB_SLAM2::Config::getInstance().RuntimeParams().log_file_path + "KeyFrameNavStateTrajectory.txt");
+    SLAM.SaveKeyFrameTrajectoryNavState(
+            ORB_SLAM2::Config::getInstance().RuntimeParams().log_file_path + "KeyFrameNavStateTrajectory.txt");
 
     cout << endl << endl << "Trajectory Saved!" << endl;
 
