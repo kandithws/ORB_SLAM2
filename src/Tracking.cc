@@ -1714,7 +1714,7 @@ bool Tracking::NeedNewKeyFrame() {
     auto bUseIMU = Config::getInstance().SystemParams().use_imu;
 
     // While updating initial poses
-    if (bUseIMU && mpLocalMapper->GetUpdatingInitPoses() && mbRelocBiasPrepare) {
+    if (bUseIMU && mpLocalMapper->GetUpdatingInitPoses()) {
         cerr << "mpLocalMapper->GetUpdatingInitPoses, no new KF" << endl;
         return false;
     }

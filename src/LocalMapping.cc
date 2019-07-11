@@ -143,7 +143,7 @@ cv::Mat LocalMapping::GetRwiInit() {
 
 void LocalMapping::VINSInitThread() {
     unsigned long initedid = 0;
-    SPDLOG_INFO("START VINS INIT THREAD");
+    SPDLOG_INFO("START VINS INIT THREAD: USEIMU={}", Config::getInstance().SystemParams().use_imu);
     while (1) {
         //cout << " KeyFrame::nNextId = " << KeyFrame::nNextId << endl;
         if (KeyFrame::nNextId > 2)
