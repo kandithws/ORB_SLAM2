@@ -771,6 +771,21 @@ void KeyFrame::SetErase()
 void KeyFrame::SetBadFlag()
 {
 
+    // Test log
+    if(mbBad)
+    {
+        vector<KeyFrame*> vKFinMap =mpMap->GetAllKeyFrames();
+        std::set<KeyFrame*> KFinMap(vKFinMap.begin(),vKFinMap.end());
+        if(KFinMap.count(this))
+        {
+            cerr<<"this bad KF is still in map?"<<endl;
+            mpMap->EraseKeyFrame(this);
+        }
+        mpKeyFrameDB->erase(this);
+        cerr<<"KeyFrame "<<mnId<<" is already bad. Set bad return"<<endl;
+        return;
+    }
+
     {
         unique_lock<mutex> lock(mMutexConnections);
         if(mnId==0)

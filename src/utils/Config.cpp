@@ -106,7 +106,7 @@ void Config::parseConfig() {
 
         ORB_SLAM2_PARSE_CONFIG_SCOPE("system") {
             ORB_SLAM2_PARSE_BOOL_CONFIG(System, use_object)
-            // ORB_SLAM2_PARSE_BOOL_CONFIG(System, use_imu)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(System, use_imu)
             ORB_SLAM2_PARSE_BOOL_CONFIG(System, real_time)
         }
 
@@ -129,12 +129,12 @@ void Config::parseConfig() {
                 auto Rt = mIMUParam.Tbc.rowRange(0,3).colRange(0,3).t();
                 mIMUParam.Tcb.rowRange(0,3).colRange(0,3) =  Rt;
                 mIMUParam.Tcb.rowRange(0,3).col(3) = - Rt * mIMUParam.Tbc.rowRange(0,3).col(3);
-//                SPDLOG_INFO("Tbc= ");
-//                std::cout << Converter::toHomogeneous4d(mIMUParam.Tbc) << std::endl;
-//                SPDLOG_INFO("Tcb= ");
-//                std::cout << Converter::toHomogeneous4d(mIMUParam.Tcb) << std::endl;
-//                SPDLOG_INFO("Tbc * Tcb= (Should be eye(4,4) )");
-//                std::cout << Converter::toHomogeneous4d(mIMUParam.Tbc * mIMUParam.Tcb) << std::endl;
+                SPDLOG_INFO("Tbc= ");
+                std::cout << mIMUParam.GetMatTbc() << std::endl;
+                SPDLOG_INFO("Tcb= ");
+                std::cout << mIMUParam.GetMatTcb() << std::endl;
+                SPDLOG_INFO("Tbc * Tcb= (Should be eye(4,4) )");
+                std::cout << mIMUParam.GetEigTbc() * mIMUParam.GetEigTcb() << std::endl;
                 mIMUParam.mbTbcRead = true;
             }
         }
@@ -152,15 +152,28 @@ void Config::parseConfig() {
         SPDLOG_INFO("\n-------Config Summary------\n"
                     "System:\n"
                     "\tuse_object: {}\n"
+                    "\tuse_imu: {}\n"
                     "\treal_time: {}\n"
                     "Runtime:\n"
                     "\tbagfile/dataset: {}\n"
                     "\tlogfilepath: {}",
                     mSystemParam.use_object,
+                    mSystemParam.use_imu,
                     mSystemParam.real_time,
                     mRuntimeParam.bagfile,
                     mRuntimeParam.log_file_path
                     );
+
+        if (mSystemParam.use_imu){
+            SPDLOG_INFO("\n-------IMU Config Summary------\n"
+                        "IMU:\n"
+                        "\tmultiply_g: {}\n"
+                        "\tg: {}\n"
+                        "\tvins_init_time: {}",
+                        mRuntimeParam.multiply_g,
+                        mIMUParam.g,
+                        mIMUParam.vins_init_time);
+        }
 
 
         // TODO-- Config Summary

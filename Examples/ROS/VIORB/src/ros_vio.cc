@@ -28,6 +28,7 @@
 #include<opencv2/core/core.hpp>
 
 #include <System.h>
+#include <utils/vector_utils.h>
 #include "MsgSync/MsgSynchronizer.h"
 #include <imu/IMUData.h>
 #include <utils/Config.h>
@@ -98,8 +99,10 @@ int main(int argc, char **argv) {
     ros::Subscriber imusub;
 
     if (realtime_mode) {
-        imagesub = nh.subscribe(ORB_SLAM2::Config::getInstance().RuntimeParams().image_topic, 2, &ORBVIO::MsgSynchronizer::imageCallback, &msgsync);
-        imusub = nh.subscribe(ORB_SLAM2::Config::getInstance().RuntimeParams().imu_topic, 200, &ORBVIO::MsgSynchronizer::imuCallback, &msgsync);
+        imagesub = nh.subscribe(ORB_SLAM2::Config::getInstance().RuntimeParams().image_topic, 2,
+                                &ORBVIO::MsgSynchronizer::imageCallback, &msgsync);
+        imusub = nh.subscribe(ORB_SLAM2::Config::getInstance().RuntimeParams().imu_topic, 200,
+                              &ORBVIO::MsgSynchronizer::imuCallback, &msgsync);
     }
     sensor_msgs::ImageConstPtr imageMsg;
     std::vector<sensor_msgs::ImuConstPtr> vimuMsg;
@@ -137,7 +140,7 @@ int main(int argc, char **argv) {
                         bool bdata = msgsync.getRecentMsgs(imageMsg, vimuMsg);
 
                         if (bdata) {
-                            std::vector<ORB_SLAM2::IMUData> vimuData;
+                            ORB_SLAM2::utils::eigen_aligned_vector<ORB_SLAM2::IMUData> vimuData;
                             //ROS_INFO("image time: %.3f",imageMsg->header.stamp.toSec());
                             for (unsigned int i = 0; i < vimuMsg.size(); i++) {
                                 sensor_msgs::ImuConstPtr imuMsg = vimuMsg[i];
@@ -205,7 +208,7 @@ int main(int argc, char **argv) {
             bool bdata = msgsync.getRecentMsgs(imageMsg, vimuMsg);
 
             if (bdata) {
-                std::vector<ORB_SLAM2::IMUData> vimuData;
+                ORB_SLAM2::utils::eigen_aligned_vector<ORB_SLAM2::IMUData> vimuData;
                 //ROS_INFO("image time: %.3f",imageMsg->header.stamp.toSec());
                 for (unsigned int i = 0; i < vimuMsg.size(); i++) {
                     sensor_msgs::ImuConstPtr imuMsg = vimuMsg[i];
@@ -260,7 +263,8 @@ int main(int argc, char **argv) {
     //SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
 
 
-    SLAM.SaveKeyFrameTrajectoryNavState(ORB_SLAM2::Config::getInstance().RuntimeParams().log_file_path + "KeyFrameNavStateTrajectory.txt");
+    SLAM.SaveKeyFrameTrajectoryNavState(
+            ORB_SLAM2::Config::getInstance().RuntimeParams().log_file_path + "KeyFrameNavStateTrajectory.txt");
 
     cout << endl << endl << "Trajectory Saved!" << endl;
 

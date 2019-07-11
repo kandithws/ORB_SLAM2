@@ -51,7 +51,6 @@ void Map::UpdateScale(const double &scale) {
 
 Map::Map():mnMaxKFid(0),mnBigChangeIdx(0)
 {
-    InitPointCloudThread();
 }
 
 void Map::AddKeyFrame(KeyFrame *pKF)

@@ -103,7 +103,12 @@ cv::Mat System::TrackMonoVI(const cv::Mat &im, const utils::eigen_aligned_vector
         cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular." << endl;
         exit(-1);
     }
-    
+
+    if (!Config::getInstance().SystemParams().use_imu){
+        cerr << "Track MonoVI must set flag use_imu" << endl;
+        exit(-1);
+    }
+
     // Check mode change
     {
         unique_lock<mutex> lock(mMutexMode);
@@ -138,16 +143,16 @@ cv::Mat System::TrackMonoVI(const cv::Mat &im, const utils::eigen_aligned_vector
         }
     }
 
-    static bool init = false;
-    if (!init) {
-        Config::getInstance().SetUseIMU(true);
-        mptLocalMappingVIOInit = std::make_shared<std::thread>(
-                &ORB_SLAM2::LocalMapping::VINSInitThread,
-                mpLocalMapper
-        );
-        init = true;
-        SPDLOG_INFO("ORBSLAM with IMU !");
-    }
+//    static bool init = false;
+//    if (!init) {
+//        Config::getInstance().SetUseIMU(true);
+//        mptLocalMappingVIOInit = std::make_shared<std::thread>(
+//                &ORB_SLAM2::LocalMapping::VINSInitThread,
+//                mpLocalMapper
+//        );
+//        init = true;
+//        SPDLOG_INFO("ORBSLAM with IMU !");
+//    }
 
     return mpTracker->GrabImageMonoVI(im,vimu,timestamp);
 }
@@ -258,7 +263,13 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
-    // Moved VINS-Init thread to TrackMONOVI
+
+    if (Config::getInstance().SystemParams().use_imu && Config::getInstance().SystemParams().real_time){
+        mptLocalMappingVIOInit = std::make_shared<std::thread>(
+                &ORB_SLAM2::LocalMapping::VINSInitThread,
+                mpLocalMapper
+        );
+    }
 }
 
 System::~System() {

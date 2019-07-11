@@ -143,7 +143,7 @@ cv::Mat LocalMapping::GetRwiInit() {
 
 void LocalMapping::VINSInitThread() {
     unsigned long initedid = 0;
-    SPDLOG_INFO("START VINS INIT THREAD");
+    SPDLOG_INFO("START VINS INIT THREAD: USEIMU={}", Config::getInstance().SystemParams().use_imu);
     while (1) {
         //cout << " KeyFrame::nNextId = " << KeyFrame::nNextId << endl;
         if (KeyFrame::nNextId > 2)
@@ -873,6 +873,7 @@ void LocalMapping::Run() {
 
         // Check if there are keyframes in the queue
         if (CheckNewKeyFrames()) {
+            bool bUseIMU = Config::getInstance().SystemParams().use_imu;
             // BoW conversion and insertion in Map
             ProcessNewKeyFrame();
 
@@ -894,7 +895,7 @@ void LocalMapping::Run() {
             mbAbortBA = false;
 
             if (!CheckNewKeyFrames() && !stopRequested()) {
-                bool bUseIMU = Config::getInstance().SystemParams().use_imu;
+
                 // Local BA
                 if (mpMap->KeyFramesInMap() > 2) {
                     if (bUseIMU) {
@@ -945,7 +946,14 @@ void LocalMapping::Run() {
                     ObjectCulling();
             }
 
-            mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
+            if (bUseIMU){
+                if (GetFlagInitGBAFinish())
+                    mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
+            }
+            else{
+                mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
+            }
+
             // TODO: Insert Object to mpLoopCloser
         } else if (Stop()) {
             // Safe area to stop
@@ -1446,6 +1454,7 @@ void LocalMapping::InterruptBA() {
     mbAbortBA = true;
 }
 
+
 void LocalMapping::KeyFrameCulling() {
     bool bUseIMU = Config::getInstance().SystemParams().use_imu;
 
@@ -1638,6 +1647,11 @@ void LocalMapping::ResetIfRequested() {
         mlNewKeyFrames.clear();
         mlpRecentAddedMapPoints.clear();
         mbResetRequested = false;
+        mlLocalKeyFrames.clear();
+
+        // Add resetting init flags
+        mbVINSInited = false;
+        mbFirstTry = true;
     }
 }
 
