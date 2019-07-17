@@ -16,6 +16,7 @@ object_detection:
   nms_threshold: 0.5
   apply_nms: 1
   grpc_url: "localhost:50051"
+  allow_skip: 1
 
 
 #--------------------------------------------------

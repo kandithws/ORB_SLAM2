@@ -4,8 +4,20 @@
 
 #include <fstream>
 #include "utils/Config.h"
+#include <algorithm>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 
 namespace ORB_SLAM2 {
+
+// 1, true, True, TRUE => true, else false
+bool parseBool(const std::string& s){
+    std::string data = boost::trim_copy(s);
+    if ( (std::atoi(data.c_str()) == 1) || (boost::to_lower_copy(data) == "true") ){
+        return true;
+    }
+    return false;
+}
 
 Config::Config() : cam_mat_(3,3, CV_64F) {}
 
@@ -91,6 +103,7 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_CONFIG(ObjectDetection, int, input_size);
             ORB_SLAM2_PARSE_CONFIG(ObjectDetection, std::string, grpc_url);
             ORB_SLAM2_PARSE_CONFIG(ObjectDetection, std::string, type);
+            ORB_SLAM2_PARSE_BOOL_CONFIG(ObjectDetection, allow_skip);
         }
 
         // Object Initialization
