@@ -1814,7 +1814,7 @@ bool Tracking::NeedNewKeyFrame() {
 void Tracking::CreateNewKeyFrame() {
     if (!mpLocalMapper->SetNotStop(true))
         return;
-
+    
     //TODO: is it necessary to clear IMU buffers if this is the first KeyFrame after relocalization (also no prevKF)?
     KeyFrame *pKF;
     bool bUseIMU = Config::getInstance().SystemParams().use_imu;
