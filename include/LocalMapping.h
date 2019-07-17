@@ -31,90 +31,195 @@
 #include <object_initializer/PointCloudObjectInitializer.h>
 
 
-namespace ORB_SLAM2
-{
+namespace ORB_SLAM2 {
 
 class Tracking;
+
 class LoopClosing;
+
 class Map;
 
-class LocalMapping
-{
-public:
-    LocalMapping(Map* pMap, const float bMonocular);
+class LocalMapping {
 
-    void SetLoopCloser(LoopClosing* pLoopCloser);
+  public:
 
-    void SetTracker(Tracking* pTracker);
+    // KeyFrames in Local Window, for Local BA
+    // Insert in ProcessNewKeyFrame()
+    void AddToLocalWindow(KeyFrame *pKF);
+
+    void DeleteBadInLocalWindow(void);
+
+    void VINSInitThread(void);
+
+    bool TryInitVIO(void);
+
+    bool GetVINSInited(void);
+
+    void SetVINSInited(bool flag);
+
+    bool GetFirstVINSInited(void);
+
+    void SetFirstVINSInited(bool flag);
+
+    cv::Mat GetGravityVec(void);
+
+    cv::Mat GetRwiInit(void);
+
+    bool GetMapUpdateFlagForTracking();
+
+    void SetMapUpdateFlagInTracking(bool bflag);
+
+    KeyFrame *GetMapUpdateKF();
+
+    const KeyFrame *GetCurrentKF(void) const { return mpCurrentKeyFrame; }
+
+    std::mutex mMutexUpdatingInitPoses;
+
+    bool GetUpdatingInitPoses(void);
+
+    void SetUpdatingInitPoses(bool flag);
+
+    std::mutex mMutexInitGBAFinish;
+    bool mbInitGBAFinish;
+
+    bool GetFlagInitGBAFinish() {
+        unique_lock<mutex> lock(mMutexInitGBAFinish);
+        return mbInitGBAFinish;
+    }
+
+    void SetFlagInitGBAFinish(bool flag) {
+        unique_lock<mutex> lock(mMutexInitGBAFinish);
+        mbInitGBAFinish = flag;
+    }
+
+  protected:
+    double mnStartTime;
+    bool mbFirstTry;
+    double mnVINSInitScale;
+    cv::Mat mGravityVec; // gravity vector in world frame
+    cv::Mat mRwiInit;
+
+    std::mutex mMutexVINSInitFlag;
+    bool mbVINSInited;
+
+    std::mutex mMutexFirstVINSInitFlag;
+    bool mbFirstVINSInited;
+
+    unsigned int mnLocalWindowSize;
+    std::list<KeyFrame *> mlLocalKeyFrames;
+
+    std::mutex mMutexMapUpdateFlag;
+    bool mbMapUpdateFlagForTracking;
+    KeyFrame *mpMapUpdateKF;
+
+    bool mbUpdatingInitPoses;
+
+    std::mutex mMutexCopyInitKFs;
+    bool mbCopyInitKFs;
+
+    bool GetFlagCopyInitKFs() {
+        unique_lock<mutex> lock(mMutexCopyInitKFs);
+        return mbCopyInitKFs;
+    }
+
+    void SetFlagCopyInitKFs(bool flag) {
+        unique_lock<mutex> lock(mMutexCopyInitKFs);
+        mbCopyInitKFs = flag;
+    }
+
+  public:
+    LocalMapping(Map *pMap, const float bMonocular);
+
+    void SetLoopCloser(LoopClosing *pLoopCloser);
+
+    void SetTracker(Tracking *pTracker);
 
     // Main function
     void Run();
 
-    void InsertKeyFrame(KeyFrame* pKF);
+    void InsertKeyFrame(KeyFrame *pKF);
 
     // Thread Synch
     void RequestStop();
+
     void RequestReset();
+
     bool Stop();
+
     void Release();
+
     bool isStopped();
+
     bool stopRequested();
+
     bool AcceptKeyFrames();
+
     void SetAcceptKeyFrames(bool flag);
+
     bool SetNotStop(bool flag);
 
     void InterruptBA();
 
     void RequestFinish();
+
     bool isFinished();
 
-    int KeyframesInQueue(){
+    int KeyframesInQueue() {
         unique_lock<std::mutex> lock(mMutexNewKFs);
         return mlNewKeyFrames.size();
     }
 
-protected:
+  protected:
 
     // Object Stuffs
     void CleanUpInitializeObjectQueue();
+
     void InitializeCurrentKeyFrameObjects();
+
     void ObjectCulling();
+
     // --------------------------------
     bool CheckNewKeyFrames();
+
     void ProcessNewKeyFrame();
+
     void CreateNewMapPoints();
 
     void MapPointCulling();
+
     void SearchInNeighbors();
 
     void KeyFrameCulling();
 
-    cv::Mat ComputeF12(KeyFrame* &pKF1, KeyFrame* &pKF2);
+    cv::Mat ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2);
 
     cv::Mat SkewSymmetricMatrix(const cv::Mat &v);
 
     bool mbMonocular;
 
     void ResetIfRequested();
+
     bool mbResetRequested;
     std::mutex mMutexReset;
 
     bool CheckFinish();
+
     void SetFinish();
+
     bool mbFinishRequested;
     bool mbFinished;
     std::mutex mMutexFinish;
 
-    Map* mpMap;
+    Map *mpMap;
 
-    LoopClosing* mpLoopCloser;
-    Tracking* mpTracker;
+    LoopClosing *mpLoopCloser;
+    Tracking *mpTracker;
 
-    std::list<KeyFrame*> mlNewKeyFrames;
+    std::list<KeyFrame *> mlNewKeyFrames;
 
-    KeyFrame* mpCurrentKeyFrame;
+    KeyFrame *mpCurrentKeyFrame;
 
-    std::list<MapPoint*> mlpRecentAddedMapPoints;
+    std::list<MapPoint *> mlpRecentAddedMapPoints;
 
     std::mutex mMutexNewKFs;
 

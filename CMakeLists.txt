@@ -32,13 +32,15 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 
 find_package(OpenCV 3.4.4 REQUIRED)
-find_package(Eigen3 3.1.0 REQUIRED)
+find_package(Eigen3 3.2.10 REQUIRED)
 find_package(Pangolin REQUIRED)
 # find_package(VTK 8 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 
+# In cmake modules
 find_package(Protobuf REQUIRED)
 find_package(GRPC REQUIRED)
+find_package(Cholmod REQUIRED)
 
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
@@ -62,6 +64,7 @@ include_directories(
         ${EIGEN3_INCLUDE_DIR}
         ${Pangolin_INCLUDE_DIRS}
         ${PCL_INCLUDE_DIRS}
+        ${CHOLMOD_INCLUDE_DIR}
 )
 
 
@@ -88,6 +91,14 @@ set(OBJECT_INIT_SRC_FILES
         include/object_initializer/PointCloudObjectInitializer.h
         src/object_initializer/PointCloudObjectInitializer.cpp)
 
+set(VIORB_SRC_FILES
+        src/imu/g2o_types.cpp
+        src/imu/IMUData.cpp
+        src/imu/IMUPreintegrator.cpp
+        src/imu/NavState.cpp
+        src/imu/so3.cpp
+        src/IMUOptimizer.cpp)
+
 set(ORBSLAM2_SRC_FILES
         src/System.cc
         src/Tracking.cc
@@ -107,13 +118,15 @@ set(ORBSLAM2_SRC_FILES
         src/KeyFrameDatabase.cc
         src/Sim3Solver.cc
         src/Initializer.cc
-        src/Viewer.cc include/MapObject.h src/MapObject.cpp include/Cuboid.h src/Cuboid.cpp src/ObjectOptimizer.cpp)
+        src/Viewer.cc
+        include/MapObject.h src/MapObject.cpp include/Cuboid.h src/Cuboid.cpp src/ObjectOptimizer.cpp)
 
 add_library(${PROJECT_NAME} SHARED
         ${ORBSLAM2_SRC_FILES}
         ${UTILS_SRC_FILES}
         ${DNN_SRC_FILES}
         ${OBJECT_INIT_SRC_FILES}
+        ${VIORB_SRC_FILES}
         )
 
 #  ${Pangolin_LIBRARIES}
@@ -126,6 +139,7 @@ target_link_libraries(${PROJECT_NAME}
         ${PCL_LIBRARIES}
         gRPC::grpc++_reflection
         protobuf::libprotobuf
+        ${CHOLMOD_LIBRARIES}
         )
 
 # Build examples
@@ -160,4 +174,10 @@ target_link_libraries(mono_kitti ${PROJECT_NAME} ${PCL_LIBRARIES})
 #add_executable(mono_euroc
 #  Examples/Monocular/mono_euroc.cc)
 #target_link_libraries(mono_euroc ${PROJECT_NAME} ${PCL_LIBRARIES})
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/VIORB)
+
+add_executable(viorb_euroc
+        Examples/VIORB/viorb_euroc.cpp)
+target_link_libraries(viorb_euroc ${PROJECT_NAME} ${PCL_LIBRARIES})
 

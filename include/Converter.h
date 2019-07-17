@@ -21,41 +21,59 @@
 #ifndef CONVERTER_H
 #define CONVERTER_H
 
-#include<opencv2/core/core.hpp>
+#include <opencv2/core/core.hpp>
 
-#include<Eigen/Dense>
-#include"Thirdparty/g2o/g2o/types/types_six_dof_expmap.h"
-#include"Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
+#include <Eigen/Dense>
+#include "Thirdparty/g2o/g2o/types/types_six_dof_expmap.h"
+#include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
+#include "imu/IMUPreintegrator.h"
+#include "imu/NavState.h"
 
-namespace ORB_SLAM2
-{
+namespace ORB_SLAM2 {
 
-class Converter
-{
-public:
+class Converter {
+
+  public:
+    static void updateNS(NavState &ns, const IMUPreintegrator &imupreint, const Vector3d &gw);
+
+    static cv::Mat toCvMatInverse(const cv::Mat &T12);
+
+  public:
     static std::vector<cv::Mat> toDescriptorVector(const cv::Mat &Descriptors);
 
     static g2o::SE3Quat toSE3Quat(const cv::Mat &cvT);
+
     static g2o::SE3Quat toSE3Quat(const g2o::Sim3 &gSim3);
 
     static cv::Mat toCvMat(const g2o::SE3Quat &SE3);
-    static cv::Mat toCvMat(const g2o::Sim3 &Sim3);
-    static cv::Mat toCvMat(const Eigen::Matrix<double,4,4> &m);
-    static cv::Mat toCvMat(const Eigen::Matrix3d &m);
-    static cv::Mat toCvMat(const Eigen::Matrix<double,3,1> &m);
-    static cv::Mat toCvSE3(const Eigen::Matrix<double,3,3> &R, const Eigen::Matrix<double,3,1> &t);
 
-    static Eigen::Matrix<double,3,1> toVector3d(const cv::Mat &cvVector);
-    static Eigen::Matrix<double,3,1> toVector3d(const cv::Point3f &cvPoint);
-    static Eigen::Matrix<double,3,3> toMatrix3d(const cv::Mat &cvMat3);
+    static cv::Mat toCvMat(const g2o::Sim3 &Sim3);
+
+    static cv::Mat toCvMat(const Eigen::Matrix<double, 4, 4> &m);
+
+    static cv::Mat toCvMat(const Eigen::Matrix3d &m);
+
+    static cv::Mat toCvMat(const Eigen::Matrix<double, 3, 1> &m);
+
+    static cv::Mat toCvSE3(const Eigen::Matrix<double, 3, 3> &R, const Eigen::Matrix<double, 3, 1> &t);
+
+    static Eigen::Matrix<double, 3, 1> toVector3d(const cv::Mat &cvVector);
+
+    static Eigen::Matrix<double, 3, 1> toVector3d(const cv::Point3f &cvPoint);
+
+    static Eigen::Matrix<double, 3, 3> toMatrix3d(const cv::Mat &cvMat3);
+
+    static Eigen::Matrix<double, 4, 4> toHomogeneous4d(const cv::Mat &cvTransform);
+
     static Eigen::Matrix<float, 4, 4> toHomogeneous4f(const cv::Mat &cvTransform);
 
     static std::vector<float> toQuaternion(const cv::Mat &M);
 
     // Bounding Boxes
 
-    static Eigen::Vector4d toVector4d(const cv::Rect& cvRect);
-    static cv::Rect toCvRect(const Eigen::Vector4d& rectVect);
+    static Eigen::Vector4d toVector4d(const cv::Rect &cvRect);
+
+    static cv::Rect toCvRect(const Eigen::Vector4d &rectVect);
 };
 
 }// namespace ORB_SLAM

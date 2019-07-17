@@ -3,6 +3,7 @@
 #include <opencv2/core/core.hpp>
 #include <memory>
 #include <spdlog/spdlog.h>
+#include "Converter.h"
 
 #define ORB_SLAM2_CONFIG_RET_MACRO(PARAM) if(is_read_) {return PARAM;} \
 else { SPDLOG_CRITICAL("Config is not read"); throw std::logic_error("Config is not read");}
@@ -14,7 +15,10 @@ else { SPDLOG_CRITICAL("Config is not read"); throw std::logic_error("Config is 
   protected: Params::PARAM_TYPE m##PARAM_TYPE##Param; \
   public: ORB_SLAM2_DEF_PARAM_GETTER(PARAM_TYPE, m##PARAM_TYPE##Param)
 
+
 namespace ORB_SLAM2 {
+
+class Config;
 
 namespace Params {
 
@@ -43,6 +47,8 @@ typedef struct {
 
 typedef struct {
     bool use_object = true;
+    bool use_imu = false;
+    bool real_time = false;
 } System;
 
 typedef struct {
@@ -57,6 +63,48 @@ typedef struct {
     // For GRPC
     std::string grpc_url;
 } ObjectDetection;
+
+
+typedef struct {
+    int window_size = 10;
+} LocalMapping;
+
+// Made compatible with LearnVIORB
+typedef struct imu {
+  public:
+
+    double g = 9.810;
+    double vins_init_time = 15.0;
+
+    imu() {
+        Tbc = cv::Mat::eye(4,4, CV_32F);
+        Tcb = cv::Mat::eye(4,4, CV_32F);
+    }
+
+    cv::Mat GetMatTbc() const { return Tbc.clone(); }
+    cv::Mat GetMatTcb() const { return Tcb.clone(); }
+    // TODO -- make class attribute with safe allocation (EIGEN_MAKE_ALIGN_OPERATOR_NEW)
+    inline Eigen::Matrix4d GetEigTbc() const { return Converter::toHomogeneous4d(Tbc); }
+    inline Eigen::Matrix4d GetEigTcb() const { return Converter::toHomogeneous4d(Tcb); }
+
+  protected:
+    cv::Mat Tbc;
+    cv::Mat Tcb;
+    bool mbTbcRead = false;
+    friend ORB_SLAM2::Config;
+} IMU;
+
+// For "main"
+typedef struct {
+    double image_delay_to_imu = 0.0;
+    std::string log_file_path;
+    // For ROSbag dataset config
+    std::string bagfile;
+    std::string imu_topic;
+    std::string image_topic;
+    bool multiply_g =  false; // _bAccMultiply9p8
+    double discard_time = 0.0;
+} Runtime;
 
 }
 
@@ -77,8 +125,25 @@ class Config {
     ORB_SLAM2_DEFINE_CONFIG_PARAM(ObjectDetection);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(ObjectInitializer);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(System);
+    ORB_SLAM2_DEFINE_CONFIG_PARAM(LocalMapping);
+    ORB_SLAM2_DEFINE_CONFIG_PARAM(IMU);
+    ORB_SLAM2_DEFINE_CONFIG_PARAM(Runtime);
 
     cv::Mat getCamMatrix();
+
+    void SetRealTimeFlag(bool st) {
+        mSystemParam.real_time = st;
+    }
+
+    void SetUseIMU(bool st){
+        mSystemParam.use_imu = st;
+        if(mSystemParam.use_imu){
+            if(!mIMUParam.mbTbcRead){
+                SPDLOG_ERROR("IMU data was passed but Tbc is not provided, abort !");
+                exit(1);
+            }
+        }
+    }
 
   protected:
     Config();

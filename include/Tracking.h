@@ -42,37 +42,81 @@
 #include <mutex>
 
 #include "utils/Config.h"
+#include <iomanip>
+#include "imu/IMUData.h"
+#include "utils/vector_utils.h"
+//#include "IMU/configparam.h"
 
-namespace ORB_SLAM2
-{
+namespace ORB_SLAM2 {
 
 class Viewer;
+
 class FrameDrawer;
+
 class Map;
+
 class LocalMapping;
+
 class LoopClosing;
+
 class System;
 
-class Tracking
-{  
+class Tracking {
+  public:
+    // Copy from LEARNVI ORB
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-public:
-    Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
-             KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor);
+    // Flags for relocalization. Create new KF once bias re-computed & flag for preparation for bias re-compute
+    bool mbCreateNewKFAfterReloc;
+    bool mbRelocBiasPrepare;
+    //bool mbUseIMU;
 
-    Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
-             KeyFrameDatabase* pKFDB, const string &strSettingPath,
+    void RecomputeIMUBiasAndCurrentNavstate(NavState &nscur);
+
+    // 20 Frames are used to compute bias
+    utils::eigen_aligned_vector<Frame> mv20FramesReloc;
+
+    // Predict the NavState of Current Frame by IMU
+    void PredictNavStateByIMU(bool bMapUpdated);
+
+    IMUPreintegrator mIMUPreIntInTrack;
+
+    bool TrackWithIMU(bool bMapUpdated = false);
+
+    bool TrackLocalMapWithIMU(bool bMapUpdated = false);
+
+    cv::Mat GrabImageMonoVI(const cv::Mat &im, const utils::eigen_aligned_vector<IMUData> &vimu, const double &timestamp);
+
+    // IMU Data since last KF. Append when new data is provided
+    // Should be cleared in 1. initialization beginning, 2. new keyframe created.
+    utils::eigen_aligned_vector<IMUData> mvIMUSinceLastKF;
+
+    IMUPreintegrator
+    GetIMUPreIntSinceLastKF(Frame *pCurF, KeyFrame *pLastKF, const utils::eigen_aligned_vector<IMUData> &vIMUSInceLastKF);
+
+    IMUPreintegrator GetIMUPreIntSinceLastFrame(Frame *pCurF, Frame *pLastF);
+
+  public:
+    Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap,
+             KeyFrameDatabase *pKFDB, const string &strSettingPath, const int sensor);
+
+    Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap,
+             KeyFrameDatabase *pKFDB, const string &strSettingPath,
              const int sensor,
-             const std::shared_ptr<BaseObjectDetector>& pObjectDetector);
+             const std::shared_ptr<BaseObjectDetector> &pObjectDetector);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
-    cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);
-    cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp);
+    cv::Mat GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp);
+
+    cv::Mat GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const double &timestamp);
+
     cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp);
 
-    void SetLocalMapper(LocalMapping* pLocalMapper);
-    void SetLoopClosing(LoopClosing* pLoopClosing);
-    void SetViewer(Viewer* pViewer);
+    void SetLocalMapper(LocalMapping *pLocalMapper);
+
+    void SetLoopClosing(LoopClosing *pLoopClosing);
+
+    void SetViewer(Viewer *pViewer);
 
     // Load new settings
     // The focal lenght should be similar or scale prediction will fail when projecting points
@@ -85,15 +129,15 @@ public:
     ~Tracking();
 
 
-public:
+  public:
 
     // Tracking states
-    enum eTrackingState{
-        SYSTEM_NOT_READY=-1,
-        NO_IMAGES_YET=0,
-        NOT_INITIALIZED=1,
-        OK=2,
-        LOST=3
+    enum eTrackingState {
+        SYSTEM_NOT_READY = -1,
+        NO_IMAGES_YET = 0,
+        NOT_INITIALIZED = 1,
+        OK = 2,
+        LOST = 3
     };
 
     eTrackingState mState;
@@ -117,8 +161,8 @@ public:
 
     // Lists used to recover the full camera trajectory at the end of the execution.
     // Basically we store the reference keyframe for each frame and its relative transformation
-    list<cv::Mat> mlRelativeFramePoses;
-    list<KeyFrame*> mlpReferences;
+    list <cv::Mat> mlRelativeFramePoses;
+    list<KeyFrame *> mlpReferences;
     list<double> mlFrameTimes;
     list<bool> mlbLost;
 
@@ -127,7 +171,7 @@ public:
 
     void Reset();
 
-protected:
+  protected:
 
     // Main tracking function. It is independent of the input sensor.
     void Track();
@@ -137,28 +181,37 @@ protected:
 
     // Map initialization for monocular
     void MonocularInitialization();
+
     void CreateInitialMapMonocular();
 
     void CheckReplacedInLastFrame();
+
     bool TrackReferenceKeyFrame();
+
     void UpdateLastFrame();
+
     bool TrackWithMotionModel();
 
     bool Relocalization();
 
     void UpdateLocalMap();
+
     void UpdateLocalPoints();
+
     void UpdateLocalKeyFrames();
 
     bool TrackLocalMap();
+
     void SearchLocalPoints();
 
     bool NeedNewKeyFrame();
+
     void CreateNewKeyFrame();
 
     // ObjectDetection Related;
-    void DetectObjectInKeyFrame(KeyFrame* pKeyFrame, const cv::Mat& ImColor);
-    void AddColorToKeyPoints(KeyFrame* pKeyFrame);
+    void DetectObjectInKeyFrame(KeyFrame *pKeyFrame, const cv::Mat &ImColor);
+
+    void AddColorToKeyPoints(KeyFrame *pKeyFrame);
 
     // In case of performing only localization, this flag is true when there are no matches to
     // points in the map. Still tracking will continue if there are enough matches with temporal points.
@@ -167,38 +220,38 @@ protected:
     bool mbVO;
 
     //Other Thread Pointers
-    LocalMapping* mpLocalMapper;
-    LoopClosing* mpLoopClosing;
+    LocalMapping *mpLocalMapper;
+    LoopClosing *mpLoopClosing;
 
     //ORB
-    ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
-    ORBextractor* mpIniORBextractor;
+    ORBextractor *mpORBextractorLeft, *mpORBextractorRight;
+    ORBextractor *mpIniORBextractor;
 
     //BoW
-    ORBVocabulary* mpORBVocabulary;
-    KeyFrameDatabase* mpKeyFrameDB;
+    ORBVocabulary *mpORBVocabulary;
+    KeyFrameDatabase *mpKeyFrameDB;
 
     // Initalization (only for monocular)
-    Initializer* mpInitializer;
+    Initializer *mpInitializer;
 
     //Local Map
-    KeyFrame* mpReferenceKF;
-    std::vector<KeyFrame*> mvpLocalKeyFrames;
-    std::vector<MapPoint*> mvpLocalMapPoints;
-    
+    KeyFrame *mpReferenceKF;
+    std::vector<KeyFrame *> mvpLocalKeyFrames;
+    std::vector<MapPoint *> mvpLocalMapPoints;
+
     // System
-    System* mpSystem;
-    
+    System *mpSystem;
+
     //Drawers
-    Viewer* mpViewer;
-    FrameDrawer* mpFrameDrawer;
-    MapDrawer* mpMapDrawer;
+    Viewer *mpViewer;
+    FrameDrawer *mpFrameDrawer;
+    MapDrawer *mpMapDrawer;
 
     //Object
     std::shared_ptr<BaseObjectDetector> mpObjectDetector;
 
     //Map
-    Map* mpMap;
+    Map *mpMap;
 
     //Calibration matrix
     cv::Mat mK;
@@ -221,7 +274,7 @@ protected:
     int mnMatchesInliers;
 
     //Last Frame, KeyFrame and Relocalisation Info
-    KeyFrame* mpLastKeyFrame;
+    KeyFrame *mpLastKeyFrame;
     Frame mLastFrame;
     unsigned int mnLastKeyFrameId;
     unsigned int mnLastRelocFrameId;
@@ -233,10 +286,12 @@ protected:
     bool mbRGB;
     bool mbUseObject = true;
 
-    list<MapPoint*> mlpTemporalPoints;
+    list<MapPoint *> mlpTemporalPoints;
 
     void CleanDetectionThread();
-    void QueueDetectionThread(KeyFrame* pKeyframe, const cv::Mat& ImColor);
+
+    void QueueDetectionThread(KeyFrame *pKeyframe, const cv::Mat &ImColor);
+
     std::shared_ptr<std::thread> mtCleanDetectionThread;
     std::queue<std::shared_ptr<std::thread> > mqDetectionThreads;
     std::condition_variable mcvDetectionThreads;

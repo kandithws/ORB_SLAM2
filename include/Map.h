@@ -38,7 +38,17 @@ class MapPoint;
 class KeyFrame;
 class MapObject;
 
+class KFIdComapre{
+  public:
+    bool operator()(const KeyFrame* kfleft,const KeyFrame* kfright) const;
+};
+
 class Map {
+  public:
+    // Update after an absolute scale is available
+    void UpdateScale(const double &scale);
+
+    //-----------------------------------------
   public:
     typedef pcl::PointXYZRGBL PCLPointT;
     Map();
@@ -81,8 +91,8 @@ class Map {
 
   protected:
     std::set<MapPoint *> mspMapPoints;
-    std::set<KeyFrame *> mspKeyFrames;
-    std::set<MapObject *>mspMapObjects;
+    std::set<KeyFrame *, KFIdComapre> mspKeyFrames;
+    std::set<MapObject *> mspMapObjects;
 
     std::vector<MapPoint *> mvpReferenceMapPoints;
 
