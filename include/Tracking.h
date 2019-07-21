@@ -296,6 +296,8 @@ class Tracking {
     std::queue<std::shared_ptr<std::thread> > mqDetectionThreads;
     std::condition_variable mcvDetectionThreads;
     std::mutex mMutexDetectionThreads;
+
+    std::mutex mMutexImColor;
 };
 
 } //namespace ORB_SLAM

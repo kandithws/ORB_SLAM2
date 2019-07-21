@@ -618,8 +618,13 @@ void Tracking::SetViewer(Viewer *pViewer) {
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp) {
     // TODO -- 2 rgb images for stereo vision
-    mImColor = imRectLeft;
-    mImColorRight = imRectRight;
+
+    {
+        std::unique_lock<std::mutex> lock(mMutexImColor);
+        mImColor = imRectLeft;
+        mImColorRight = imRectRight;
+    }
+
     cv::Mat imGrayRight;
 
     if (mImColor.channels() == 3) {
@@ -650,7 +655,10 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
 
 
 cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const double &timestamp) {
-    mImColor = imRGB;
+    {
+        std::unique_lock<std::mutex> lock(mMutexImColor);
+        mImColor = imRGB;
+    }
     cv::Mat imDepth = imD;
 
     assert(mImColor.channels() >= 3);
@@ -681,7 +689,10 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const 
 
 cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp) {
     //mImGray = im;
-    mImColor = im;
+    {
+        std::unique_lock<std::mutex> lock(mMutexImColor);
+        mImColor = im;
+    }
     if (mImColor.channels() == 3) {
         if (mbRGB)
             cvtColor(mImColor, mImGray, CV_RGB2GRAY);
@@ -1584,15 +1595,18 @@ void Tracking::CreateNewKeyFrame() {
     if (mbUseObject) {
 
         // TODO
+        std::unique_lock<std::mutex> lock(mMutexImColor);
         if (bUseIMU) {
             SPDLOG_ERROR("Use object + IMU is not yet implemented");
             throw std::runtime_error("NOT IMPLEMENTED YET");
         } else {
-            if ((mSensor == System::MONOCULAR) || (mSensor == System::RGBD)) {
-                pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mImColor, mImGray);
-            } else {
-                pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB); // TODO: Stereo Vision support
-            }
+//            if ((mSensor == System::MONOCULAR) || (mSensor == System::RGBD)) {
+//                pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mImColor, mImGray);
+//            } else {
+//                pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB); // TODO: Stereo Vision support
+//            }
+
+            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
         }
 
         if (KeyFrame::nInitId < 0) {
@@ -1600,10 +1614,9 @@ void Tracking::CreateNewKeyFrame() {
         }
 
         // Make a copy of current imcolor;
-
         QueueDetectionThread(pKF,
-                pKF->mImColor,
-                Config::getInstance().ObjectDetectionParams().allow_skip);
+                             mImColor.clone(),
+                             Config::getInstance().ObjectDetectionParams().allow_skip);
 
 
     } else {

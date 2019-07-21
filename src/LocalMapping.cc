@@ -1700,18 +1700,21 @@ void LocalMapping::InitializeCurrentKeyFrameObjects() {
     auto start_time = utils::time::time_now();
 
     while (!mpCurrentKeyFrame->IsObjectsReady()) {
-        usleep(100);
-        if (utils::time::time_diff_from_now_second(start_time) > mfObjectInitTimeOut) {
-            SPDLOG_DEBUG("Put KF in processing Queue {}", mpCurrentKeyFrame->mnId);
+        usleep(10);
+        auto diff = utils::time::time_diff_from_now_second(start_time);
+        if (diff > mfObjectInitTimeOut) {
+            // SPDLOG_DEBUG("Put KF in processing Queue {}", mpCurrentKeyFrame->mnId);
             // TODO: Push to pending Queue
+            SPDLOG_INFO("TOTAL Object Waiting time {}", diff);
             break;
         }
 
     }
 
+    auto start_time2 = utils::time::time_now();
     mpObjInitializer->InitializeObjects(mpCurrentKeyFrame, mpMap);
-
-    SPDLOG_INFO("INIT objects DONE for KF {}", mpCurrentKeyFrame->mnId);
+    SPDLOG_INFO("INIT objects DONE for KF {}, time={}", mpCurrentKeyFrame->mnId,
+            utils::time::time_diff_from_now_second(start_time2));
     // StateFlow * Assume that initialize process is fast, (unlike prediction)
     // -- If current keyframe has finished object prediction, Initialize objects (now=wait until finished)
     // -- else store current frame pointer in a queue and continue

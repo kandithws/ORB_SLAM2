@@ -411,10 +411,10 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
     SPDLOG_DEBUG("----DONE! {} -----", pKeyframe->mnId);
 
     // TODO -- release current KF debugging image
-    std::lock_guard<std::mutex> imglock(pKeyframe->mMutexImages);
-    pKeyframe->mImGray.release();
-    pKeyframe->mImColor.release();
-    SPDLOG_DEBUG("----Release {} -----", pKeyframe->mnId);
+//    std::lock_guard<std::mutex> imglock(pKeyframe->mMutexImages);
+//    pKeyframe->mImGray.release();
+//    pKeyframe->mImColor.release();
+//    SPDLOG_DEBUG("----Release {} -----", pKeyframe->mnId);
 }
 
 }
