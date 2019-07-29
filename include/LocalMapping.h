@@ -169,6 +169,8 @@ class LocalMapping {
         return mlNewKeyFrames.size();
     }
 
+    bool DetectWaitQueueAvaliable();
+
   protected:
 
     // Object Stuffs
@@ -239,6 +241,10 @@ class LocalMapping {
     std::mutex mMutexLocalBA;
 
     float mfObjectInitTimeOut = 2.5f;
+    int mnObjectDetectWaitQueueSize = 20;
+    void PushDetectWaitQueue(KeyFrame* pKeyFrame);
+    std::mutex mMutexObjectDetectWaitQueue;
+    std::list<std::pair<KeyFrame *, bool> > mlObjectDetectWaitQueue;
 
 
 };

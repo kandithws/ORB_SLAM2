@@ -125,6 +125,7 @@ void Config::parseConfig() {
 
         ORB_SLAM2_PARSE_CONFIG_SCOPE("local_mapping") {
             ORB_SLAM2_PARSE_CONFIG(LocalMapping, int, window_size)
+            ORB_SLAM2_PARSE_CONFIG(LocalMapping, double, object_detect_timeout)
         }
 
 

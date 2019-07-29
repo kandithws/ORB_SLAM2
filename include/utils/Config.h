@@ -68,6 +68,7 @@ typedef struct {
 
 typedef struct {
     int window_size = 10;
+    double object_detect_timeout = 1.0;
 } LocalMapping;
 
 // Made compatible with LearnVIORB

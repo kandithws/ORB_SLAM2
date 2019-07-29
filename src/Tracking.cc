@@ -1588,7 +1588,10 @@ bool Tracking::NeedNewKeyFrame() {
 void Tracking::CreateNewKeyFrame() {
     if (!mpLocalMapper->SetNotStop(true))
         return;
-    
+    static auto last_time = utils::time::time_now();
+    auto time_now = utils::time::time_now();
+    SPDLOG_INFO("KeyFrame Create Time diff {}", utils::time::time_diff_second(last_time, time_now));
+    last_time = time_now;
     //TODO: is it necessary to clear IMU buffers if this is the first KeyFrame after relocalization (also no prevKF)?
     KeyFrame *pKF;
     bool bUseIMU = Config::getInstance().SystemParams().use_imu;
@@ -1614,10 +1617,13 @@ void Tracking::CreateNewKeyFrame() {
         }
 
         // Make a copy of current imcolor;
-        QueueDetectionThread(pKF,
-                             mImColor.clone(),
-                             Config::getInstance().ObjectDetectionParams().allow_skip);
-
+        if (mpLocalMapper->DetectWaitQueueAvaliable()){
+            auto start_time2 = utils::time::time_now();
+            QueueDetectionThread(pKF,
+                                 mImColor.clone(),
+                                 Config::getInstance().ObjectDetectionParams().allow_skip);
+            SPDLOG_INFO("RGB Image Clone time {}", utils::time::time_diff_from_now_second(start_time2));
+        }
 
     } else {
         if (bUseIMU) {
@@ -2132,7 +2138,7 @@ void Tracking::InformOnlyTracking(const bool &flag) {
 }
 
 void Tracking::DetectObjectInKeyFrame(KeyFrame *pKeyFrame, const cv::Mat &ImColor) {
-    SPDLOG_DEBUG("DetectionThread Invoked! KeyframeID={}", pKeyFrame->mnId);
+    SPDLOG_DEBUG("START DETECT: DetectionThread Invoked! KeyframeID={}", pKeyFrame->mnId);
     auto time_point = utils::time::time_now();
     {
         std::lock_guard<std::mutex> lock(pKeyFrame->mMutexObject);
@@ -2151,7 +2157,7 @@ void Tracking::DetectObjectInKeyFrame(KeyFrame *pKeyFrame, const cv::Mat &ImColo
         mpFrameDrawer->UpdateObjectFrame(ImColor, pKeyFrame);
 
     mcvDetectionThreads.notify_all();
-    SPDLOG_DEBUG("Detect {} Objects in KeyframeID={}, time={}",
+    SPDLOG_DEBUG("END DETECT: Detect {} Objects in KeyframeID={}, time={}",
                  pKeyFrame->mvObjectPrediction.size(),
                  pKeyFrame->mnId,
                  utils::time::time_diff_from_now_second(time_point));
@@ -2177,6 +2183,7 @@ void Tracking::QueueDetectionThread(KeyFrame *pKeyframe, const cv::Mat &ImColor,
                 std::bind(&Tracking::DetectObjectInKeyFrame,
                           this, std::placeholders::_1, std::placeholders::_2),
                 pKeyframe, ImColor);
+        t->detach();
         mqDetectionThreads.push(t);
     }
 }
@@ -2185,11 +2192,12 @@ void Tracking::CleanDetectionThread() {
     while(!mbRequestReset){
         std::unique_lock<std::mutex> lock(mMutexDetectionThreads);
         mcvDetectionThreads.wait(lock);
-        auto t = mqDetectionThreads.front();
+        //auto t = mqDetectionThreads.front();
         mqDetectionThreads.pop();
         SPDLOG_INFO("Detection Thread After Clean {}", mqDetectionThreads.size());
-        if (t->joinable())
-            t->join();
+
+        //        if (t->joinable())
+//            t->join();
     }
 }
 
