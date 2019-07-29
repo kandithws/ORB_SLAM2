@@ -204,11 +204,6 @@ bool MapObject::GetProjectedBoundingBox(ORB_SLAM2::KeyFrame *pTargetKF, cv::Rect
         st |= pTargetKF->IsInImage(bb.br().x, bb.br().y);
     }
 
-
-    if(!st){
-        SPDLOG_WARN("Object {}, bounding boxes is not in Keyframe {}", mnId, pTargetKF->mnId);
-    }
-
     return st;
 }
 

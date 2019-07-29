@@ -932,12 +932,14 @@ void LocalMapping::Run() {
                         }
 
                     } else {
+                        auto start = utils::time::time_now();
                         if (mbUseObject) {
                             Optimizer::LocalBundleAdjustmentWithObjects(mpCurrentKeyFrame, &mbAbortBA, mpMap);
                             // Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
                         } else {
                             Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap);
                         }
+                        SPDLOG_DEBUG("LOCAL BA RUNTIME={}", utils::time::time_diff_from_now_second(start));
                     }
                 }
                 // Check redundant local Keyframes

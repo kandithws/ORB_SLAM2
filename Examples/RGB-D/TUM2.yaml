@@ -32,7 +32,7 @@ object_initialization:
   outlier_threshold: 0.15 # For type 1(recommend: 0.2), 2(recommend: 0.15)
 
 local_mapping:
-  object_detect_timeout: 0.25
+  object_detect_timeout: 0.3
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!

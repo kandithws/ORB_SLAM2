@@ -31,6 +31,8 @@ object_initialization:
   outlier_filter_type: 2 # 0: PCL SOR, 1: local dist diff, 2: local std diff
   outlier_threshold: 0.1 # For type 1(recommend: 0.2), 2(recommend: 0.15)
 
+local_mapping:
+  object_detect_timeout: 0.3
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!
