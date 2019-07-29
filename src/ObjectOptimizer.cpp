@@ -355,6 +355,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
 
 void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag, Map* pMap)
 {
+    auto start_graphcon = utils::time::time_now();
     // Local KeyFrames: First Breath Search from Current Keyframe
     list<KeyFrame*> lLocalKeyFrames;
 
@@ -501,9 +502,6 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         if (pMO->mnId > maxLandmarkId)
             maxLandmarkId = pMO->mnId;
     }
-
-
-
 
     // Set MapPoint vertices
     const int nExpectedSize = (lLocalKeyFrames.size() + lFixedCameras.size()) * lLocalMapPoints.size();
@@ -801,10 +799,12 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         }
     }
 
+    auto graphcon_time = utils::time::time_diff_from_now_second(start_graphcon);
+
     if (pbStopFlag)
         if (*pbStopFlag)
             return;
-
+    auto start_opt = utils::time::time_now();
     optimizer.initializeOptimization();
     optimizer.optimize(5);
 
@@ -851,6 +851,10 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         optimizer.optimize(10);
 
     }
+
+    SPDLOG_DEBUG("[OptTime] Optimization: {}, GraphConstruction: {}",
+            utils::time::time_diff_from_now_second(start_opt),
+            graphcon_time);
 
     vector<pair<KeyFrame*, MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size() + vpEdgesStereo.size());

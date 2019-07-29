@@ -282,7 +282,6 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
 //            pKeyframe->DrawDebugPointsInMask(drawn_mask, box, pred._mask, pred._mask_type);
 //            cv::imwrite(outdebug, drawn_mask);
 //        }
-        SPDLOG_DEBUG("Obj {}: Total Point {}", i, vObjMapPoints.size());
 
         if (vObjMapPoints.size() < 10) {
             continue; // Too few points for calculation, TODO: Set as parameters
@@ -379,7 +378,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
 
     // ------------- Init objects where there is no association-------------------
 
-    SPDLOG_DEBUG("----Init Object for KF:  {} -----", pKeyframe->mnId);
+    SPDLOG_DEBUG("Init Object for KF:  {}", pKeyframe->mnId);
     for (size_t i = 0; i < vPredictedObjects.size(); i++) {
         if (vAssociatedCount[i] > 0)
             continue;
@@ -408,7 +407,6 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe, Map *pM
         pKeyframe->AddMapObject(pMO, i);
         pMap->AddMapObject(pMO);
     }
-    SPDLOG_DEBUG("----DONE! {} -----", pKeyframe->mnId);
 
     // TODO -- release current KF debugging image
 //    std::lock_guard<std::mutex> imglock(pKeyframe->mMutexImages);
