@@ -1,7 +1,7 @@
 %YAML:1.0
 
 system:
-  use_object: 1
+  use_object: 0
 
 #--------------------------------------------------
 # Object Detection parameters
@@ -16,6 +16,7 @@ object_detection:
   nms_threshold: 0.5
   apply_nms: 1
   grpc_url: "localhost:50051"
+  allow_skip: 1
 
 
 #--------------------------------------------------
@@ -29,6 +30,9 @@ object_initialization:
   use_mask: 0
   outlier_filter_type: 2 # 0: PCL SOR, 1: local dist diff, 2: local std diff
   outlier_threshold: 0.15 # For type 1(recommend: 0.2), 2(recommend: 0.15)
+
+local_mapping:
+  object_detect_timeout: 0.3
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!

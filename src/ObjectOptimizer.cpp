@@ -352,8 +352,10 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
 }
 */
 
+
 void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag, Map* pMap)
 {
+    auto start_graphcon = utils::time::time_now();
     // Local KeyFrames: First Breath Search from Current Keyframe
     list<KeyFrame*> lLocalKeyFrames;
 
@@ -501,9 +503,6 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
             maxLandmarkId = pMO->mnId;
     }
 
-
-
-
     // Set MapPoint vertices
     const int nExpectedSize = (lLocalKeyFrames.size() + lFixedCameras.size()) * lLocalMapPoints.size();
 
@@ -530,50 +529,49 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
 
     // Constructing Object Edges !!!
     // ---------- 3D Object - Cam Error -----------
-    /*
-    for (auto pKFi : lFixedCameras) {
-        // add g2o camera-object measurement edges, if there is
-        auto landmarks = pKFi->GetMapObjects();
-        for (const auto& pMO : landmarks) {
-            if (pMO){
-                auto* edgeSE3Cuboid = new g2o::EdgeSE3Cuboid();
-                edgeSE3Cuboid->setVertex(0, optimizer.vertex(pKFi->mnId));
-                edgeSE3Cuboid->setVertex(1, optimizer.vertex(maxKFId + 1 + pMO->mnId));
-                edgeSE3Cuboid->setMeasurement(pMO->GetCuboidPtr()->transformTo(
-                        Converter::toSE3Quat(pKFi->GetPoseInverse())));
-                Eigen::Vector9d inv_sigma;
-                inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1; // Identity for now
-                inv_sigma = inv_sigma * 2.0;
-                // inv_sigma = inv_sigma * 2.0 * pMO->mQuality;
-                Eigen::Matrix9d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
-                edgeSE3Cuboid->setInformation(info);
 
-                optimizer.addEdge(edgeSE3Cuboid);
-            }
-        }
-    }
-
-    for (auto pKFi : lLocalKeyFrames) {
-        // add g2o camera-object measurement edges, if there is
-        auto landmarks = pKFi->GetMapObjects();
-        for (const auto& pMO : landmarks) {
-            if (pMO){
-                auto* edgeSE3Cuboid = new g2o::EdgeSE3Cuboid();
-                edgeSE3Cuboid->setVertex(0, optimizer.vertex(pKFi->mnId));
-                edgeSE3Cuboid->setVertex(1, optimizer.vertex(maxKFId + 1 + pMO->mnId));
-                edgeSE3Cuboid->setMeasurement(pMO->GetCuboidPtr()->transformTo(
-                        Converter::toSE3Quat(pKFi->GetPoseInverse())));
-                Eigen::Vector9d inv_sigma;
-                inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1;
-                inv_sigma = inv_sigma * 2.0;
-                // inv_sigma = inv_sigma * 2.0 * pLandmark->mQuality;
-                Eigen::Matrix9d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
-                edgeSE3Cuboid->setInformation(info);
-                optimizer.addEdge(edgeSE3Cuboid);
-            }
-        }
-    }
-    */
+//    for (auto pKFi : lFixedCameras) {
+//        // add g2o camera-object measurement edges, if there is
+//        auto landmarks = pKFi->GetMapObjects();
+//        for (const auto& pMO : landmarks) {
+//            if (pMO){
+//                auto* edgeSE3Cuboid = new g2o::EdgeSE3Cuboid();
+//                edgeSE3Cuboid->setVertex(0, optimizer.vertex(pKFi->mnId));
+//                edgeSE3Cuboid->setVertex(1, optimizer.vertex(maxKFId + 1 + pMO->mnId));
+//                edgeSE3Cuboid->setMeasurement(pMO->GetCuboidPtr()->transformTo(
+//                        Converter::toSE3Quat(pKFi->GetPoseInverse())));
+//                Eigen::Vector9d inv_sigma;
+//                inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1; // Identity for now
+//                inv_sigma = inv_sigma * 2.0;
+//                // inv_sigma = inv_sigma * 2.0 * pMO->mQuality;
+//                Eigen::Matrix9d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
+//                edgeSE3Cuboid->setInformation(info);
+//
+//                optimizer.addEdge(edgeSE3Cuboid);
+//            }
+//        }
+//    }
+//
+//    for (auto pKFi : lLocalKeyFrames) {
+//        // add g2o camera-object measurement edges, if there is
+//        auto landmarks = pKFi->GetMapObjects();
+//        for (const auto& pMO : landmarks) {
+//            if (pMO){
+//                auto* edgeSE3Cuboid = new g2o::EdgeSE3Cuboid();
+//                edgeSE3Cuboid->setVertex(0, optimizer.vertex(pKFi->mnId));
+//                edgeSE3Cuboid->setVertex(1, optimizer.vertex(maxKFId + 1 + pMO->mnId));
+//                edgeSE3Cuboid->setMeasurement(pMO->GetCuboidPtr()->transformTo(
+//                        Converter::toSE3Quat(pKFi->GetPoseInverse())));
+//                Eigen::Vector9d inv_sigma;
+//                inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1;
+//                inv_sigma = inv_sigma * 2.0;
+//                // inv_sigma = inv_sigma * 2.0 * pLandmark->mQuality;
+//                Eigen::Matrix9d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
+//                edgeSE3Cuboid->setInformation(info);
+//                optimizer.addEdge(edgeSE3Cuboid);
+//            }
+//        }
+//    }
 
 
 
@@ -684,6 +682,9 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
             // Adding Mappoint Constraints
             auto vMapPointObservations = pMO->GetMapPoints();
             for (auto& pMP : vMapPointObservations){
+                if (pMP->isBad())
+                    continue;
+
                 if (!optimizer.vertex(pMP->mnId + maxKFId + maxLandmarkId + 2)){
                     // create vertex if doesn't exist
                     auto* vPoint = new g2o::VertexSBAPointXYZ();
@@ -753,6 +754,9 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
             // Adding Mappoint Constraints
             auto vMapPointObservations = pMO->GetMapPoints();
             for (auto& pMP : vMapPointObservations){
+                if (pMP->isBad())
+                    continue;
+
                 if (!optimizer.vertex(pMP->mnId + maxKFId + maxLandmarkId + 2)){
                     // create vertex if doesn't exist
                     auto* vPoint = new g2o::VertexSBAPointXYZ();
@@ -795,10 +799,12 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         }
     }
 
+    auto graphcon_time = utils::time::time_diff_from_now_second(start_graphcon);
+
     if (pbStopFlag)
         if (*pbStopFlag)
             return;
-
+    auto start_opt = utils::time::time_now();
     optimizer.initializeOptimization();
     optimizer.optimize(5);
 
@@ -845,6 +851,10 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         optimizer.optimize(10);
 
     }
+
+    SPDLOG_DEBUG("[OptTime] Optimization: {}, GraphConstruction: {}",
+            utils::time::time_diff_from_now_second(start_opt),
+            graphcon_time);
 
     vector<pair<KeyFrame*, MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size() + vpEdgesStereo.size());
@@ -916,4 +926,5 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
 
     //pMap->NotifyMapUpdated();
 }
+
 }

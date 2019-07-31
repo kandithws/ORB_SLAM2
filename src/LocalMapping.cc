@@ -850,6 +850,7 @@ LocalMapping::LocalMapping(Map *pMap, const float bMonocular) :
         mpObjInitializer = std::make_shared<PointCloudObjectInitializer>();
 
     mnLocalWindowSize = Config::getInstance().LocalMappingParams().window_size;
+    mfObjectInitTimeOut = Config::getInstance().LocalMappingParams().object_detect_timeout;
 }
 
 void LocalMapping::SetLoopCloser(LoopClosing *pLoopCloser) {
@@ -931,12 +932,14 @@ void LocalMapping::Run() {
                         }
 
                     } else {
+                        auto start = utils::time::time_now();
                         if (mbUseObject) {
                             Optimizer::LocalBundleAdjustmentWithObjects(mpCurrentKeyFrame, &mbAbortBA, mpMap);
                             // Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
                         } else {
                             Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap);
                         }
+                        SPDLOG_DEBUG("LOCAL BA RUNTIME={}", utils::time::time_diff_from_now_second(start));
                     }
                 }
                 // Check redundant local Keyframes
@@ -1684,6 +1687,22 @@ void LocalMapping::CleanUpInitializeObjectQueue() {
     // -- if there are some keyframes in a pending queue and those are not bad (has not been culled):
     // (Do we need to check if it is still in LocalBA windows ??)
     //         initialize all objects in a queue
+    std::unique_lock<std::mutex> lock(mMutexObjectDetectWaitQueue);
+    if (mlObjectDetectWaitQueue.empty())
+        return;
+
+    for (auto it = mlObjectDetectWaitQueue.begin(), end = mlObjectDetectWaitQueue.end(); it != end; it++){
+        if (it->first->IsObjectsReady() || it->first->isBad()){
+            SPDLOG_INFO("Cleaning Init KF: {}", it->first->mnId);
+            if (!it->first->isBad())
+                mpObjInitializer->InitializeObjects(it->first, mpMap);
+
+            it->second = true;
+            //mlObjectDetectWaitQueue.erase(it);
+        }
+    }
+
+    mlObjectDetectWaitQueue.remove_if([](std::pair<KeyFrame* , bool> p){ return p.second; });
 }
 
 void LocalMapping::InitializeCurrentKeyFrameObjects() {
@@ -1698,27 +1717,45 @@ void LocalMapping::InitializeCurrentKeyFrameObjects() {
 
     SPDLOG_INFO("INIT objects for KF {}", mpCurrentKeyFrame->mnId);
     auto start_time = utils::time::time_now();
+    bool skip = false;
+    if(!mpCurrentKeyFrame->IsObjectsReady()){
+        SPDLOG_INFO("Objects in KF {} not ready! waiting", mpCurrentKeyFrame->mnId);
+        while (!mpCurrentKeyFrame->IsObjectsReady()) {
+            usleep(100);
+            auto diff = utils::time::time_diff_from_now_second(start_time);
+            if (diff > mfObjectInitTimeOut) {
+                skip = true;
+                SPDLOG_WARN("Pushing to wait Queue KF {}", mpCurrentKeyFrame->mnId);
+                PushDetectWaitQueue(mpCurrentKeyFrame);
+                break;
+            }
 
-    while (!mpCurrentKeyFrame->IsObjectsReady()) {
-        usleep(100);
-        if (utils::time::time_diff_from_now_second(start_time) > mfObjectInitTimeOut) {
-            SPDLOG_DEBUG("Put KF in processing Queue {}", mpCurrentKeyFrame->mnId);
-            // TODO: Push to pending Queue
-            break;
         }
-
     }
 
-    mpObjInitializer->InitializeObjects(mpCurrentKeyFrame, mpMap);
-
-    SPDLOG_INFO("INIT objects DONE for KF {}", mpCurrentKeyFrame->mnId);
-    // StateFlow * Assume that initialize process is fast, (unlike prediction)
-    // -- If current keyframe has finished object prediction, Initialize objects (now=wait until finished)
-    // -- else store current frame pointer in a queue and continue
+    if (!skip){
+        auto start_time2 = utils::time::time_now();
+        mpObjInitializer->InitializeObjects(mpCurrentKeyFrame, mpMap);
+        SPDLOG_INFO("INIT objects DONE for KF {}, time={}", mpCurrentKeyFrame->mnId,
+                    utils::time::time_diff_from_now_second(start_time2));
+    }
 }
 
 void LocalMapping::ObjectCulling() {
     // TODO: Copy Logic from MapPoint Culling
+}
+
+bool LocalMapping::DetectWaitQueueAvaliable() {
+    std::unique_lock<std::mutex> lock(mMutexObjectDetectWaitQueue);
+    return mlObjectDetectWaitQueue.size() < mnObjectDetectWaitQueueSize;
+}
+
+void LocalMapping::PushDetectWaitQueue(KeyFrame* pKeyFrame) {
+    std::unique_lock<std::mutex> lock(mMutexObjectDetectWaitQueue);
+    if (mlObjectDetectWaitQueue.size() < mnObjectDetectWaitQueueSize)
+        mlObjectDetectWaitQueue.push_back(std::pair<KeyFrame*, bool>(pKeyFrame, false));
+    else
+        SPDLOG_WARN("Detect wait queue full, skipping process KF: {}", pKeyFrame->mnId);
 }
 
 } //namespace ORB_SLAM

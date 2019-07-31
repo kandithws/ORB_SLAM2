@@ -459,6 +459,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
 void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap, LocalMapping* pLM)
 {    
+    auto start_graphcon = utils::time::time_now();
     // Local KeyFrames: First Breath Search from Current Keyframe
     list<KeyFrame*> lLocalKeyFrames;
 
@@ -658,11 +659,12 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
             }
         }
     }
-
+    auto graphcon_time = utils::time::time_diff_from_now_second(start_graphcon);
     if(pbStopFlag)
         if(*pbStopFlag)
             return;
 
+    auto start_opt = utils::time::time_now();
     optimizer.initializeOptimization();
     optimizer.optimize(5);
 
@@ -714,6 +716,10 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     optimizer.optimize(10);
 
     }
+
+    SPDLOG_DEBUG("[OptTime] Optimization: {}, GraphConstruction: {}",
+                 utils::time::time_diff_from_now_second(start_opt),
+                 graphcon_time);
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size()+vpEdgesStereo.size());

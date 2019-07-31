@@ -62,11 +62,13 @@ typedef struct {
     int input_size = 416;
     // For GRPC
     std::string grpc_url;
+    bool allow_skip=true; // TODO -- can use SystemParams.real_time instead
 } ObjectDetection;
 
 
 typedef struct {
     int window_size = 10;
+    double object_detect_timeout = 1.0;
 } LocalMapping;
 
 // Made compatible with LearnVIORB
@@ -139,7 +141,7 @@ class Config {
         mSystemParam.use_imu = st;
         if(mSystemParam.use_imu){
             if(!mIMUParam.mbTbcRead){
-                SPDLOG_ERROR("IMU data was passed but Tbc is not provided, abort !");
+                SPDLOG_ERROR("SystemParam.use_imu was set but Tbc is not provided, abort !");
                 exit(1);
             }
         }

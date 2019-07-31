@@ -285,17 +285,19 @@ class Tracking {
     //Color order (true RGB, false BGR, ignored if grayscale)
     bool mbRGB;
     bool mbUseObject = true;
+    bool mbRequestReset = false;
 
     list<MapPoint *> mlpTemporalPoints;
 
     void CleanDetectionThread();
-
-    void QueueDetectionThread(KeyFrame *pKeyframe, const cv::Mat &ImColor);
+    void QueueDetectionThread(KeyFrame *pKeyframe, const cv::Mat &ImColor, bool skip_if_running=false);
 
     std::shared_ptr<std::thread> mtCleanDetectionThread;
     std::queue<std::shared_ptr<std::thread> > mqDetectionThreads;
     std::condition_variable mcvDetectionThreads;
     std::mutex mMutexDetectionThreads;
+
+    std::mutex mMutexImColor;
 };
 
 } //namespace ORB_SLAM

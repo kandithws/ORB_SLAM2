@@ -36,6 +36,7 @@ Optimizer::LocalBAPRVIDP(KeyFrame *pCurKF, const std::list<KeyFrame *> &lLocalKe
     if (pCurKF != lLocalKeyFrames.back())
         cerr << "pCurKF != lLocalKeyFrames.back. check" << endl;
 
+    auto start_graphcon = utils::time::time_now();
     // Extrinsics
     Matrix4d Tcb = Config::getInstance().IMUParams().GetEigTcb();
     Matrix3d Rcb = Tcb.topLeftCorner(3, 3);
@@ -403,11 +404,11 @@ Optimizer::LocalBAPRVIDP(KeyFrame *pCurKF, const std::list<KeyFrame *> &lLocalKe
         }
     }
 
-
+    auto graphcon_time = utils::time::time_diff_from_now_second(start_graphcon);
     if (pbStopFlag)
         if (*pbStopFlag)
             return;
-
+    auto start_opt = utils::time::time_now();
     // First try
     //optimizer.setVerbose(true);
     optimizer.initializeOptimization();
@@ -445,6 +446,10 @@ Optimizer::LocalBAPRVIDP(KeyFrame *pCurKF, const std::list<KeyFrame *> &lLocalKe
         optimizer.optimize(10);
 
     }
+
+    SPDLOG_DEBUG("[OptTime] Optimization: {}, GraphConstruction: {}",
+                 utils::time::time_diff_from_now_second(start_opt),
+                 graphcon_time);
 
     //
     vector<pair<KeyFrame *, MapPoint *> > vToErase;
