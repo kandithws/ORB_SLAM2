@@ -922,6 +922,575 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         // pMO->SetPoseAndDimension(cuboid);
         pMO->SetCuboid(cuboid);
     }
+    //pMap->NotifyMapUpdated();
+}
+
+// Unary on 3rd constraint
+void Optimizer::LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool* pbStopFlag, Map* pMap)
+{
+    auto start_graphcon = utils::time::time_now();
+    // Local KeyFrames: First Breath Search from Current Keyframe
+    list<KeyFrame*> lLocalKeyFrames;
+
+    lLocalKeyFrames.push_back(pKF);
+    pKF->mnBALocalForKF = pKF->mnId;
+
+    const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
+    for (auto pKFi : vNeighKFs) {
+        pKFi->mnBALocalForKF = pKF->mnId;
+        if (!pKFi->isBad())
+            lLocalKeyFrames.push_back(pKFi);
+    }
+
+    // Local MapPoints seen in Local KeyFrames
+    list<MapPoint*> lLocalMapPoints;
+    unordered_set<MapPoint*> sLocalMapPoints;
+    for (auto& lLocalKeyFrame : lLocalKeyFrames) {
+        vector<MapPoint*> vpMPs = lLocalKeyFrame->GetMapPointMatches();
+        for (auto pMP : vpMPs) {
+            if (pMP)
+                if (!pMP->isBad())
+                    if (pMP->mnBALocalForKF != pKF->mnId) {
+                        lLocalMapPoints.push_back(pMP);
+                        sLocalMapPoints.insert(pMP);
+                        pMP->mnBALocalForKF = pKF->mnId;
+                    }
+        }
+    }
+
+    // Fixed Keyframes. Keyframes that see Local MapPoints but that are not Local Keyframes
+    list<KeyFrame*> lFixedCameras;
+    for (auto& lLocalMapPoint : lLocalMapPoints) {
+        auto observations = lLocalMapPoint->GetObservations();
+        for (auto& observation : observations) {
+            KeyFrame* pKFi = observation.first;
+
+            if (pKFi->mnBALocalForKF != pKF->mnId && pKFi->mnBAFixedForKF != pKF->mnId) {
+                pKFi->mnBAFixedForKF = pKF->mnId;
+                if (!pKFi->isBad())
+                    lFixedCameras.push_back(pKFi);
+            }
+        }
+    }
+
+    // Setup optimizer
+    g2o::SparseOptimizer optimizer;
+
+    g2o::BlockSolverX::LinearSolverType * linearSolver;
+
+    linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
+
+    g2o::BlockSolverX* solver_ptr = new g2o::BlockSolverX(linearSolver);
+
+    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+    optimizer.setAlgorithm(solver);
+
+    if (pbStopFlag)
+        optimizer.setForceStopFlag(pbStopFlag);
+
+    unsigned long maxKFId = 0;
+    unsigned long  maxLandmarkId = 0;
+
+    // Set Local KeyFrame vertices
+    unordered_set<uint32_t> sLandmarkIds;
+    list<MapObject* > lLocalLandmarks;
+
+    for (auto pKFi : lLocalKeyFrames) {
+        auto objects = pKFi->GetMapObjects();
+        for (auto& obj : objects){
+            if (obj){
+                if(!obj->IsReady())
+                    continue;
+
+                if (sLandmarkIds.find(obj->mnId) == sLandmarkIds.end()) {
+                    sLandmarkIds.insert(obj->mnId);
+                    lLocalLandmarks.push_back(obj);
+                }
+            }
+        }
+
+        // Add Keyframe vertices
+        auto* vSE3 = new g2o::VertexSE3Expmap();
+        vSE3->setEstimate(Converter::toSE3Quat(pKFi->GetPose()));
+        vSE3->setId(pKFi->mnId);
+        vSE3->setFixed(pKFi->mnId == 0);
+        optimizer.addVertex(vSE3);
+        if (pKFi->mnId > maxKFId)
+            maxKFId = pKFi->mnId;
+    }
+
+    list<MapObject* > lLocalLandmarksFixed;
+
+    // Set Fixed KeyFrame vertices
+    for (auto pKFi : lFixedCameras) {
+        auto objects = pKFi->GetMapObjects();
+        for (auto& obj : objects){
+
+            if (obj){
+                if(!obj->IsReady())
+                    continue;
+                // Not in both fixed and non-fixed landmarks
+                if (sLandmarkIds.find(obj->mnId) == sLandmarkIds.end()) {
+                    sLandmarkIds.insert(obj->mnId);
+                    lLocalLandmarksFixed.push_back(obj);
+                }
+            }
+        }
+
+        auto* vSE3 = new g2o::VertexSE3Expmap();
+        vSE3->setEstimate(Converter::toSE3Quat(pKFi->GetPose()));
+        vSE3->setId(pKFi->mnId);
+        vSE3->setFixed(true);
+        optimizer.addVertex(vSE3);
+        if (pKFi->mnId > maxKFId)
+            maxKFId = pKFi->mnId;
+    }
+
+    for (const auto& pMO : lLocalLandmarks) {
+        if(!pMO->IsReady())
+            continue;
+
+        Cuboid pInitCuboidGlobalPose;
+        pMO->GetCuboid(pInitCuboidGlobalPose);
+        auto* vCuboid = new g2o::VertexCuboid();
+        vCuboid->setEstimate(pInitCuboidGlobalPose);
+        vCuboid->setId(maxKFId + 1 + pMO->mnId);
+        vCuboid->setFixed(false);
+        optimizer.addVertex(vCuboid);
+        if (pMO->mnId > maxLandmarkId)
+            maxLandmarkId = pMO->mnId;
+    }
+
+    for (const auto& pMO : lLocalLandmarksFixed) {
+        if(!pMO->IsReady())
+            continue;
+
+        Cuboid pInitCuboidGlobalPose;
+        pMO->GetCuboid(pInitCuboidGlobalPose);
+        auto* vCuboid = new g2o::VertexCuboid();
+        vCuboid->setEstimate(pInitCuboidGlobalPose);
+        vCuboid->setId(maxKFId + 1 + pMO->mnId);
+        vCuboid->setFixed(true);
+        optimizer.addVertex(vCuboid);
+        if (pMO->mnId > maxLandmarkId)
+            maxLandmarkId = pMO->mnId;
+    }
+
+    // Set MapPoint vertices
+    const int nExpectedSize = (lLocalKeyFrames.size() + lFixedCameras.size()) * lLocalMapPoints.size();
+
+    vector<g2o::EdgeSE3ProjectXYZ*> vpEdgesMono;
+    vpEdgesMono.reserve(nExpectedSize);
+
+    vector<KeyFrame*> vpEdgeKFMono;
+    vpEdgeKFMono.reserve(nExpectedSize);
+
+    vector<MapPoint*> vpMapPointEdgeMono;
+    vpMapPointEdgeMono.reserve(nExpectedSize);
+
+    vector<g2o::EdgeStereoSE3ProjectXYZ*> vpEdgesStereo;
+    vpEdgesStereo.reserve(nExpectedSize);
+
+    vector<KeyFrame*> vpEdgeKFStereo;
+    vpEdgeKFStereo.reserve(nExpectedSize);
+
+    vector<MapPoint*> vpMapPointEdgeStereo;
+    vpMapPointEdgeStereo.reserve(nExpectedSize);
+
+    const float thHuberMono = sqrtf(5.991f);
+    const float thHuberStereo = sqrtf(7.815f);
+
+    // Constructing Object Edges !!!
+    // ---------- 3D Object - Cam Error -----------
+
+//    for (auto pKFi : lFixedCameras) {
+//        // add g2o camera-object measurement edges, if there is
+//        auto landmarks = pKFi->GetMapObjects();
+//        for (const auto& pMO : landmarks) {
+//            if (pMO){
+//                auto* edgeSE3Cuboid = new g2o::EdgeSE3Cuboid();
+//                edgeSE3Cuboid->setVertex(0, optimizer.vertex(pKFi->mnId));
+//                edgeSE3Cuboid->setVertex(1, optimizer.vertex(maxKFId + 1 + pMO->mnId));
+//                edgeSE3Cuboid->setMeasurement(pMO->GetCuboidPtr()->transformTo(
+//                        Converter::toSE3Quat(pKFi->GetPoseInverse())));
+//                Eigen::Vector9d inv_sigma;
+//                inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1; // Identity for now
+//                inv_sigma = inv_sigma * 2.0;
+//                // inv_sigma = inv_sigma * 2.0 * pMO->mQuality;
+//                Eigen::Matrix9d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
+//                edgeSE3Cuboid->setInformation(info);
+//
+//                optimizer.addEdge(edgeSE3Cuboid);
+//            }
+//        }
+//    }
+//
+//    for (auto pKFi : lLocalKeyFrames) {
+//        // add g2o camera-object measurement edges, if there is
+//        auto landmarks = pKFi->GetMapObjects();
+//        for (const auto& pMO : landmarks) {
+//            if (pMO){
+//                auto* edgeSE3Cuboid = new g2o::EdgeSE3Cuboid();
+//                edgeSE3Cuboid->setVertex(0, optimizer.vertex(pKFi->mnId));
+//                edgeSE3Cuboid->setVertex(1, optimizer.vertex(maxKFId + 1 + pMO->mnId));
+//                edgeSE3Cuboid->setMeasurement(pMO->GetCuboidPtr()->transformTo(
+//                        Converter::toSE3Quat(pKFi->GetPoseInverse())));
+//                Eigen::Vector9d inv_sigma;
+//                inv_sigma << 1, 1, 1, 1, 1, 1, 1, 1, 1;
+//                inv_sigma = inv_sigma * 2.0;
+//                // inv_sigma = inv_sigma * 2.0 * pLandmark->mQuality;
+//                Eigen::Matrix9d info = inv_sigma.cwiseProduct(inv_sigma).asDiagonal();
+//                edgeSE3Cuboid->setInformation(info);
+//                optimizer.addEdge(edgeSE3Cuboid);
+//            }
+//        }
+//    }
+
+
+
+    // -----------------------------------------------------------
+    for (auto pMP : lLocalMapPoints) {
+        auto* vPoint = new g2o::VertexSBAPointXYZ();
+        vPoint->setEstimate(Converter::toVector3d(pMP->GetWorldPos()));
+        unsigned long id = pMP->mnId + maxKFId + maxLandmarkId + 2;
+        vPoint->setId(id);
+        vPoint->setMarginalized(true);
+        optimizer.addVertex(vPoint);
+
+        const auto observations = pMP->GetObservations();
+
+        //Set edges
+        for (auto& observation : observations) {
+            KeyFrame* pKFi = observation.first;
+
+            if (!pKFi->isBad()) {
+                const cv::KeyPoint& kpUn = pKFi->mvKeysUn[observation.second];
+
+                // Monocular observation
+                if (pKFi->mvuRight[observation.second] < 0) {
+                    Eigen::Matrix<double, 2, 1> obs;
+                    obs << kpUn.pt.x, kpUn.pt.y;
+
+                    auto* edgeSE3ProjectXYZX = new g2o::EdgeSE3ProjectXYZ();
+
+                    edgeSE3ProjectXYZX->setVertex(0, optimizer.vertex(id));
+                    edgeSE3ProjectXYZX->setVertex(1, optimizer.vertex(pKFi->mnId));
+                    edgeSE3ProjectXYZX->setMeasurement(obs);
+                    const float& invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
+                    edgeSE3ProjectXYZX->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
+
+                    auto* rk = new g2o::RobustKernelHuber;
+                    edgeSE3ProjectXYZX->setRobustKernel(rk);
+                    rk->setDelta(thHuberMono);
+
+                    edgeSE3ProjectXYZX->fx = pKFi->fx;
+                    edgeSE3ProjectXYZX->fy = pKFi->fy;
+                    edgeSE3ProjectXYZX->cx = pKFi->cx;
+                    edgeSE3ProjectXYZX->cy = pKFi->cy;
+
+                    optimizer.addEdge(edgeSE3ProjectXYZX);
+                    vpEdgesMono.push_back(edgeSE3ProjectXYZX);
+                    vpEdgeKFMono.push_back(pKFi);
+                    vpMapPointEdgeMono.push_back(pMP);
+                }
+                else // Stereo observation
+                {
+                    Eigen::Matrix<double, 3, 1> obs;
+                    const float kp_ur = pKFi->mvuRight[observation.second];
+                    obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
+
+                    auto* e = new g2o::EdgeStereoSE3ProjectXYZ();
+
+                    e->setVertex(0, optimizer.vertex(id));
+                    e->setVertex(1, optimizer.vertex(pKFi->mnId));
+                    e->setMeasurement(obs);
+                    const float& invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
+                    Eigen::Matrix3d Info = Eigen::Matrix3d::Identity() * invSigma2;
+                    e->setInformation(Info);
+
+                    auto* rk = new g2o::RobustKernelHuber;
+                    e->setRobustKernel(rk);
+                    rk->setDelta(thHuberStereo);
+
+                    e->fx = pKFi->fx;
+                    e->fy = pKFi->fy;
+                    e->cx = pKFi->cx;
+                    e->cy = pKFi->cy;
+                    e->bf = pKFi->mbf;
+
+                    optimizer.addEdge(e);
+                    vpEdgesStereo.push_back(e);
+                    vpEdgeKFStereo.push_back(pKFi);
+                    vpMapPointEdgeStereo.push_back(pMP);
+                }
+            }
+        }
+    }
+
+    for (auto pKFi : lFixedCameras) {
+        // TODO -- should this be fixed ???
+        // add g2o camera-object measurement edges, if there is
+        auto landmarks = pKFi->GetMapObjects();
+        auto vObservations = pKFi->GetObjectPredictions();
+        auto vObservationsMap = pKFi->GetMapObjectObservationsMap();
+        auto K = Converter::toMatrix3d(pKFi->mK);
+
+        for (const auto& pMO : landmarks) {
+            if (vObservationsMap.find(pMO) == vObservationsMap.end())
+                continue;
+
+            if(!pMO->IsReady())
+                continue;
+
+            unsigned long landmark_id = maxKFId + 1 + pMO->mnId;
+            auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj(K);
+            edgeSE3CuboidProj->setVertex(0, optimizer.vertex(pKFi->mnId));
+            edgeSE3CuboidProj->setVertex(1, optimizer.vertex(landmark_id));
+            auto obs = vObservations[vObservationsMap[pMO]];
+            edgeSE3CuboidProj->setMeasurement(Converter::toVector4d(obs->box()));
+            Eigen::Matrix4d info = Eigen::Matrix4d::Identity() * obs->_confidence;
+            edgeSE3CuboidProj->setInformation(info);
+            optimizer.addEdge(edgeSE3CuboidProj);
+
+            // Adding Mappoint Constraints
+            auto vMapPointObservations = pMO->GetMapPoints();
+            for (auto& pMP : vMapPointObservations){
+                if (pMP->isBad())
+                    continue;
+
+                // Add mappoint constraint!
+                auto* edgeMP = new g2o::EdgeCuboidMapPointUnary();
+                edgeMP->setVertex(0, optimizer.vertex(landmark_id));
+                auto cuboid_pose_inv = pMO->GetCuboidPtr()->mPose.inverse().to_homogeneous_matrix();
+
+                edgeMP->setMeasurement(
+                        homo_to_real_coord_vec<double>(
+                                cuboid_pose_inv *
+                                real_to_homo_coord_vec<double>(
+                                        Converter::toVector3d(pMP->GetWorldPos()))
+                                        )
+                        );
+                // edgeMP->setMeasurement(pMP->GetWorldPos());
+                edgeMP->setInformation(Eigen::Matrix3d::Identity());
+                optimizer.addEdge(edgeMP);
+            }
+
+
+//            auto vMapPointObservations = pMO->GetMapPointsWithScore();
+//            for (auto& pMPpair : vMapPointObservations){
+//                if (!optimizer.vertex(pMPpair.first->mnId + maxKFId + maxLandmarkId + 2)){
+//                    // create vertex if doesn't exist
+//                    auto* vPoint = new g2o::VertexSBAPointXYZ();
+//                    vPoint->setEstimate(Converter::toVector3d(pMPpair.first->GetWorldPos()));
+//                    unsigned long id = pMPpair.first->mnId + maxKFId + maxLandmarkId + 2;
+//                    vPoint->setId(id);
+//                    vPoint->setMarginalized(true);
+//                    vPoint->setFixed(true); // TODO -- recheck this
+//                    optimizer.addVertex(vPoint);
+//                }
+//
+//                // Add mappoint constraint!
+//                auto* edgeMP = new g2o::EdgeCuboidMapPoint();
+//                edgeMP->setVertex(0, optimizer.vertex(pMPpair.first->mnId + maxKFId + maxLandmarkId + 2));
+//                edgeMP->setVertex(1, optimizer.vertex(landmark_id));
+//                edgeMP->setInformation(Eigen::Matrix3d::Identity() * pMPpair.second);
+//                optimizer.addEdge(edgeMP);
+//            }
+        }
+    }
+
+    for (auto pKFi : lLocalKeyFrames) {
+        // add g2o camera-object measurement edges, if there is
+        auto landmarks = pKFi->GetMapObjects();
+        auto vObservations = pKFi->GetObjectPredictions();
+        auto vObservationsMap = pKFi->GetMapObjectObservationsMap();
+        auto K = Converter::toMatrix3d(pKFi->mK);
+
+        for (const auto& pMO : landmarks) {
+            if (vObservationsMap.find(pMO) == vObservationsMap.end())
+                continue;
+
+            if(!pMO->IsReady())
+                continue;
+            unsigned long landmark_id = maxKFId + 1 + pMO->mnId;
+            auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj(K);
+            edgeSE3CuboidProj->setVertex(0, optimizer.vertex(pKFi->mnId));
+            edgeSE3CuboidProj->setVertex(1, optimizer.vertex(landmark_id));
+            auto obs = vObservations[vObservationsMap[pMO]];
+            edgeSE3CuboidProj->setMeasurement(Converter::toVector4d(obs->box()));
+            Eigen::Matrix4d info = Eigen::Matrix4d::Identity() * obs->_confidence;
+            edgeSE3CuboidProj->setInformation(info);
+            optimizer.addEdge(edgeSE3CuboidProj);
+
+            // Adding Mappoint Constraints
+            auto vMapPointObservations = pMO->GetMapPoints();
+            for (auto& pMP : vMapPointObservations){
+                if (pMP->isBad())
+                    continue;
+
+                // Add mappoint constraint!
+                auto* edgeMP = new g2o::EdgeCuboidMapPointUnary();
+                edgeMP->setVertex(0, optimizer.vertex(landmark_id));
+                auto cuboid_pose_inv = pMO->GetCuboidPtr()->mPose.inverse().to_homogeneous_matrix();
+
+                edgeMP->setMeasurement(
+                        homo_to_real_coord_vec<double>(
+                                cuboid_pose_inv *
+                                real_to_homo_coord_vec<double>(
+                                        Converter::toVector3d(pMP->GetWorldPos()))
+                        )
+                );
+                // edgeMP->setMeasurement(pMP->GetWorldPos());
+                edgeMP->setInformation(Eigen::Matrix3d::Identity());
+                optimizer.addEdge(edgeMP);
+            }
+
+//            auto vMapPointObservations = pMO->GetMapPointsWithScore();
+//            for (auto& pMPpair : vMapPointObservations){
+//                if (!optimizer.vertex(pMPpair.first->mnId + maxKFId + maxLandmarkId + 2)){
+//                    // create vertex if doesn't exist
+//                    auto* vPoint = new g2o::VertexSBAPointXYZ();
+//                    vPoint->setEstimate(Converter::toVector3d(pMPpair.first->GetWorldPos()));
+//                    unsigned long id = pMPpair.first->mnId + maxKFId + maxLandmarkId + 2;
+//                    vPoint->setId(id);
+//                    vPoint->setMarginalized(true);
+//                    vPoint->setFixed(true); // TODO -- recheck this
+//                    optimizer.addVertex(vPoint);
+//                }
+//
+//                // Add mappoint constraint!
+//                auto* edgeMP = new g2o::EdgeCuboidMapPoint();
+//                edgeMP->setVertex(0, optimizer.vertex(pMPpair.first->mnId + maxKFId + maxLandmarkId + 2));
+//                edgeMP->setVertex(1, optimizer.vertex(landmark_id));
+//                edgeMP->setInformation(Eigen::Matrix3d::Identity() * pMPpair.second);
+//                optimizer.addEdge(edgeMP);
+//            }
+        }
+    }
+
+    auto graphcon_time = utils::time::time_diff_from_now_second(start_graphcon);
+
+    if (pbStopFlag)
+        if (*pbStopFlag)
+            return;
+    auto start_opt = utils::time::time_now();
+    optimizer.initializeOptimization();
+    optimizer.optimize(5);
+
+    bool bDoMore = true;
+
+    if (pbStopFlag)
+        if (*pbStopFlag)
+            bDoMore = false;
+
+    if (bDoMore) {
+
+        // Check inlier observations
+        for (size_t i = 0; i < vpEdgesMono.size(); i++) {
+            g2o::EdgeSE3ProjectXYZ* e = vpEdgesMono[i];
+            MapPoint* pMP = vpMapPointEdgeMono[i];
+
+            if (pMP->isBad())
+                continue;
+
+            if (e->chi2() > 5.991 || !e->isDepthPositive()) {
+                e->setLevel(1);
+            }
+
+            e->setRobustKernel(nullptr);
+        }
+
+        for (size_t i = 0; i < vpEdgesStereo.size(); i++) {
+            g2o::EdgeStereoSE3ProjectXYZ* e = vpEdgesStereo[i];
+            MapPoint* pMP = vpMapPointEdgeStereo[i];
+
+            if (pMP->isBad())
+                continue;
+
+            if (e->chi2() > 7.815 || !e->isDepthPositive()) {
+                e->setLevel(1);
+            }
+
+            e->setRobustKernel(nullptr);
+        }
+
+        // Optimize again without the outliers
+
+        optimizer.initializeOptimization(0);
+        optimizer.optimize(10);
+
+    }
+
+    SPDLOG_DEBUG("[OptTime] Optimization: {}, GraphConstruction: {}",
+                 utils::time::time_diff_from_now_second(start_opt),
+                 graphcon_time);
+
+    vector<pair<KeyFrame*, MapPoint*> > vToErase;
+    vToErase.reserve(vpEdgesMono.size() + vpEdgesStereo.size());
+
+    // Check inlier observations
+    for (size_t i = 0; i < vpEdgesMono.size(); i++) {
+        g2o::EdgeSE3ProjectXYZ* e = vpEdgesMono[i];
+        MapPoint* pMP = vpMapPointEdgeMono[i];
+
+        if (pMP->isBad())
+            continue;
+
+        if (e->chi2() > 5.991 || !e->isDepthPositive()) {
+            KeyFrame* pKFi = vpEdgeKFMono[i];
+            vToErase.emplace_back(pKFi, pMP);
+        }
+    }
+
+    for (size_t i = 0; i < vpEdgesStereo.size(); i++) {
+        g2o::EdgeStereoSE3ProjectXYZ* e = vpEdgesStereo[i];
+        MapPoint* pMP = vpMapPointEdgeStereo[i];
+
+        if (pMP->isBad())
+            continue;
+
+        if (e->chi2() > 7.815 || !e->isDepthPositive()) {
+            KeyFrame* pKFi = vpEdgeKFStereo[i];
+            vToErase.emplace_back(pKFi, pMP);
+        }
+    }
+
+    // Get Map Mutex
+    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+
+    if (!vToErase.empty()) {
+        for (auto& i : vToErase) {
+            KeyFrame* pKFi = i.first;
+            MapPoint* pMPi = i.second;
+            pKFi->EraseMapPointMatch(pMPi);
+            pMPi->EraseObservation(pKFi);
+        }
+    }
+
+    // Recover optimized data
+
+    //Keyframes
+    for (auto pLocalKF : lLocalKeyFrames) {
+        auto* vSE3 = dynamic_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pLocalKF->mnId));
+        const g2o::SE3Quat& SE3quat = vSE3->estimate();
+        pLocalKF->SetPose(Converter::toCvMat(SE3quat));
+    }
+
+    //Points
+    for (auto pMP : lLocalMapPoints) {
+        auto* vPoint = dynamic_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->mnId + maxKFId + maxLandmarkId + 2));
+        pMP->SetWorldPos(Converter::toCvMat(vPoint->estimate()));
+        pMP->UpdateNormalAndDepth();
+    }
+
+
+    //Landmarks
+    for (const auto& pMO : lLocalLandmarks) {
+        auto* vCube = dynamic_cast<g2o::VertexCuboid*>(optimizer.vertex(maxKFId + 1 + pMO->mnId));
+        const g2o::Cuboid& cuboid = vCube->estimate();
+        // pMO->SetPoseAndDimension(cuboid);
+        pMO->SetCuboid(cuboid);
+    }
 
 
     //pMap->NotifyMapUpdated();

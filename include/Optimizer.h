@@ -84,6 +84,7 @@ class Optimizer {
     void static LocalBundleAdjustment(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, LocalMapping* pLM=NULL);
 
     void static LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool *pbStopFlag, Map *pMap);
+    void static LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool *pbStopFlag, Map *pMap);
 
     int static PoseOptimization(Frame *pFrame);
 
