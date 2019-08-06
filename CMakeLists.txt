@@ -150,11 +150,11 @@ add_executable(rgbd_tum
         Examples/RGB-D/rgbd_tum.cc)
 target_link_libraries(rgbd_tum ${PROJECT_NAME} ${PCL_LIBRARIES})
 #
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
 #
-#add_executable(stereo_kitti
-#  Examples/Stereo/stereo_kitti.cc)
-#target_link_libraries(stereo_kitti ${PROJECT_NAME} ${PCL_LIBRARIES})
+add_executable(stereo_kitti
+  Examples/Stereo/stereo_kitti.cc)
+target_link_libraries(stereo_kitti ${PROJECT_NAME} ${PCL_LIBRARIES})
 #
 #add_executable(stereo_euroc
 #  Examples/Stereo/stereo_euroc.cc)

@@ -623,31 +623,31 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
         std::unique_lock<std::mutex> lock(mMutexImColor);
         mImColor = imRectLeft;
         mImColorRight = imRectRight;
-    }
 
-    cv::Mat imGrayRight;
 
-    if (mImColor.channels() == 3) {
-        if (mbRGB) {
-            cvtColor(mImColor, mImGray, CV_RGB2GRAY);
-            cvtColor(mImColorRight, imGrayRight, CV_RGB2GRAY);
-        } else {
-            cvtColor(mImColor, mImGray, CV_BGR2GRAY);
-            cvtColor(mImColorRight, imGrayRight, CV_BGR2GRAY);
+        cv::Mat imGrayRight;
+
+        if (mImColor.channels() == 3) {
+            if (mbRGB) {
+                cvtColor(mImColor, mImGray, CV_RGB2GRAY);
+                cvtColor(mImColorRight, imGrayRight, CV_RGB2GRAY);
+            } else {
+                cvtColor(mImColor, mImGray, CV_BGR2GRAY);
+                cvtColor(mImColorRight, imGrayRight, CV_BGR2GRAY);
+            }
+        } else if (mImColor.channels() == 4) {
+            if (mbRGB) {
+                cvtColor(mImColor, mImGray, CV_RGBA2GRAY);
+                cvtColor(mImColorRight, imGrayRight, CV_RGBA2GRAY);
+            } else {
+                cvtColor(mImColor, mImGray, CV_BGRA2GRAY);
+                cvtColor(mImColorRight, imGrayRight, CV_BGRA2GRAY);
+            }
         }
-    } else if (mImColor.channels() == 4) {
-        if (mbRGB) {
-            cvtColor(mImColor, mImGray, CV_RGBA2GRAY);
-            cvtColor(mImColorRight, imGrayRight, CV_RGBA2GRAY);
-        } else {
-            cvtColor(mImColor, mImGray, CV_BGRA2GRAY);
-            cvtColor(mImColorRight, imGrayRight, CV_BGRA2GRAY);
-        }
+
+        mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK,
+                              mDistCoef, mbf, mThDepth);
     }
-
-    mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK,
-                          mDistCoef, mbf, mThDepth);
-
     Track();
 
     return mCurrentFrame.mTcw.clone();
@@ -658,29 +658,29 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const 
     {
         std::unique_lock<std::mutex> lock(mMutexImColor);
         mImColor = imRGB;
+
+        cv::Mat imDepth = imD;
+
+        assert(mImColor.channels() >= 3);
+
+        if (mImColor.channels() == 3) {
+            if (mbRGB)
+                cvtColor(mImColor, mImGray, CV_RGB2GRAY);
+            else
+                cvtColor(mImColor, mImGray, CV_BGR2GRAY);
+        } else if (mImColor.channels() == 4) {
+            if (mbRGB)
+                cvtColor(mImColor, mImGray, CV_RGBA2GRAY);
+            else
+                cvtColor(mImColor, mImGray, CV_BGRA2GRAY);
+        }
+
+        if ((fabs(mDepthMapFactor - 1.0f) > 1e-5) || imDepth.type() != CV_32F)
+            imDepth.convertTo(imDepth, CV_32F, mDepthMapFactor);
+
+        mCurrentFrame = Frame(mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef, mbf,
+                              mThDepth);
     }
-    cv::Mat imDepth = imD;
-
-    assert(mImColor.channels() >= 3);
-
-    if (mImColor.channels() == 3) {
-        if (mbRGB)
-            cvtColor(mImColor, mImGray, CV_RGB2GRAY);
-        else
-            cvtColor(mImColor, mImGray, CV_BGR2GRAY);
-    } else if (mImColor.channels() == 4) {
-        if (mbRGB)
-            cvtColor(mImColor, mImGray, CV_RGBA2GRAY);
-        else
-            cvtColor(mImColor, mImGray, CV_BGRA2GRAY);
-    }
-
-    if ((fabs(mDepthMapFactor - 1.0f) > 1e-5) || imDepth.type() != CV_32F)
-        imDepth.convertTo(imDepth, CV_32F, mDepthMapFactor);
-
-    mCurrentFrame = Frame(mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef, mbf,
-                          mThDepth);
-
     Track();
 
     return mCurrentFrame.mTcw.clone();
@@ -692,23 +692,25 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
     {
         std::unique_lock<std::mutex> lock(mMutexImColor);
         mImColor = im;
-    }
-    if (mImColor.channels() == 3) {
-        if (mbRGB)
-            cvtColor(mImColor, mImGray, CV_RGB2GRAY);
-        else
-            cvtColor(mImColor, mImGray, CV_BGR2GRAY);
-    } else if (mImColor.channels() == 4) {
-        if (mbRGB)
-            cvtColor(mImColor, mImGray, CV_RGBA2GRAY);
-        else
-            cvtColor(mImColor, mImGray, CV_BGRA2GRAY);
-    }
 
-    if (mState == NOT_INITIALIZED || mState == NO_IMAGES_YET)
-        mCurrentFrame = Frame(mImGray, timestamp, mpIniORBextractor, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth);
-    else
-        mCurrentFrame = Frame(mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth);
+        if (mImColor.channels() == 3) {
+            if (mbRGB)
+                cvtColor(mImColor, mImGray, CV_RGB2GRAY);
+            else
+                cvtColor(mImColor, mImGray, CV_BGR2GRAY);
+        } else if (mImColor.channels() == 4) {
+            if (mbRGB)
+                cvtColor(mImColor, mImGray, CV_RGBA2GRAY);
+            else
+                cvtColor(mImColor, mImGray, CV_BGRA2GRAY);
+        }
+
+        if (mState == NOT_INITIALIZED || mState == NO_IMAGES_YET)
+            mCurrentFrame = Frame(mImGray, timestamp, mpIniORBextractor, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth);
+        else
+            mCurrentFrame = Frame(mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth);
+
+    }
 
     Track();
 
