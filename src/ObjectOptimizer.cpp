@@ -1253,8 +1253,10 @@ void Optimizer::LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool* pbStopFla
             optimizer.addEdge(edgeSE3CuboidProj);
 
             // Adding Mappoint Constraints
-            auto vMapPointObservations = pMO->GetMapPoints();
-            for (auto& pMP : vMapPointObservations){
+            //auto vMapPointObservations = pMO->GetMapPoints();
+            auto vMapPointObservations = pMO->GetMapPointsWithScore();
+            for (auto& pair_pMP : vMapPointObservations){
+                auto& pMP = pair_pMP.first;
                 if (pMP->isBad())
                     continue;
 
@@ -1271,7 +1273,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool* pbStopFla
                                         )
                         );
                 // edgeMP->setMeasurement(pMP->GetWorldPos());
-                edgeMP->setInformation(Eigen::Matrix3d::Identity());
+                edgeMP->setInformation(Eigen::Matrix3d::Identity() * pair_pMP.second * 1.5);
                 optimizer.addEdge(edgeMP);
             }
 
@@ -1323,8 +1325,10 @@ void Optimizer::LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool* pbStopFla
             optimizer.addEdge(edgeSE3CuboidProj);
 
             // Adding Mappoint Constraints
-            auto vMapPointObservations = pMO->GetMapPoints();
-            for (auto& pMP : vMapPointObservations){
+            // auto vMapPointObservations = pMO->GetMapPoints();
+            auto vMapPointObservations = pMO->GetMapPointsWithScore();
+            for (auto& pair_pMP : vMapPointObservations){
+                auto& pMP = pair_pMP.first;
                 if (pMP->isBad())
                     continue;
 
@@ -1341,7 +1345,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool* pbStopFla
                         )
                 );
                 // edgeMP->setMeasurement(pMP->GetWorldPos());
-                edgeMP->setInformation(Eigen::Matrix3d::Identity());
+                edgeMP->setInformation(Eigen::Matrix3d::Identity() * pair_pMP.second * 1.5);
                 optimizer.addEdge(edgeMP);
             }
 
