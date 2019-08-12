@@ -217,6 +217,10 @@ bool LoopClosing::DetectLoop() {
 }
 
 bool LoopClosing::ComputeSim3() {
+    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
+    if (mbFixScale){
+        bUseIMU &= mpLocalMapper->GetVINSInited();
+    }
     // For each consistent loop candidate we try to compute a Sim3
 
     const int nInitialCandidates = mvpEnoughConsistentCandidates.size();
@@ -235,7 +239,7 @@ bool LoopClosing::ComputeSim3() {
     vbDiscarded.resize(nInitialCandidates);
 
     int nCandidates = 0; //candidates with enough matches
-    static const int nmatches_th = Config::getInstance().SystemParams().use_imu ? 15 : 20;
+    static const int nmatches_th = bUseIMU ? 15 : 20;
 
     for (int i = 0; i < nInitialCandidates; i++) {
         KeyFrame *pKF = mvpEnoughConsistentCandidates[i];
@@ -370,6 +374,10 @@ bool LoopClosing::ComputeSim3() {
 
 void LoopClosing::CorrectLoop() {
     cout << "Loop detected!" << endl;
+    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
+    if (mbFixScale){
+        bUseIMU &= mpLocalMapper->GetVINSInited();
+    }
 
     // Send a stop signal to Local Mapping
     // Avoid new keyframes are inserted while correcting the loop
@@ -527,7 +535,7 @@ void LoopClosing::CorrectLoop() {
     Optimizer::OptimizeEssentialGraph(mpMap, mpMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections,
                                       mbFixScale, this);
 
-    if (!Config::getInstance().SystemParams().use_imu)
+    if (!bUseIMU)
         mpMap->InformNewBigChange();
 
     // Map updated, set flag for Tracking

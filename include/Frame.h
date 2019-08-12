@@ -56,6 +56,19 @@ class Frame {
           ORBVocabulary *voc,
           cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame *pLastKF = NULL);
 
+    // Constructor for StereoVI
+    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp,
+            const utils::eigen_aligned_vector<IMUData> &vimu,
+            ORBextractor *extractorLeft, ORBextractor *extractorRight,
+            ORBVocabulary *voc,
+            cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame *pLastKF = NULL);
+
+    // Constructor for RGBD VI
+    Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp,
+            const utils::eigen_aligned_vector<IMUData> &vimu, ORBextractor *extractor,
+            ORBVocabulary *voc,
+            cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame *pLastKF = NULL);
+
     void ComputeIMUPreIntSinceLastFrame(const Frame *pLastF, IMUPreintegrator &imupreint) const;
 
     void UpdatePoseFromNS(const cv::Mat &Tbc);

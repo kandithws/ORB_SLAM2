@@ -468,6 +468,86 @@ cv::Mat Tracking::GrabImageMonoVI(const cv::Mat &im, const utils::eigen_aligned_
     return mCurrentFrame.mTcw.clone();
 }
 
+
+cv::Mat Tracking::GrabImageStereoVI(const cv::Mat &imRectLeft, const cv::Mat &imRectRight,
+                          const ORB_SLAM2::utils::eigen_aligned_vector<IMUData> &vimu, const double &timestamp){
+
+    mvIMUSinceLastKF.insert(mvIMUSinceLastKF.end(), vimu.begin(), vimu.end());
+
+    {
+        std::unique_lock<std::mutex> lock(mMutexImColor);
+        mImColor = imRectLeft;
+        mImColorRight = imRectRight;
+
+
+        cv::Mat imGrayRight;
+
+        if (mImColor.channels() == 3) {
+            if (mbRGB) {
+                cvtColor(mImColor, mImGray, CV_RGB2GRAY);
+                cvtColor(mImColorRight, imGrayRight, CV_RGB2GRAY);
+            } else {
+                cvtColor(mImColor, mImGray, CV_BGR2GRAY);
+                cvtColor(mImColorRight, imGrayRight, CV_BGR2GRAY);
+            }
+        } else if (mImColor.channels() == 4) {
+            if (mbRGB) {
+                cvtColor(mImColor, mImGray, CV_RGBA2GRAY);
+                cvtColor(mImColorRight, imGrayRight, CV_RGBA2GRAY);
+            } else {
+                cvtColor(mImColor, mImGray, CV_BGRA2GRAY);
+                cvtColor(mImColorRight, imGrayRight, CV_BGRA2GRAY);
+            }
+        }
+
+
+        mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, vimu, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK,
+                              mDistCoef, mbf, mThDepth);
+    }
+    // Track();
+    TrackIMUStereo();
+
+    return mCurrentFrame.mTcw.clone();
+}
+
+cv::Mat Tracking::GrabImageRGBDVI(const cv::Mat &imRGB, const cv::Mat &imD,
+                                  const ORB_SLAM2::utils::eigen_aligned_vector<ORB_SLAM2::IMUData> &vimu,
+                                  const double &timestamp) {
+
+    mvIMUSinceLastKF.insert(mvIMUSinceLastKF.end(), vimu.begin(), vimu.end());
+
+    {
+        std::unique_lock<std::mutex> lock(mMutexImColor);
+        mImColor = imRGB;
+
+        cv::Mat imDepth = imD;
+
+        assert(mImColor.channels() >= 3);
+
+        if (mImColor.channels() == 3) {
+            if (mbRGB)
+                cvtColor(mImColor, mImGray, CV_RGB2GRAY);
+            else
+                cvtColor(mImColor, mImGray, CV_BGR2GRAY);
+        } else if (mImColor.channels() == 4) {
+            if (mbRGB)
+                cvtColor(mImColor, mImGray, CV_RGBA2GRAY);
+            else
+                cvtColor(mImColor, mImGray, CV_BGRA2GRAY);
+        }
+
+        if ((fabs(mDepthMapFactor - 1.0f) > 1e-5) || imDepth.type() != CV_32F)
+            imDepth.convertTo(imDepth, CV_32F, mDepthMapFactor);
+
+        mCurrentFrame = Frame(mImGray, imDepth, timestamp, vimu, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef, mbf,
+                              mThDepth);
+    }
+    // Track();
+    TrackIMUStereo();
+
+    return mCurrentFrame.mTcw.clone();
+}
+
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
@@ -617,7 +697,6 @@ void Tracking::SetViewer(Viewer *pViewer) {
 
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp) {
-    // TODO -- 2 rgb images for stereo vision
 
     {
         std::unique_lock<std::mutex> lock(mMutexImColor);
@@ -1029,15 +1108,280 @@ void Tracking::Track() {
     }
 }
 
+// Concept -- Before Init will do like VI MONO, vision only after initialized
+void Tracking::TrackIMUStereo() {
+    if (mState == NO_IMAGES_YET) {
+        mState = NOT_INITIALIZED;
+    }
+
+    mLastProcessedState = mState;
+
+    // Get Map Mutex -> Map cannot be changed
+    unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
+    //auto lock = Map::CreateUpdateLock(mpMap);
+    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
+
+    if (mState == NOT_INITIALIZED) {
+        StereoInitialization();
+
+        mpFrameDrawer->Update(this);
+
+        if (mState != OK)
+            return;
+    } else {
+        // System is initialized. Track Frame.
+        bool bOK;
+
+        // Initial camera pose estimation using motion model or relocalization (if tracking is lost)
+        if (!mbOnlyTracking) {
+            // Local Mapping is activated. This is the normal behaviour, unless
+            // you explicitly activate the "only tracking" mode.
+
+            if (mState == OK) {
+                // Local Mapping might have changed some MapPoints tracked in last frame
+                CheckReplacedInLastFrame();
+                // Visual only
+                if (mVelocity.empty() || mCurrentFrame.mnId < mnLastRelocFrameId + 2) {
+                    bOK = TrackReferenceKeyFrame();
+                } else {
+                    bOK = TrackWithMotionModel();
+                    if (!bOK)
+                        bOK = TrackReferenceKeyFrame();
+                }
+
+            } else {
+                bOK = Relocalization();
+            }
+        } else {
+            // Localization Mode: Local Mapping is deactivated
+
+            if (mState == LOST) {
+                bOK = Relocalization();
+            } else {
+                if (!mbVO) {
+                    // In last frame we tracked enough MapPoints in the map
+
+                    if (!mVelocity.empty()) {
+                        bOK = TrackWithMotionModel();
+                    } else {
+                        bOK = TrackReferenceKeyFrame();
+                    }
+                } else {
+                    // In last frame we tracked mainly "visual odometry" points.
+
+                    // We compute two camera poses, one from motion model and one doing relocalization.
+                    // If relocalization is sucessfull we choose that solution, otherwise we retain
+                    // the "visual odometry" solution.
+
+                    bool bOKMM = false;
+                    bool bOKReloc = false;
+                    vector<MapPoint *> vpMPsMM;
+                    vector<bool> vbOutMM;
+                    cv::Mat TcwMM;
+                    if (!mVelocity.empty()) {
+                        bOKMM = TrackWithMotionModel();
+                        vpMPsMM = mCurrentFrame.mvpMapPoints;
+                        vbOutMM = mCurrentFrame.mvbOutlier;
+                        TcwMM = mCurrentFrame.mTcw.clone();
+                    }
+                    bOKReloc = Relocalization();
+
+                    if (bOKMM && !bOKReloc) {
+                        mCurrentFrame.SetPose(TcwMM);
+                        mCurrentFrame.mvpMapPoints = vpMPsMM;
+                        mCurrentFrame.mvbOutlier = vbOutMM;
+
+                        if (mbVO) {
+                            for (int i = 0; i < mCurrentFrame.N; i++) {
+                                if (mCurrentFrame.mvpMapPoints[i] && !mCurrentFrame.mvbOutlier[i]) {
+                                    mCurrentFrame.mvpMapPoints[i]->IncreaseFound();
+                                }
+                            }
+                        }
+                    } else if (bOKReloc) {
+                        mbVO = false;
+                    }
+
+                    bOK = bOKReloc || bOKMM;
+                }
+            }
+        }
+
+        mCurrentFrame.mpReferenceKF = mpReferenceKF;
+
+        // If we have an initial estimation of the camera pose and matching. Track the local map.
+        if (!mbOnlyTracking) {
+            if (bOK) {
+                bOK = TrackLocalMap();
+            }
+        } else {
+            // mbVO true means that there are few matches to MapPoints in the map. We cannot retrieve
+            // a local map and therefore we do not perform TrackLocalMap(). Once the system relocalizes
+            // the camera we will use the local map again.
+
+            if (bOK && !mbVO)
+                bOK = TrackLocalMap();
+        }
+
+        if (bOK) {
+            mState = OK;
+
+            // Add Frames to re-compute IMU bias after reloc
+            if (bUseIMU && !mpLocalMapper->GetVINSInited()){
+                if (mbRelocBiasPrepare) {
+                    mv20FramesReloc.push_back(mCurrentFrame);
+
+                    // Before creating new keyframe
+                    // Use 20 consecutive frames to re-compute IMU bias
+                    if (mCurrentFrame.mnId == mnLastRelocFrameId + 20 - 1) {
+                        NavState nscur;
+                        RecomputeIMUBiasAndCurrentNavstate(nscur);
+                        // Update NavState of CurrentFrame
+                        mCurrentFrame.SetNavState(nscur);
+                        // Clear flag and Frame buffer
+                        mbRelocBiasPrepare = false;
+                        mv20FramesReloc.clear();
+
+                        // Release LocalMapping. To ensure to insert new keyframe.
+                        mpLocalMapper->Release();
+                        // Create new KeyFrame
+                        mbCreateNewKFAfterReloc = true;
+
+                        //Debug log
+                        cout << "NavState recomputed." << endl;
+                        cout << "V:" << mCurrentFrame.GetNavState().Get_V().transpose() << endl;
+                        cout << "bg:" << mCurrentFrame.GetNavState().Get_BiasGyr().transpose() << endl;
+                        cout << "ba:" << mCurrentFrame.GetNavState().Get_BiasAcc().transpose() << endl;
+                        cout << "dbg:" << mCurrentFrame.GetNavState().Get_dBias_Gyr().transpose() << endl;
+                        cout << "dba:" << mCurrentFrame.GetNavState().Get_dBias_Acc().transpose() << endl;
+                    }
+                }
+            }
+
+
+
+        } else {
+            mState = LOST;
+
+            // Clear Frame vectors for reloc bias computation
+            if (bUseIMU && mv20FramesReloc.size() > 0)
+                mv20FramesReloc.clear();
+        }
+
+        // Update drawer
+        mpFrameDrawer->Update(this);
+
+        // If tracking were good, check if we insert a keyframe
+        if (bOK) {
+            // Update motion model
+            if (!mLastFrame.mTcw.empty()) {
+                cv::Mat LastTwc = cv::Mat::eye(4, 4, CV_32F);
+                mLastFrame.GetRotationInverse().copyTo(LastTwc.rowRange(0, 3).colRange(0, 3));
+                mLastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0, 3).col(3));
+                mVelocity = mCurrentFrame.mTcw * LastTwc;
+            } else
+                mVelocity = cv::Mat();
+
+            mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+
+            // Clean VO matches
+            for (int i = 0; i < mCurrentFrame.N; i++) {
+                MapPoint *pMP = mCurrentFrame.mvpMapPoints[i];
+                if (pMP)
+                    if (pMP->Observations() < 1) {
+                        mCurrentFrame.mvbOutlier[i] = false;
+                        mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
+                    }
+            }
+
+            // Delete temporal MapPoints
+            for (list<MapPoint *>::iterator lit = mlpTemporalPoints.begin(), lend = mlpTemporalPoints.end();
+                 lit != lend; lit++) {
+                MapPoint *pMP = *lit;
+                delete pMP;
+            }
+            mlpTemporalPoints.clear();
+
+            // Check if we need to insert a new keyframe
+            auto bIMUcond = bUseIMU && !mpLocalMapper->GetVINSInited();
+            if (NeedNewKeyFrame() || (bIMUcond && mbCreateNewKFAfterReloc))
+                CreateNewKeyFrame();
+
+
+            // Clear flag
+            if (bIMUcond && mbCreateNewKFAfterReloc)
+                mbCreateNewKFAfterReloc = false;
+
+            // We allow points with high innovation (considererd outliers by the Huber Function)
+            // pass to the new keyframe, so that bundle adjustment will finally decide
+            // if they are outliers or not. We don't want next frame to estimate its position
+            // with those points so we discard them in the frame.
+            for (int i = 0; i < mCurrentFrame.N; i++) {
+                if (mCurrentFrame.mvpMapPoints[i] && mCurrentFrame.mvbOutlier[i])
+                    mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
+            }
+
+
+            // Clear First-Init flag
+            if (bIMUcond && mpLocalMapper->GetFirstVINSInited()){
+                mpLocalMapper->SetFirstVINSInited(false);
+            }
+        }
+
+        // Reset if the camera get lost soon after initialization
+        if (mState == LOST) {
+            auto cond = bUseIMU ? !mpLocalMapper->GetVINSInited() : mpMap->KeyFramesInMap() <= 5;
+
+            if (cond) {
+                cout << "Track lost soon after initialisation, reseting..." << endl;
+                mpSystem->Reset();
+                return;
+            }
+
+        }
+
+        if (!mCurrentFrame.mpReferenceKF)
+            mCurrentFrame.mpReferenceKF = mpReferenceKF;
+
+        mLastFrame = Frame(mCurrentFrame);
+    }
+
+    // Store frame pose information to retrieve the complete camera trajectory afterwards.
+    if (!mCurrentFrame.mTcw.empty()) {
+        cv::Mat Tcr = mCurrentFrame.mTcw * mCurrentFrame.mpReferenceKF->GetPoseInverse();
+        mlRelativeFramePoses.push_back(Tcr);
+        mlpReferences.push_back(mpReferenceKF);
+        mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);
+        mlbLost.push_back(mState == LOST);
+    } else {
+        // This can happen if tracking is lost
+        mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());
+        mlpReferences.push_back(mlpReferences.back());
+        mlFrameTimes.push_back(mlFrameTimes.back());
+        mlbLost.push_back(mState == LOST);
+    }
+}
+
 void Tracking::StereoInitialization() {
     if (mCurrentFrame.N > 500) {
         // Set Frame pose to the origin
         mCurrentFrame.SetPose(cv::Mat::eye(4, 4, CV_32F));
+
         KeyFrame *pKFini;
         // Create KeyFrame
-        if (mbUseObject) {
-            pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mImColor, mImGray);
-        } else {
+        if (Config::getInstance().SystemParams().use_imu) {
+            utils::eigen_aligned_vector<IMUData> vimu;
+            for (size_t i = 0; i < mvIMUSinceLastKF.size(); i++) {
+                // TODO -- maybe we can copy, cuz we have only 1 frame ??
+                IMUData imu = mvIMUSinceLastKF[i];
+                if (imu._t < mCurrentFrame.mTimeStamp)
+                    vimu.push_back(imu);
+            }
+
+            pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, vimu, NULL);
+            pKFini->ComputePreInt();
+        }
+        else {
             pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
         }
 
@@ -1267,7 +1611,6 @@ void Tracking::CreateInitialMapMonocular() {
 
     mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
-    //KeyFrame::nInitId = pKFcur->mnId;
     mState = OK;
 }
 
@@ -1487,7 +1830,10 @@ bool Tracking::NeedNewKeyFrame() {
     if (mbOnlyTracking)
         return false;
 
-    auto bUseIMU = Config::getInstance().SystemParams().use_imu;
+    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
+    if (mSensor != System::MONOCULAR){
+        bUseIMU &= !mpLocalMapper->GetVINSInited();
+    }
 
     // While updating initial poses
     if (bUseIMU && mpLocalMapper->GetUpdatingInitPoses()) {
@@ -1599,34 +1945,30 @@ void Tracking::CreateNewKeyFrame() {
     bool bUseIMU = Config::getInstance().SystemParams().use_imu;
     if (mbUseObject) {
 
-        // TODO
         std::unique_lock<std::mutex> lock(mMutexImColor);
-        if (bUseIMU) {
-            SPDLOG_ERROR("Use object + IMU is not yet implemented");
-            throw std::runtime_error("NOT IMPLEMENTED YET");
+        if (bUseIMU && !mpLocalMapper->GetVINSInited()) {
+            assert (mSensor != System::MONOCULAR);
+            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mvIMUSinceLastKF, mpLastKeyFrame);
+            // Set initial NavState for KeyFrame
+            pKF->SetInitialNavStateAndBias(mCurrentFrame.GetNavState());
+            // Compute pre-integrator
+            pKF->ComputePreInt();
         } else {
-//            if ((mSensor == System::MONOCULAR) || (mSensor == System::RGBD)) {
-//                pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mImColor, mImGray);
-//            } else {
-//                pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB); // TODO: Stereo Vision support
-//            }
-
             pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
-        }
 
-        if (KeyFrame::nInitId < 0) {
-            KeyFrame::nInitId = pKF->mnId; // First KF to consider objects
-        }
+            if (KeyFrame::nInitId < 0) {
+                KeyFrame::nInitId = pKF->mnId; // First KF to consider objects
+            }
 
-        // Make a copy of current imcolor;
-        if (mpLocalMapper->DetectWaitQueueAvaliable()){
-            auto start_time2 = utils::time::time_now();
-            QueueDetectionThread(pKF,
-                                 mImColor.clone(),
-                                 Config::getInstance().ObjectDetectionParams().allow_skip);
-            SPDLOG_INFO("RGB Image Clone time {}", utils::time::time_diff_from_now_second(start_time2));
+            // Make a copy of current imcolor;
+            if (mpLocalMapper->DetectWaitQueueAvaliable()){
+                auto start_time2 = utils::time::time_now();
+                QueueDetectionThread(pKF,
+                                     mImColor.clone(),
+                                     Config::getInstance().ObjectDetectionParams().allow_skip);
+                SPDLOG_INFO("RGB Image Clone time {}", utils::time::time_diff_from_now_second(start_time2));
+            }
         }
-
     } else {
         if (bUseIMU) {
             pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mvIMUSinceLastKF, mpLastKeyFrame);
@@ -1635,11 +1977,14 @@ void Tracking::CreateNewKeyFrame() {
             // Compute pre-integrator
             pKF->ComputePreInt();
             // Clear IMUData buffer
-            mvIMUSinceLastKF.clear();
+            // mvIMUSinceLastKF.clear();
         } else {
             pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
         }
     }
+
+    // Clear IMUData buffer
+    mvIMUSinceLastKF.clear();
 
     // TODO -- Add Keypoint Color Rendering (or perform as a Thread)
     // AddColorToKeyPoints(pKF);

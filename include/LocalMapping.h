@@ -53,6 +53,8 @@ class LocalMapping {
 
     bool TryInitVIO(void);
 
+    bool TryInitVIONoScale(void);
+
     bool GetVINSInited(void);
 
     void SetVINSInited(bool flag);
@@ -128,7 +130,7 @@ class LocalMapping {
     }
 
   public:
-    LocalMapping(Map *pMap, const float bMonocular);
+    LocalMapping(Map *pMap, const bool bMonocular);
 
     void SetLoopCloser(LoopClosing *pLoopCloser);
 
