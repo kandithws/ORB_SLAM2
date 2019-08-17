@@ -14,10 +14,12 @@ StereoMsgSynchronizer::StereoMsgSynchronizer(const double &imagedelay1,
     // (we just need the second image for scale computation)
     _imageMsgDelaySec = _img1Delay;
 
-    if (!_realTimeFlag){
-        _img1MsgFilter = std::shared_ptr<message_filters::PassThrough<sensor_msgs::Image> >();
-        _img2MsgFilter = std::shared_ptr<message_filters::PassThrough<sensor_msgs::Image> >();
 
+    if (!_realTimeFlag){
+        ROS_INFO(" INITALIZE PASS THROUGH");
+        _img1MsgFilter = std::make_shared<message_filters::PassThrough<sensor_msgs::Image> >();
+        _img2MsgFilter = std::make_shared<message_filters::PassThrough<sensor_msgs::Image> >();
+        ROS_INFO(" INITALIZE SYNCHORNIZER");
         // message_filters::Synchronizer
         _syncFilter = std::make_shared<message_filters::Synchronizer<sync_policy> >(
                 sync_policy(10),
@@ -30,6 +32,7 @@ StereoMsgSynchronizer::StereoMsgSynchronizer(const double &imagedelay1,
         // TODO use messsage_filters::Subscriber instead
     }
 
+    ROS_INFO("REGISTERING CALLBACK!");
     _syncFilter->registerCallback(boost::bind(&StereoMsgSynchronizer::stereoSyncCallback, this, _1, _2));
 }
 
@@ -37,7 +40,6 @@ StereoMsgSynchronizer::StereoMsgSynchronizer(const double &imagedelay1,
 void StereoMsgSynchronizer::addImuMsg(const sensor_msgs::ImuConstPtr &imumsg)
 {
     std::unique_lock<std::mutex> lock(_mutexIMUQueue);
-
 
     if(_imageMsgDelaySec>=0) {
         _imuMsgQueue.push(imumsg);
@@ -83,10 +85,11 @@ void StereoMsgSynchronizer::addImage2Msg(const sensor_msgs::ImageConstPtr &imgms
 void StereoMsgSynchronizer::stereoSyncCallback(const sensor_msgs::ImageConstPtr& img1_msg_const,
         const sensor_msgs::ImageConstPtr& img2_msg_const){
 
+
     std::unique_lock<std::mutex> lock(_mutexImageQueue);
 
-    sensor_msgs::ImageConstPtr img1_msg = boost::make_shared<sensor_msgs::Image const>(*img1_msg_const);
-    sensor_msgs::ImageConstPtr img2_msg = boost::make_shared<sensor_msgs::Image const>(*img2_msg_const);
+    sensor_msgs::ImageConstPtr img1_msg = img1_msg_const;
+    sensor_msgs::ImageConstPtr img2_msg = img2_msg_const;
 
     if(_imageMsgDelaySec >= 0) {
         // if there's no imu messages, don't add image
@@ -137,9 +140,8 @@ bool StereoMsgSynchronizer::getRecentMsgs(sensor_msgs::ImageConstPtr &img1_msg,
                                           std::vector<sensor_msgs::ImuConstPtr> &vimumsgs)
 {
 
-    //unique_lock<mutex> lock2(_mutexIMUQueue);
     std::unique_lock<std::mutex> lock1(_mutexImageQueue);
-
+    //std::unique_lock<std::mutex> lock(_mutexIMUQueue);
     if(_status == NOTINIT || _status == INIT)
     {
         //ROS_INFO("synchronizer not inited");
@@ -202,8 +204,8 @@ bool StereoMsgSynchronizer::getRecentMsgs(sensor_msgs::ImageConstPtr &img1_msg,
 
     // get image message
     auto imgmsg_pair = _imageMsgQueue.front();
-    // img1_msg = imgmsg_pair.first;
-    // img2_msg = imgmsg_pair.second;
+    img1_msg = imgmsg_pair.first;
+    img2_msg = imgmsg_pair.second;
     _imageMsgQueue.pop();
 
     // clear imu message vector, and push all imu messages whose timestamp is earlier than image message

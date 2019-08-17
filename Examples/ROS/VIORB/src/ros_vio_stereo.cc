@@ -97,11 +97,12 @@ int main(int argc, char **argv) {
     /**
      * @brief added data sync
      */
+    ROS_INFO("INITIALIZE MSG SYNC");
     double imageMsgDelaySec = ORB_SLAM2::Config::getInstance().RuntimeParams().image_delay_to_imu;
     ORBVIO::StereoMsgSynchronizer msgsync(imageMsgDelaySec, imageMsgDelaySec, realtime_mode);
     ros::Subscriber imagesub;
     ros::Subscriber imusub;
-
+    ROS_INFO("INITIALIZED !");
     if (realtime_mode) {
         /*
         imagesub = nh.subscribe(ORB_SLAM2::Config::getInstance().RuntimeParams().image_topic, 2,
@@ -120,7 +121,7 @@ int main(int argc, char **argv) {
     // 3dm imu output per g. 1g=9.80665 according to datasheet
     const double g3dm = 9.80665;
     const bool bAccMultiply98 = ORB_SLAM2::Config::getInstance().RuntimeParams().multiply_g;
-
+    const bool bRGB = ORB_SLAM2::Config::getInstance().CameraParams().rgb;
     ros::Rate r(1000);
     double discard_time = ORB_SLAM2::Config::getInstance().RuntimeParams().discard_time;
     if (!realtime_mode) {
@@ -157,8 +158,9 @@ int main(int argc, char **argv) {
 
             bool bdata = msgsync.getRecentMsgs(imageMsg, image2Msg, vimuMsg);
             if (bdata) {
+                ROS_DEBUG("Num IMUs between images: %d", (int)vimuMsg.size());
                 ORB_SLAM2::utils::eigen_aligned_vector<ORB_SLAM2::IMUData> vimuData;
-                //ROS_INFO("image time: %.3f",imageMsg->header.stamp.toSec());
+
                 for (unsigned int i = 0; i < vimuMsg.size(); i++) {
                     sensor_msgs::ImuConstPtr imuMsg = vimuMsg[i];
                     double ax = imuMsg->linear_acceleration.x;
@@ -189,8 +191,30 @@ int main(int argc, char **argv) {
                     return -1;
                 }
 
+
                 cv::Mat im = cv_ptr->image.clone();
                 cv::Mat im2 = cv_ptr2->image.clone();
+
+                if (im.channels() == 1){
+                    if (bRGB){
+                        cv::cvtColor(im, im, CV_GRAY2RGB);
+                    }
+                    else{
+                        cv::cvtColor(im, im, CV_GRAY2BGR);
+                    }
+                }
+
+                if (sensor_type == ORB_SLAM2::System::STEREO){
+                    if (im2.channels() == 1){
+                        if (bRGB){
+                            cv::cvtColor(im2, im2, CV_GRAY2RGB);
+                        }
+                        else{
+                            cv::cvtColor(im2, im2, CV_GRAY2BGR);
+                        }
+                    }
+                }
+
                 {
                     // To test relocalization
                     static double startT = -1;
@@ -199,8 +223,8 @@ int main(int argc, char **argv) {
                     // Below to test relocalizaiton
                     //if(imageMsg->header.stamp.toSec() > startT+25 && imageMsg->header.stamp.toSec() < startT+25.3)
                     if (imageMsg->header.stamp.toSec() < startT + discard_time){
-                        im = cv::Mat::zeros(im.rows, im.cols, im.type());
-                        im2 = cv::Mat::zeros(im2.rows, im2.cols, im2.type());
+                        im = cv::Mat::zeros(im.size(), im.type());
+                        im2 = cv::Mat::zeros(im2.size(), im2.type());
                     }
 
                 }
