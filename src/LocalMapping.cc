@@ -150,7 +150,7 @@ void LocalMapping::VINSInitThread() {
             if (!GetVINSInited() && mpCurrentKeyFrame->mnId > initedid) {
                 initedid = mpCurrentKeyFrame->mnId;
 
-                bool tmpbool = TryInitVIO();
+                bool tmpbool = mbMonocular ? TryInitVIO() : TryInitVIONoScale();
 
                 if (tmpbool) {
                     break;
@@ -1253,14 +1253,14 @@ void LocalMapping::Run() {
                             //Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, this);
                             Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap, this);
                             if (!Config::getInstance().SystemParams().real_time) {
-                                bool tmpbool = TryInitVIO();
+                                bool tmpbool = mbMonocular ? TryInitVIO() : TryInitVIONoScale();
                                 SetVINSInited(tmpbool);
                                 if (tmpbool) {
                                     // Update map scale
-                                    if(mbMonocular)
+                                    if(mbMonocular){
                                         mpMap->UpdateScale(mnVINSInitScale);
-
-                                    cout << "... scale updated from localmapping run...\n";
+                                        cout << "... scale updated from localmapping run...\n";
+                                    }
                                     // Set initialization flag
                                     SetFirstVINSInited(true);
                                 }
@@ -1269,6 +1269,7 @@ void LocalMapping::Run() {
                         else{
                             if (mbUseObject) {
                                 // TODO -- Object + Gravity Optimization!!
+                                SPDLOG_INFO("I AM HERE NOW");
                                 assert(!mbMonocular);
                                 Optimizer::LocalBundleAdjustmentWithObjects2(mpCurrentKeyFrame, &mbAbortBA, mpMap);
                             }
