@@ -163,6 +163,7 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_CONFIG(Runtime, double, image_delay_to_imu)
             ORB_SLAM2_PARSE_CONFIG(Runtime, double, discard_time)
             ORB_SLAM2_PARSE_BOOL_CONFIG(Runtime, multiply_g)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(Runtime, pre_rectify_images)
         }
         SPDLOG_INFO("\n-------Config Summary------\n"
                     "System:\n"
