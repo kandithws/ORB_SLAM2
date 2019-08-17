@@ -104,6 +104,7 @@ typedef struct {
     std::string bagfile;
     std::string imu_topic;
     std::string image_topic;
+    std::string image2_topic;
     bool multiply_g =  false; // _bAccMultiply9p8
     double discard_time = 0.0;
 } Runtime;

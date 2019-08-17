@@ -92,4 +92,14 @@ target_link_libraries(VIORB
 ${LIBS}
 )
 
+rosbuild_add_executable(stereo
+        src/ros_vio_stereo.cc
+        src/MsgSync/StereoMsgSynchronizer.cpp
+        src/MsgSync/StereoMsgSynchronizer.h
+        )
+
+target_link_libraries(stereo
+        ${LIBS}
+        )
+
 

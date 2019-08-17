@@ -158,6 +158,7 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, bagfile)
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, imu_topic)
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, image_topic)
+            ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, image2_topic)
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, log_file_path)
             ORB_SLAM2_PARSE_CONFIG(Runtime, double, image_delay_to_imu)
             ORB_SLAM2_PARSE_CONFIG(Runtime, double, discard_time)
