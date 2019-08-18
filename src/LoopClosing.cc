@@ -219,7 +219,7 @@ bool LoopClosing::DetectLoop() {
 bool LoopClosing::ComputeSim3() {
     bool bUseIMU = Config::getInstance().SystemParams().use_imu;
     if (mbFixScale){
-        bUseIMU &= mpLocalMapper->GetVINSInited();
+        bUseIMU &= !mpLocalMapper->GetVINSInited();
     }
     // For each consistent loop candidate we try to compute a Sim3
 
@@ -376,7 +376,7 @@ void LoopClosing::CorrectLoop() {
     cout << "Loop detected!" << endl;
     bool bUseIMU = Config::getInstance().SystemParams().use_imu;
     if (mbFixScale){
-        bUseIMU &= mpLocalMapper->GetVINSInited();
+        bUseIMU &= !mpLocalMapper->GetVINSInited();
     }
 
     // Send a stop signal to Local Mapping
@@ -614,7 +614,7 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF) {
 
     int idx = mnFullBAIdx;
     bool bUseIMU = Config::getInstance().SystemParams().use_imu;
-    if (bUseIMU){
+    if (bUseIMU && !mbFixScale){
         Optimizer::GlobalBundleAdjustmentNavStatePRV(mpMap,mpLocalMapper->GetGravityVec(),10,&mbStopGBA,nLoopKF,false);
     }
     else{

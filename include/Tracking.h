@@ -181,9 +181,6 @@ class Tracking {
     // Main tracking function. It is independent of the input sensor.
     void Track();
 
-    // TODO -- merge into Track, seperate for now
-    void TrackIMUStereo();
-
     // Map initialization for stereo and RGB-D
     void StereoInitialization();
 

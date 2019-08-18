@@ -1221,7 +1221,7 @@ void LocalMapping::Run() {
         // Check if there are keyframes in the queue
         if (CheckNewKeyFrames()) {
             bool bUseIMU = Config::getInstance().SystemParams().use_imu;
-            bool bIMUCond = mbMonocular ? bUseIMU : bUseIMU && GetVINSInited();
+            bool bIMUCond = mbMonocular ? bUseIMU : bUseIMU && !GetVINSInited();
             // BoW conversion and insertion in Map
             ProcessNewKeyFrame();
 
@@ -1253,16 +1253,18 @@ void LocalMapping::Run() {
                             //Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, this);
                             Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap, this);
                             if (!Config::getInstance().SystemParams().real_time) {
-                                bool tmpbool = mbMonocular ? TryInitVIO() : TryInitVIONoScale();
-                                SetVINSInited(tmpbool);
-                                if (tmpbool) {
-                                    // Update map scale
-                                    if(mbMonocular){
-                                        mpMap->UpdateScale(mnVINSInitScale);
-                                        cout << "... scale updated from localmapping run...\n";
+                                if (!GetVINSInited()){
+                                    bool tmpbool = mbMonocular ? TryInitVIO() : TryInitVIONoScale();
+                                    SetVINSInited(tmpbool);
+                                    if (tmpbool) {
+                                        // Update map scale
+                                        if(mbMonocular){
+                                            mpMap->UpdateScale(mnVINSInitScale);
+                                            cout << "... scale updated from localmapping run...\n";
+                                        }
+                                        // Set initialization flag
+                                        SetFirstVINSInited(true);
                                     }
-                                    // Set initialization flag
-                                    SetFirstVINSInited(true);
                                 }
                             }
                         }
@@ -1372,7 +1374,7 @@ void LocalMapping::ProcessNewKeyFrame() {
 
     bool bUseIMU = Config::getInstance().SystemParams().use_imu;
     if (bUseIMU && !mbMonocular){
-        bUseIMU &= GetVINSInited();
+        bUseIMU &= !GetVINSInited();
     }
 
     if (bUseIMU) {
@@ -1811,7 +1813,7 @@ void LocalMapping::InterruptBA() {
 void LocalMapping::KeyFrameCulling() {
     bool bUseIMU = Config::getInstance().SystemParams().use_imu;
     if (!mbMonocular){
-        bUseIMU &= GetVINSInited();
+        bUseIMU = bUseIMU && !GetVINSInited();
     }
 
     if (bUseIMU) {

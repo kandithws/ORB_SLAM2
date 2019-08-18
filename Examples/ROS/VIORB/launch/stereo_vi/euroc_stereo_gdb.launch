@@ -1,0 +1,10 @@
+<launch>
+    <node pkg="VIORB" type="stereo" name="VIORB"
+          launch-prefix="gdb -ex=r --args"
+          args="$(find VIORB)/../../../Vocabulary/ORBvoc.txt $(find VIORB)/config/stereo_vi/EuRoC.yaml"
+          cwd="node" output="screen">
+
+        <param name="sensor_type_str" value="STEREO"/>
+
+    </node>
+</launch>
