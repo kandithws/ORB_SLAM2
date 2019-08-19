@@ -56,13 +56,16 @@ class FrameDrawer;
 
 class MapObject;
 
+class LocalMapping;
+
 class KeyFrame {
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    //KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, std::vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
-    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, utils::eigen_aligned_vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
+    // KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, std::vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
+    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, LocalMapping* pLocalMapper, utils::eigen_aligned_vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
+    // KeyFrame(Frame &F, LocalMapper *pLocalMapper, Map *pMap, KeyFrameDatabase *pKFDB, utils::eigen_aligned_vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
 
     KeyFrame *GetPrevKeyFrame(void);
 
@@ -130,9 +133,9 @@ class KeyFrame {
     IMUPreintegrator mIMUPreInt;
 
   public:
-    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB);
+    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, LocalMapping* pLocalMapper);
 
-    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB,
+    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, LocalMapping* pLocalMapper,
              const cv::Mat &imColor, const cv::Mat &imGray,
              bool rgb = false);
 
@@ -380,6 +383,7 @@ class KeyFrame {
     float mHalfBaseline; // Only for visualization
 
     Map *mpMap;
+    LocalMapping *mpLocalMapper;
 
     std::mutex mMutexPose;
     std::mutex mMutexConnections;

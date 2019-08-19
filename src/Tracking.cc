@@ -1127,11 +1127,11 @@ void Tracking::StereoInitialization() {
                     vimu.push_back(imu);
             }
 
-            pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, vimu, NULL);
+            pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper, vimu, NULL);
             pKFini->ComputePreInt();
         }
         else {
-            pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+            pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper);
         }
 
 
@@ -1261,15 +1261,15 @@ void Tracking::CreateInitialMapMonocular() {
     KeyFrame *pKFcur;
 
     if (Config::getInstance().SystemParams().use_imu) {
-        pKFini = new KeyFrame(mInitialFrame, mpMap, mpKeyFrameDB, vimu1, NULL);
+        pKFini = new KeyFrame(mInitialFrame, mpMap, mpKeyFrameDB, mpLocalMapper, vimu1, NULL);
         pKFini->ComputePreInt();
-        pKFcur = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, vimu2, pKFini);
+        pKFcur = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper, vimu2, pKFini);
         pKFcur->ComputePreInt();
         // Clear IMUData buffer
         mvIMUSinceLastKF.clear();
     } else {
-        pKFini = new KeyFrame(mInitialFrame, mpMap, mpKeyFrameDB);
-        pKFcur = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+        pKFini = new KeyFrame(mInitialFrame, mpMap, mpKeyFrameDB, mpLocalMapper);
+        pKFcur = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper);
     }
 
     pKFini->ComputeBoW();
@@ -1697,13 +1697,13 @@ void Tracking::CreateNewKeyFrame() {
         std::unique_lock<std::mutex> lock(mMutexImColor);
         if (bUseIMU && !mpLocalMapper->GetVINSInited()) {
             assert (mSensor != System::MONOCULAR);
-            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mvIMUSinceLastKF, mpLastKeyFrame);
+            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper, mvIMUSinceLastKF, mpLastKeyFrame);
             // Set initial NavState for KeyFrame
             pKF->SetInitialNavStateAndBias(mCurrentFrame.GetNavState());
             // Compute pre-integrator
             pKF->ComputePreInt();
         } else {
-            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper);
 
             if (KeyFrame::nInitId < 0) {
                 KeyFrame::nInitId = pKF->mnId; // First KF to consider objects
@@ -1720,7 +1720,7 @@ void Tracking::CreateNewKeyFrame() {
         }
     } else {
         if (bUseIMU) {
-            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mvIMUSinceLastKF, mpLastKeyFrame);
+            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper, mvIMUSinceLastKF, mpLastKeyFrame);
             // Set initial NavState for KeyFrame
             pKF->SetInitialNavStateAndBias(mCurrentFrame.GetNavState());
             // Compute pre-integrator
@@ -1728,7 +1728,7 @@ void Tracking::CreateNewKeyFrame() {
             // Clear IMUData buffer
             // mvIMUSinceLastKF.clear();
         } else {
-            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper);
         }
     }
 

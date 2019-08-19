@@ -118,6 +118,14 @@ bool LocalMapping::GetVINSInited(void) {
     return mbVINSInited;
 }
 
+bool LocalMapping::GetUseIMUFlag() {
+    unique_lock<mutex> lock(mMutexVINSInitFlag);
+    bool ret = mbUseIMU;
+    if (!mbMonocular)
+        ret &= !mbVINSInited;
+    return ret;
+}
+
 void LocalMapping::SetVINSInited(bool flag) {
     unique_lock <mutex> lock(mMutexVINSInitFlag);
     mbVINSInited = flag;
@@ -1197,6 +1205,7 @@ LocalMapping::LocalMapping(Map *pMap, const bool bMonocular) :
 
     mnLocalWindowSize = Config::getInstance().LocalMappingParams().window_size;
     mfObjectInitTimeOut = Config::getInstance().LocalMappingParams().object_detect_timeout;
+    mbUseIMU = Config::getInstance().SystemParams().use_imu;
 }
 
 void LocalMapping::SetLoopCloser(LoopClosing *pLoopCloser) {

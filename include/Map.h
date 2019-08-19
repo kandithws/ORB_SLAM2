@@ -119,10 +119,7 @@ class Map {
     pcl::PointCloud<PCLPointT>::Ptr mpCloudMap;
     std::shared_ptr<std::thread> mtPointcloudRendererThread;
 
-
-    friend class PCLViewer;
     bool mbRenderReady = false; // for PCLViewer
-
 };
 } //namespace ORB_SLAM
 

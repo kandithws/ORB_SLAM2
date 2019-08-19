@@ -26,7 +26,7 @@ imu:
 
 local_mapping:
   window_size: 20
-  object_detect_timeout: 0.3
+  object_detect_timeout: 1.0
 
 #--------------------------------------------------
 # Object Detection parameters

@@ -267,7 +267,7 @@ void KeyFrame::ComputePreInt(void)
     //cout<<"pre-int delta time: "<<mIMUPreInt.getDeltaTime()<<", deltaR:"<<endl<<mIMUPreInt.getDeltaR()<<endl;
 }
 
-KeyFrame::KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB, utils::eigen_aligned_vector<IMUData>& vIMUData, KeyFrame* pPrevKF):
+KeyFrame::KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB, LocalMapping* pLocalMapper, utils::eigen_aligned_vector<IMUData>& vIMUData, KeyFrame* pPrevKF):
         mnFrameId(F.mnId),  mTimeStamp(F.mTimeStamp), mnGridCols(FRAME_GRID_COLS), mnGridRows(FRAME_GRID_ROWS),
         mfGridElementWidthInv(F.mfGridElementWidthInv), mfGridElementHeightInv(F.mfGridElementHeightInv),
         mnTrackReferenceForFrame(0), mnFuseTargetForKF(0), mnBALocalForKF(0), mnBAFixedForKF(0),
@@ -280,7 +280,7 @@ KeyFrame::KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB, utils::eigen_al
         mvInvLevelSigma2(F.mvInvLevelSigma2), mnMinX(F.mnMinX), mnMinY(F.mnMinY), mnMaxX(F.mnMaxX),
         mnMaxY(F.mnMaxY), mK(F.mK), mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB),
         mpORBvocabulary(F.mpORBvocabulary), mbFirstConnection(true), mpParent(NULL), mbNotErase(false),
-        mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap),
+        mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), mpLocalMapper(pLocalMapper),
         mpPrevKeyFrame(pPrevKF), mpNextKeyFrame(NULL), mvIMUData(vIMUData) //VI-ORB
 {
     if(pPrevKF){
@@ -306,7 +306,7 @@ KeyFrame::KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB, utils::eigen_al
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
 
-KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
+KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, LocalMapping* pLocalMapper):
     mnFrameId(F.mnId),  mTimeStamp(F.mTimeStamp), mnGridCols(FRAME_GRID_COLS), mnGridRows(FRAME_GRID_ROWS),
     mfGridElementWidthInv(F.mfGridElementWidthInv), mfGridElementHeightInv(F.mfGridElementHeightInv),
     mnTrackReferenceForFrame(0), mnFuseTargetForKF(0), mnBALocalForKF(0), mnBAFixedForKF(0),
@@ -319,7 +319,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mvInvLevelSigma2(F.mvInvLevelSigma2), mnMinX(F.mnMinX), mnMinY(F.mnMinY), mnMaxX(F.mnMaxX),
     mnMaxY(F.mnMaxY), mK(F.mK), mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB),
     mpORBvocabulary(F.mpORBvocabulary), mbFirstConnection(true), mpParent(NULL), mbNotErase(false),
-    mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap)
+    mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), mpLocalMapper(pLocalMapper)
 {
     mnId=nNextId++;
 
@@ -334,9 +334,9 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     SetPose(F.mTcw);
 }
 
-KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, const cv::Mat &imColor,
+KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, LocalMapping* pLocalMapper, const cv::Mat &imColor,
         const cv::Mat &imGray, bool rgb) :
-    KeyFrame(F, pMap, pKFDB)
+    KeyFrame(F, pMap, pKFDB, pLocalMapper)
 {
     // Extracting Keypoints color
     mvKeysUnColor.resize(mvKeysUn.size());
@@ -873,7 +873,7 @@ void KeyFrame::SetBadFlag()
         mbBad = true;
     }
 
-    if (Config::getInstance().SystemParams().use_imu){
+    if (mpLocalMapper->GetUseIMUFlag()){
         // Update Prev/Next KeyFrame for prev/next
         KeyFrame* pPrevKF = GetPrevKeyFrame();
         KeyFrame* pNextKF = GetNextKeyFrame();
