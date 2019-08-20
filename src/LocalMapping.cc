@@ -1140,12 +1140,12 @@ bool LocalMapping::TryInitVIONoScale() {
         //cout << "bVIOInited is true! \n";
         // Set NavState , scale and bias for all KeyFrames
         // Scale
-        double scale = s_;
+        //double scale = s_;
         mnVINSInitScale = s_;
         // gravity vector in world frame, w
         cv::Mat gw = Rwi_ * GI;
         mGravityVec = gw.clone();
-        Vector3d gweig = Converter::toVector3d(gw);
+        //Vector3d gweig = Converter::toVector3d(gw);
         mRwiInit = Rwi_.clone();
 
         SPDLOG_INFO("-------- Gravity Init Complete! ------");
@@ -1229,8 +1229,8 @@ void LocalMapping::Run() {
 
         // Check if there are keyframes in the queue
         if (CheckNewKeyFrames()) {
-            bool bUseIMU = Config::getInstance().SystemParams().use_imu;
-            bool bIMUCond = mbMonocular ? bUseIMU : bUseIMU && !GetVINSInited();
+
+            bool bIMUCond = GetUseIMUFlag();;
             // BoW conversion and insertion in Map
             ProcessNewKeyFrame();
 
@@ -1256,7 +1256,7 @@ void LocalMapping::Run() {
                 // Local BA
                 if (mpMap->KeyFramesInMap() > 2) {
 
-                    if (bUseIMU) {
+                    if (mbUseIMU) {
 
                         if (!GetVINSInited()) {
                             //Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, this);
@@ -1381,10 +1381,7 @@ void LocalMapping::ProcessNewKeyFrame() {
     // Update links in the Covisibility Graph
     mpCurrentKeyFrame->UpdateConnections();
 
-    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
-    if (bUseIMU && !mbMonocular){
-        bUseIMU &= !GetVINSInited();
-    }
+    bool bUseIMU = GetUseIMUFlag();
 
     if (bUseIMU) {
         // Delete bad KF in LocalWindow
@@ -1820,10 +1817,7 @@ void LocalMapping::InterruptBA() {
 
 
 void LocalMapping::KeyFrameCulling() {
-    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
-    if (!mbMonocular){
-        bUseIMU = bUseIMU && !GetVINSInited();
-    }
+    bool bUseIMU = GetUseIMUFlag();
 
     if (bUseIMU) {
         if (Config::getInstance().SystemParams().real_time && GetFlagCopyInitKFs())

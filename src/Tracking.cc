@@ -806,10 +806,7 @@ void Tracking::Track() {
     // Get Map Mutex -> Map cannot be changed
     unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
     //auto lock = Map::CreateUpdateLock(mpMap);
-    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
-    if (mSensor != System::MONOCULAR){
-        bUseIMU &= !mpLocalMapper->GetVINSInited();
-    }
+    bool bUseIMU = mpLocalMapper->GetUseIMUFlag();
     // Different operation, according to whether the map is updated
     bool bMapUpdated = false;
     if (bUseIMU) {
@@ -1579,10 +1576,7 @@ bool Tracking::NeedNewKeyFrame() {
     if (mbOnlyTracking)
         return false;
 
-    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
-    if (mSensor != System::MONOCULAR){
-        bUseIMU &= !mpLocalMapper->GetVINSInited();
-    }
+    bool bUseIMU = mpLocalMapper->GetUseIMUFlag();
 
     // While updating initial poses
     if (bUseIMU && mpLocalMapper->GetUpdatingInitPoses()) {
@@ -1880,10 +1874,7 @@ void Tracking::UpdateLocalPoints() {
 
 
 void Tracking::UpdateLocalKeyFrames() {
-    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
-    if (mSensor != System::MONOCULAR){
-        bUseIMU &= !mpLocalMapper->GetVINSInited();
-    }
+    bool bUseIMU = mpLocalMapper->GetUseIMUFlag();
     // Each map point vote for the keyframes in which it has been observed
     map<KeyFrame *, int> keyframeCounter;
     for (int i = 0; i < mCurrentFrame.N; i++) {
