@@ -62,6 +62,7 @@ class Map {
     void SetReferenceMapPoints(const std::vector<MapPoint *> &vpMPs);
     void InformNewBigChange();
     int GetLastBigChangeIdx();
+    KeyFrame* GetInitialKeyFrame();
 
     std::vector<KeyFrame *> GetAllKeyFrames();
     std::vector<MapPoint *> GetAllMapPoints();
@@ -88,6 +89,9 @@ class Map {
     std::mutex mMutexObjectCreation;
 
     void ShutDown();
+
+    void SetGravityVec(const cv::Mat& g);
+    bool GetGravityVec(cv::Mat& g);
 
   protected:
     std::set<MapPoint *> mspMapPoints;
@@ -120,6 +124,12 @@ class Map {
     std::shared_ptr<std::thread> mtPointcloudRendererThread;
 
     bool mbRenderReady = false; // for PCLViewer
+
+    std::mutex mMutexGravityVec;
+    cv::Mat mGravityVec;
+    bool mbGravityVecInited = false;
+    float mfGravityVecScale = 1.0;
+    KeyFrame* mpInitialKeyFrame;
 };
 } //namespace ORB_SLAM
 

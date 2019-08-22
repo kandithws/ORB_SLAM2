@@ -302,6 +302,30 @@ void MapDrawer::DrawObjects(const bool bDrawObj, const bool bDrawGraph) {
 
 }
 
+void MapDrawer::DrawGravity(){
+    if (!mbGravityReady){
+        // Try get gravity vector
+        cv::Mat g;
+        if (!mpMap->GetGravityVec(g))
+            return;
+
+        mbGravityReady = true;
+        mGravityVec = g / cv::norm(g);
+    }
+
+    // Calculate gravity Vector
+
+    glLineWidth(mGravityLineWidth);
+    glColor4f(1.0f,0.0f,0.0f, 1.0f);
+    glBegin(GL_LINES);
+    glVertex3f(0.0f, 0.0f, 0.0f);
+    glVertex3f(
+            mGravityVec.at<float>(0) * mGravityLineLength,
+            mGravityVec.at<float>(1) * mGravityLineLength,
+            mGravityVec.at<float>(2) * mGravityLineLength);
+    glEnd();
+}
+
 void MapDrawer::DrawCurrentCamera(pangolin::OpenGlMatrix &Twc)
 {
     const float &w = mCameraSize;

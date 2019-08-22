@@ -128,6 +128,11 @@ bool LocalMapping::GetUseIMUFlag() {
 
 void LocalMapping::SetVINSInited(bool flag) {
     unique_lock <mutex> lock(mMutexVINSInitFlag);
+    if (flag){
+        // When true, copy Gravity Vector to a map
+        mpMap->SetGravityVec(mGravityVec);
+    }
+
     mbVINSInited = flag;
 }
 
@@ -1152,6 +1157,8 @@ bool LocalMapping::TryInitVIONoScale() {
 
         // Set for now cuz we won't do GBA again for NoScale
         SetFlagInitGBAFinish(true);
+        SetFirstVINSInited(true);
+        SetVINSInited(true);
 
     }
 
@@ -1264,7 +1271,7 @@ void LocalMapping::Run() {
                             if (!Config::getInstance().SystemParams().real_time) {
                                 if (!GetVINSInited()){
                                     bool tmpbool = mbMonocular ? TryInitVIO() : TryInitVIONoScale();
-                                    SetVINSInited(tmpbool);
+                                    // SetVINSInited(tmpbool);
                                     if (tmpbool) {
                                         // Update map scale
                                         if(mbMonocular){

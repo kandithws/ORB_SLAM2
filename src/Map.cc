@@ -59,6 +59,9 @@ void Map::AddKeyFrame(KeyFrame *pKF)
     mspKeyFrames.insert(pKF);
     if(pKF->mnId>mnMaxKFid)
         mnMaxKFid=pKF->mnId;
+
+//    if(pKF->mnId == 0)
+//        mpInitialKeyFrame = pKF;
 }
 
 void Map::AddMapPoint(MapPoint *pMP)
@@ -158,6 +161,12 @@ long unsigned int Map::GetMaxKFid()
     return mnMaxKFid;
 }
 
+KeyFrame* Map::GetInitialKeyFrame(){
+    unique_lock<mutex> lock(mMutexMap);
+    KeyFrame* pKF = *mspKeyFrames.begin();
+    return pKF;
+}
+
 void Map::clear()
 {
     for(set<MapPoint*>::iterator sit=mspMapPoints.begin(), send=mspMapPoints.end(); sit!=send; sit++)
@@ -196,6 +205,19 @@ void Map::ShutDown() {
 
 Map::~Map() {
     ShutDown();
+}
+
+void Map::SetGravityVec(const cv::Mat &g) {
+    std::unique_lock<std::mutex> lock(mMutexGravityVec);
+    mGravityVec = g.clone();
+    mbGravityVecInited = true;
+}
+
+bool Map::GetGravityVec(cv::Mat& g){
+    std::unique_lock<std::mutex> lock(mMutexGravityVec);
+    if (mbGravityVecInited)
+        g = mGravityVec.clone();
+    return mbGravityVecInited;
 }
 
 void Map::RenderPointCloudThread() {
