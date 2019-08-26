@@ -1273,7 +1273,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool* pbStopFla
                                         )
                         );
                 // edgeMP->setMeasurement(pMP->GetWorldPos());
-                edgeMP->setInformation(Eigen::Matrix3d::Identity() * pair_pMP.second * 1.5);
+                edgeMP->setInformation(Eigen::Matrix3d::Identity() * pair_pMP.second);
                 optimizer.addEdge(edgeMP);
             }
 
@@ -1345,7 +1345,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool* pbStopFla
                         )
                 );
                 // edgeMP->setMeasurement(pMP->GetWorldPos());
-                edgeMP->setInformation(Eigen::Matrix3d::Identity() * pair_pMP.second * 1.5);
+                edgeMP->setInformation(Eigen::Matrix3d::Identity() * pair_pMP.second);
                 optimizer.addEdge(edgeMP);
             }
 

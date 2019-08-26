@@ -1207,8 +1207,9 @@ LocalMapping::LocalMapping(Map *pMap, const bool bMonocular) :
         mbVINSInited(false), mbFirstTry(true), mbFirstVINSInited(false), mbUpdatingInitPoses(false),
         mbCopyInitKFs(false), mbInitGBAFinish(false) {
     mbUseObject = Config::getInstance().SystemParams().use_object;
+
     if (mbUseObject)
-        mpObjInitializer = std::make_shared<PointCloudObjectInitializer>();
+        mpObjInitializer = std::make_shared<PointCloudObjectInitializer>(pMap);
 
     mnLocalWindowSize = Config::getInstance().LocalMappingParams().window_size;
     mfObjectInitTimeOut = Config::getInstance().LocalMappingParams().object_detect_timeout;
@@ -2059,8 +2060,14 @@ void LocalMapping::CleanUpInitializeObjectQueue() {
     for (auto it = mlObjectDetectWaitQueue.begin(), end = mlObjectDetectWaitQueue.end(); it != end; it++) {
         if (it->first->IsObjectsReady() || it->first->isBad()) {
             SPDLOG_INFO("Cleaning Init KF: {}", it->first->mnId);
-            if (!it->first->isBad())
-                mpObjInitializer->InitializeObjects(it->first, mpMap);
+            if (!it->first->isBad()){
+                if(Config::getInstance().SystemParams().use_imu){
+                    mpObjInitializer->InitializedObjectsWithGravity(it->first, mGravityVec);
+                }
+                else{
+                    mpObjInitializer->InitializeObjects(it->first);
+                }
+            }
 
             it->second = true;
             //mlObjectDetectWaitQueue.erase(it);
@@ -2100,7 +2107,13 @@ void LocalMapping::InitializeCurrentKeyFrameObjects() {
 
     if (!skip) {
         auto start_time2 = utils::time::time_now();
-        mpObjInitializer->InitializeObjects(mpCurrentKeyFrame, mpMap);
+        if(Config::getInstance().SystemParams().use_imu){
+            mpObjInitializer->InitializedObjectsWithGravity(mpCurrentKeyFrame, mGravityVec);
+        }
+        else{
+            mpObjInitializer->InitializeObjects(mpCurrentKeyFrame);
+        }
+
         SPDLOG_INFO("INIT objects DONE for KF {}, time={}", mpCurrentKeyFrame->mnId,
                     utils::time::time_diff_from_now_second(start_time2));
     }

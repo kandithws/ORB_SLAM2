@@ -65,8 +65,8 @@ private:
 
     bool mbGravityReady = false;
     cv::Mat mGravityVec;
-    float mGravityLineWidth = 4.0;
-    float mGravityLineLength = 1.0;
+    float mGravityLineWidth = 4.0f;
+    float mGravityLineLength = 0.5f;
 };
 
 } //namespace ORB_SLAM

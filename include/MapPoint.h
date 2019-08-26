@@ -43,7 +43,7 @@ class cmpKeyFrameId{
 typedef std::map<KeyFrame*,size_t,cmpKeyFrameId> mapMapPointObs;
 
 class MapPoint {
-    typedef pcl::PointXYZRGBL PointT; // TODO: fix pointtype hardcode with Map::PCLPointT due to forward dec conflict
+    typedef pcl::PointXYZRGB PointT; // TODO: fix pointtype hardcode with Map::PCLPointT due to forward dec conflict
   public:
     void UpdateScale(float scale);
 

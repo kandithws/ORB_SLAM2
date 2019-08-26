@@ -50,7 +50,7 @@ class Map {
 
     //-----------------------------------------
   public:
-    typedef pcl::PointXYZRGBL PCLPointT;
+    typedef pcl::PointXYZRGB PCLPointT;
     Map();
     ~Map();
     void AddKeyFrame(KeyFrame *pKF);
@@ -78,15 +78,11 @@ class Map {
 
     vector<KeyFrame *> mvpKeyFrameOrigins;
 
-    std::mutex mMutexMapUpdate;
-
-
-    pcl::PointCloud<PCLPointT>::Ptr GetCloudPtr();
-    void NotifyMapUpdated();
-
     // This avoid that two points are created simultaneously in separate threads (id conflict)
     std::mutex mMutexPointCreation;
     std::mutex mMutexObjectCreation;
+
+    std::mutex mMutexMapUpdate;
 
     void ShutDown();
 
@@ -100,16 +96,6 @@ class Map {
 
     std::vector<MapPoint *> mvpReferenceMapPoints;
 
-    // Notify Condition variable wheter map is updated
-
-    bool mbMapUpdate = false; // Trigger RenderPointCloud
-    std::condition_variable mcvMapUpdate;
-
-    // PCL Related FN
-    void InitPointCloudThread();
-    void RenderPointCloudThread();
-    void RenderPointCloud();
-
     long unsigned int mnMaxKFid;
 
     // Index related to a big change in the map (loop closure, global BA)
@@ -120,7 +106,6 @@ class Map {
     // Point Cloud related attributes
     bool mbIsShutdown = false;
     std::mutex mMutexCloud;
-    pcl::PointCloud<PCLPointT>::Ptr mpCloudMap;
     std::shared_ptr<std::thread> mtPointcloudRendererThread;
 
     bool mbRenderReady = false; // for PCLViewer
