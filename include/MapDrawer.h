@@ -57,6 +57,8 @@ private:
     float mCameraSize;
     float mCameraLineWidth;
     float mMapObjectLineWidth = 3;
+    float mMapObjectAxisWidth = 4;
+    float mMapObjectAxisScale = 0.75;
     std::vector<std::array<float, 3>> mLabelColorMap;
 
     cv::Mat mCameraPose;

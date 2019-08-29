@@ -19,6 +19,7 @@ class Cuboid;
 
 class PointCloudObjectInitializer {
   public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     PointCloudObjectInitializer(Map* pMap);
     void InitializeObjects(KeyFrame* pKeyframe);
     void InitializedObjectsWithGravity(KeyFrame* pKeyframe, const cv::Mat& g);
@@ -33,6 +34,8 @@ class PointCloudObjectInitializer {
     bool mbUseStatRemoveOutlier;
     int mOutlierFilterType;
     double mOutlierFilterThreshold;
+
+    Eigen::Matrix3f mMatrixRotatePitch90;
 
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> mCloudSORFilter;
     pcl::ProjectInliers<pcl::PointXYZRGB> mProj;

@@ -214,12 +214,11 @@ void MapDrawer::DrawObjects(const bool bDrawObj, const bool bDrawGraph) {
             cv::Mat scale = pObj->GetScale();
             float x, y, z;
             x = scale.at<float>(0); y = scale.at<float>(1); z = scale.at<float>(2);
-
+            float axis_scale = std::min(x , std::min(y,z)) * mMapObjectAxisScale;
             glPushMatrix();
-
             glMultMatrixf(Twc.ptr<GLfloat>(0));
 
-
+            // Cuboid
             glLineWidth(mMapObjectLineWidth);
             auto& color = mLabelColorMap[pObj->mLabel];
             glColor3f(color[0],color[1],color[2]);
@@ -265,8 +264,27 @@ void MapDrawer::DrawObjects(const bool bDrawObj, const bool bDrawGraph) {
 
             glEnd();
 
+            glLineWidth(mMapObjectAxisWidth);
+
+            glBegin(GL_LINES);
+            // x-axis
+            glColor3f(1.0f, 0, 0);
+            glVertex3f(0, 0, 0);
+            glVertex3f(axis_scale, 0, 0);
+
+            glColor3f(0, 1.0f, 0);
+            glVertex3f(0, 0, 0);
+            glVertex3f(0, axis_scale, 0);
+
+            glColor3f(0.0,0.0,1.0f);
+            glVertex3f(0, 0, 0);
+            glVertex3f(0, 0, axis_scale);
+            glEnd();
+
+
             glPopMatrix();
 
+            glColor3f(color[0],color[1],color[2]);
             glPointSize(mPointSize * 2.0);
             glBegin(GL_POINTS);
             for (auto& pMP : pObj->GetMapPoints()){

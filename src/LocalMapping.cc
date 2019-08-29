@@ -1209,7 +1209,7 @@ LocalMapping::LocalMapping(Map *pMap, const bool bMonocular) :
     mbUseObject = Config::getInstance().SystemParams().use_object;
 
     if (mbUseObject)
-        mpObjInitializer = std::make_shared<PointCloudObjectInitializer>(pMap);
+        mpObjInitializer = std::shared_ptr<PointCloudObjectInitializer>(new PointCloudObjectInitializer(pMap));
 
     mnLocalWindowSize = Config::getInstance().LocalMappingParams().window_size;
     mfObjectInitTimeOut = Config::getInstance().LocalMappingParams().object_detect_timeout;

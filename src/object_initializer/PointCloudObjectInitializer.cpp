@@ -24,6 +24,7 @@ PointCloudObjectInitializer::PointCloudObjectInitializer(Map* pMap) : mpMap(pMap
     mOutlierFilterType = Config::getInstance().ObjectInitializerParams().outlier_filter_type;
     mOutlierFilterThreshold = Config::getInstance().ObjectInitializerParams().outlier_threshold;
     mProj.setModelType(pcl::SACMODEL_PLANE);
+    mMatrixRotatePitch90 = Eigen::AngleAxisf(M_PI/2.0f, Eigen::Vector3f::UnitY()).toRotationMatrix();
     //mbUseMask = true;
 }
 
@@ -104,7 +105,8 @@ Cuboid PointCloudObjectInitializer::CuboidFromPointCloudWithGravity(pcl::PointCl
     /// This line is necessary for proper orientation in some cases. The numbers come out the same without it, but
     /// the signs are different and the box doesn't get correctly oriented in some cases.
 
-    // Make z-axis align with gravity vector
+    // Make z-axis opposite with gravity vector
+    eigenVectorsPCA = eigenVectorsPCA * mMatrixRotatePitch90;
 
     // TODO -- check axis!!!!
     // eigenVectorsPCA.col(2).swap(eigenVectorsPCA.col(0));
