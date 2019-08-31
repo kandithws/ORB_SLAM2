@@ -39,6 +39,7 @@ class Cuboid {
     void fromVector(const Eigen::Vector10d& v);
 
     inline const Eigen::Vector3d& getTranslation() const { return mPose.translation(); }
+    inline const Eigen::Quaterniond& getRotation() const { return mPose.rotation(); }
     inline void setTranslation(const Eigen::Vector3d& t_) { mPose.setTranslation(t_); }
     inline void setRotation(const Eigen::Quaterniond& r_) { mPose.setRotation(r_); }
     inline void setRotation(const Eigen::Matrix3d& R) { mPose.setRotation(Eigen::Quaterniond(R)); }

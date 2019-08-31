@@ -20,19 +20,17 @@ using namespace ORB_SLAM2::utils;
 
 class VertexCuboid : public BaseVertex<9, Cuboid>  // NOTE  this vertex stores object pose to world
 {
-public:
+  public:
     inline VertexCuboid() = default;
 
     inline void setToOriginImpl() override { _estimate = Cuboid(); }
 
-    inline void oplusImpl(const double* update_) override
-    {
+    inline void oplusImpl(const double *update_) override {
         Eigen::Map<const Eigen::Vector9d> update(update_);
         setEstimate(_estimate.expUpdate(update));
     }
 
-    inline bool read(std::istream& is) override
-    {
+    inline bool read(std::istream &is) override {
         Eigen::Vector9d est;
         for (int i = 0; i < 9; i++)
             is >> est[i];
@@ -42,8 +40,7 @@ public:
         return true;
     }
 
-    inline bool write(std::ostream& os) const override
-    {
+    inline bool write(std::ostream &os) const override {
         Eigen::Vector9d lv = _estimate.toMinimalVector();
         for (int i = 0; i < lv.rows(); i++) {
             os << lv[i] << " ";
@@ -56,26 +53,23 @@ public:
 
 // camera -object 3D error
 class EdgeSE3Cuboid : public BaseBinaryEdge<9, Cuboid, VertexSE3Expmap, VertexCuboid> {
-public:
+  public:
     inline EdgeSE3Cuboid() = default;
 
-    inline bool read(std::istream& is) override
-    {
+    inline bool read(std::istream &is) override {
         return true;
     };
 
-    inline bool write(std::ostream& os) const override
-    {
+    inline bool write(std::ostream &os) const override {
         return os.good();
     };
 
-    inline void computeError() override
-    {
-        const auto* SE3Vertex = dynamic_cast<const VertexSE3Expmap*>(_vertices[0]); //  world to camera pose
-        const auto* cuboidVertex = dynamic_cast<const VertexCuboid*>(_vertices[1]); //  object pose to world
+    inline void computeError() override {
+        const auto *SE3Vertex = dynamic_cast<const VertexSE3Expmap *>(_vertices[0]); //  world to camera pose
+        const auto *cuboidVertex = dynamic_cast<const VertexCuboid *>(_vertices[1]); //  object pose to world
 
         SE3Quat cam_pose_Twc = SE3Vertex->estimate().inverse();
-        const Cuboid& global_cube = cuboidVertex->estimate();
+        const Cuboid &global_cube = cuboidVertex->estimate();
         Cuboid esti_global_cube = _measurement.transformFrom(cam_pose_Twc);
         _error = global_cube.minLogError(esti_global_cube);
     }
@@ -85,28 +79,25 @@ public:
 
 // camera -object 2D projection error, rectangle difference, could also change to iou
 class EdgeSE3CuboidProj : public BaseBinaryEdge<4, Eigen::Vector4d, VertexSE3Expmap, VertexCuboid> {
-public:
-    EdgeSE3CuboidProj(const Eigen::Matrix3d& K){
+  public:
+    EdgeSE3CuboidProj(const Eigen::Matrix3d &K) {
         Kalib = K;
     }
 
-    inline bool read(std::istream& is) override
-    {
+    inline bool read(std::istream &is) override {
         return true;
     };
 
-    inline bool write(std::ostream& os) const override
-    {
+    inline bool write(std::ostream &os) const override {
         return os.good();
     };
 
-    inline void computeError() override
-    {
-        const auto* SE3Vertex = dynamic_cast<const VertexSE3Expmap*>(_vertices[0]);  //  world to camera pose
-        const auto* cuboidVertex = dynamic_cast<const VertexCuboid*>(_vertices[1]);       //  object pose to world
+    inline void computeError() override {
+        const auto *SE3Vertex = dynamic_cast<const VertexSE3Expmap *>(_vertices[0]);  //  world to camera pose
+        const auto *cuboidVertex = dynamic_cast<const VertexCuboid *>(_vertices[1]);       //  object pose to world
 
-        const SE3Quat& cam_pose_Tcw = SE3Vertex->estimate();
-        const Cuboid& global_cube = cuboidVertex->estimate();
+        const SE3Quat &cam_pose_Tcw = SE3Vertex->estimate();
+        const Cuboid &global_cube = cuboidVertex->estimate();
 
         Eigen::Vector4d rect_project = global_cube.projectOntoImageBbox(cam_pose_Tcw, Kalib); // center, width, height
 
@@ -114,7 +105,7 @@ public:
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-public:
+  public:
     Eigen::Matrix3d Kalib;
 };
 
@@ -123,34 +114,31 @@ class EdgeCuboidMapPoint : public BaseBinaryEdge<3, Eigen::Vector3d, VertexSBAPo
   public:
     EdgeCuboidMapPoint() = default;
 
-    inline bool read(std::istream& is) override
-    {
+    inline bool read(std::istream &is) override {
         return true;
     };
 
-    inline bool write(std::ostream& os) const override
-    {
+    inline bool write(std::ostream &os) const override {
         return os.good();
     };
 
-    inline void computeError() override
-    {
-        const auto* pointVertex = dynamic_cast<const VertexSBAPointXYZ*>(_vertices[0]);
-        const auto* cuboidVertex = dynamic_cast<const VertexCuboid*>(_vertices[1]);
-        const auto& cuboid = cuboidVertex->estimate();
+    inline void computeError() override {
+        const auto *pointVertex = dynamic_cast<const VertexSBAPointXYZ *>(_vertices[0]);
+        const auto *cuboidVertex = dynamic_cast<const VertexCuboid *>(_vertices[1]);
+        const auto &cuboid = cuboidVertex->estimate();
         const auto cuboid_pose_inv = cuboid.mPose.inverse().to_homogeneous_matrix();
 
-        const auto  p_o = homo_to_real_coord_vec<double>(
+        const auto p_o = homo_to_real_coord_vec<double>(
                 cuboid_pose_inv * real_to_homo_coord_vec<double>(pointVertex->estimate())
-                        );
+        );
         // TODO -- Assume no measurement for now (use map point vertex as a measurement)
-        const auto& dm = cuboid.mScale;
+        const auto &dm = cuboid.mScale;
 
         _error = Eigen::Vector3d({
-           std::max<double>(std::abs(p_o[0]) - dm[0], 0.0),
-           std::max<double>(std::abs(p_o[1]) - dm[1], 0.0),
-           std::max<double>(std::abs(p_o[2]) - dm[2], 0.0)
-        });
+                                         std::max<double>(std::abs(p_o[0]) - dm[0], 0.0),
+                                         std::max<double>(std::abs(p_o[1]) - dm[1], 0.0),
+                                         std::max<double>(std::abs(p_o[2]) - dm[2], 0.0)
+                                 });
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -162,38 +150,103 @@ class EdgeCuboidMapPointUnary : public BaseUnaryEdge<3, Eigen::Vector3d, VertexC
   public:
     EdgeCuboidMapPointUnary() = default;
 
-    inline bool read(std::istream& is) override
-    {
+    inline bool read(std::istream &is) override {
         return true;
     };
 
-    inline bool write(std::ostream& os) const override
-    {
+    inline bool write(std::ostream &os) const override {
         return os.good();
     };
 
-    inline void computeError() override
-    {
+    inline void computeError() override {
         //const auto* pointVertex = dynamic_cast<const VertexSBAPointXYZ*>(_vertices[0]);
-        const auto* cuboidVertex = dynamic_cast<const VertexCuboid*>(_vertices[0]);
-        const auto& cuboid = cuboidVertex->estimate();
+        const auto *cuboidVertex = dynamic_cast<const VertexCuboid *>(_vertices[0]);
+        const auto &cuboid = cuboidVertex->estimate();
         // const auto cuboid_pose_inv = cuboid.mPose.inverse().to_homogeneous_matrix();
 
         //const auto  p_o = homo_to_real_coord_vec<double>(
         //        cuboid_pose_inv * real_to_homo_coord_vec<double>(_measurement)
         //);
 
-        const auto& dm = cuboid.mScale;
+        const auto &dm = cuboid.mScale;
 
         _error = Eigen::Vector3d({
             std::max<double>(std::abs(_measurement[0]) - dm[0], 0.0),
             std::max<double>(std::abs(_measurement[1]) - dm[1], 0.0),
             std::max<double>(std::abs(_measurement[2]) - dm[2], 0.0)
-        });
+                                 });
     }
 
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
+class EdgeCuboidGravityConstraint : public BaseUnaryEdge<3, Eigen::Vector3d, VertexCuboid>{
+  public:
+    EdgeCuboidGravityConstraint(){
+        information() = Eigen::Matrix3d::Identity();
+    };
+
+    inline bool read(std::istream &is) override {
+        return true;
+    };
+
+    inline bool write(std::ostream &os) const override {
+        return os.good();
+    };
+
+    inline void computeError() override {
+        const auto *cuboidVertex = dynamic_cast<const VertexCuboid *>(_vertices[0]);
+        const auto &cuboid = cuboidVertex->estimate();
+
+        Eigen::Vector3d z_rot_axis = cuboid.getRotation().toRotationMatrix().col(2);
+
+        // Aligned with "Inverse unit gravity vector, so +"
+
+
+        _error = z_rot_axis + _measurement;
+        // _error = z_rot_axis.dot(_measurement) / z_rot_axis.norm();
+        // double e =
+    }
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
+  class EdgeCuboidGravityConstraint2 : public BaseUnaryEdge<1, double, VertexCuboid>{
+  public:
+    EdgeCuboidGravityConstraint2(const Eigen::Vector3d& gNormalized, double info_scale=2.0){
+        information()[0] = info_scale;
+
+        _g_normalized_inverse = -gNormalized;
+    };
+
+    inline bool read(std::istream &is) override {
+        return true;
+    };
+
+    inline bool write(std::ostream &os) const override {
+        return os.good();
+    };
+
+    inline void computeError() override {
+        const auto *cuboidVertex = dynamic_cast<const VertexCuboid *>(_vertices[0]);
+        const auto &cuboid = cuboidVertex->estimate();
+
+        Eigen::Vector3d z_rot_axis = cuboid.getRotation().toRotationMatrix().col(2);
+
+        // Aligned with "Inverse unit gravity vector, so +"
+
+
+        // _error = z_rot_axis + _measurement;
+        // Cosine distance
+        _error[0] = 1.0 - z_rot_axis.dot(_g_normalized_inverse);
+        // double e =
+    }
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  private:
+
+    Eigen::Vector3d _g_normalized_inverse;
 };
 
 }

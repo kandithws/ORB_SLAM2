@@ -140,6 +140,14 @@ Eigen::Matrix<double, 3, 1> Converter::toVector3d(const cv::Mat &cvVector) {
     return v;
 }
 
+
+Eigen::Matrix<float, 3, 1> Converter::toVector3f(const cv::Mat &cvVector) {
+    Eigen::Matrix<float, 3, 1> v;
+    v << cvVector.at<float>(0), cvVector.at<float>(1), cvVector.at<float>(2);
+
+    return v;
+}
+
 Eigen::Matrix<double, 3, 1> Converter::toVector3d(const cv::Point3f &cvPoint) {
     Eigen::Matrix<double, 3, 1> v;
     v << cvPoint.x, cvPoint.y, cvPoint.z;

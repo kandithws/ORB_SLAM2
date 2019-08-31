@@ -72,7 +72,7 @@ Cuboid PointCloudObjectInitializer::CuboidFromPointCloud(pcl::PointCloud<PointT>
 }
 
 
-Cuboid PointCloudObjectInitializer::CuboidFromPointCloudWithGravity(pcl::PointCloud<PointT>::Ptr cloud, const cv::Mat& gNormalized)  {
+Cuboid PointCloudObjectInitializer::CuboidFromPointCloudWithGravity(pcl::PointCloud<PointT>::Ptr cloud, const Eigen::Vector3f& gNormalized)  {
 
     Cuboid cuboid;
     Eigen::Vector4f pcaCentroid;
@@ -81,13 +81,11 @@ Cuboid PointCloudObjectInitializer::CuboidFromPointCloudWithGravity(pcl::PointCl
     // Create a plane from the gravity vector
     pcl::PointCloud<PointT>::Ptr cloud_projected (new pcl::PointCloud<PointT>);
     pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
-    coefficients->values.resize (4);
-    coefficients->values[0] = gNormalized.at<float>(0);
-    coefficients->values[1] = gNormalized.at<float>(1);
-    coefficients->values[2] = gNormalized.at<float>(2);
-    coefficients->values[3] = -( gNormalized.at<float>(0) * pcaCentroid[0]
-                                 + gNormalized.at<float>(1) * pcaCentroid[1]
-                                 + gNormalized.at<float>(2)  * pcaCentroid[2]);
+    coefficients->values.resize(4);
+    coefficients->values[0] = gNormalized[0];
+    coefficients->values[1] = gNormalized[1];
+    coefficients->values[2] = gNormalized[2];
+    coefficients->values[3] = -( gNormalized.dot(pcaCentroid.head(3)));
 
     // Project to a plane
     // pcl::ProjectInliers<PointT> proj;
@@ -106,10 +104,10 @@ Cuboid PointCloudObjectInitializer::CuboidFromPointCloudWithGravity(pcl::PointCl
     /// the signs are different and the box doesn't get correctly oriented in some cases.
 
     // Make z-axis opposite with gravity vector
-    eigenVectorsPCA = eigenVectorsPCA * mMatrixRotatePitch90;
-
-    // TODO -- check axis!!!!
-    // eigenVectorsPCA.col(2).swap(eigenVectorsPCA.col(0));
+    if (eigenVectorsPCA.col(0).dot(gNormalized) <= 0)
+        eigenVectorsPCA = eigenVectorsPCA * mMatrixRotatePitch90;
+    else
+        eigenVectorsPCA = eigenVectorsPCA * mMatrixRotatePitch90.transpose();
 
     // Transform the original cloud to the origin where the principal components correspond to the axes.
     Eigen::Matrix4f projectionTransform(Eigen::Matrix4f::Identity());
@@ -135,7 +133,6 @@ Cuboid PointCloudObjectInitializer::CuboidFromPointCloudWithGravity(pcl::PointCl
     cuboid.setRotation(bboxQuaternion.cast<double>());
     cuboid.setTranslation(bboxTransform.cast<double>());
     cuboid.setScale(scale);
-
     return cuboid;
 }
 
@@ -484,7 +481,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe) {
 
 void PointCloudObjectInitializer::InitializedObjectsWithGravity(ORB_SLAM2::KeyFrame *pKeyframe, const cv::Mat &g) {
 
-    cv::Mat gNormalized = g / cv::norm(g);
+    Eigen::Vector3f gNormalized = Converter::toVector3f(g / cv::norm(g));
     SPDLOG_INFO("Preparing Init {}", pKeyframe->mnId);
     auto vPredictedObjects = pKeyframe->GetObjectPredictions();
     // Retrieve neighbor keyframes in covisibility graph

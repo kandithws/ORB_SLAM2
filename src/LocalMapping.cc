@@ -1288,9 +1288,12 @@ void LocalMapping::Run() {
                         else{
                             if (mbUseObject) {
                                 // TODO -- Object + Gravity Optimization!!
-                                SPDLOG_INFO("I AM HERE NOW");
                                 assert(!mbMonocular);
-                                Optimizer::LocalBundleAdjustmentWithObjects2(mpCurrentKeyFrame, &mbAbortBA, mpMap);
+                                // Optimizer::LocalBundleAdjustmentWithObjects2(mpCurrentKeyFrame, &mbAbortBA, mpMap);
+                                Optimizer::LocalBundleAdjustmentWithObjects(
+                                        mpCurrentKeyFrame, &mbAbortBA,
+                                        mpMap, mGravityVec
+                                        );
                             }
                             else {
                                 Optimizer::LocalBAPRVIDP(mpCurrentKeyFrame, mlLocalKeyFrames, &mbAbortBA, mpMap,
