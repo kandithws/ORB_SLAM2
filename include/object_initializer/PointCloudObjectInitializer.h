@@ -32,6 +32,7 @@ class PointCloudObjectInitializer {
     bool mbProject2d;
     bool mbUseMask;
     bool mbUseStatRemoveOutlier;
+    bool mbAccociateCentroid;
     int mOutlierFilterType;
     double mOutlierFilterThreshold;
 

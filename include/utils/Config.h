@@ -30,6 +30,7 @@ typedef struct {
     double std_dev_mul_th = 0.8;
     bool project_2d_outlier = true;
     bool use_mask = true;
+    bool associate_centroid_only = true; // On Object association, full BB check or centroid only?
 } ObjectInitializer;
 
 typedef struct {

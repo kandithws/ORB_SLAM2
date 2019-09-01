@@ -25,6 +25,7 @@ PointCloudObjectInitializer::PointCloudObjectInitializer(Map* pMap) : mpMap(pMap
     mOutlierFilterThreshold = Config::getInstance().ObjectInitializerParams().outlier_threshold;
     mProj.setModelType(pcl::SACMODEL_PLANE);
     mMatrixRotatePitch90 = Eigen::AngleAxisf(M_PI/2.0f, Eigen::Vector3f::UnitY()).toRotationMatrix();
+    mbAccociateCentroid = Config::getInstance().ObjectInitializerParams().associate_centroid_only;
     //mbUseMask = true;
 }
 
@@ -400,7 +401,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe) {
             }
 
             if (pMO->IsPositiveToKeyFrame(pKeyframe)
-            && pMO->GetProjectedBoundingBox(pKeyframe, bb)) {
+            && pMO->GetProjectedBoundingBox(pKeyframe, bb, mbAccociateCentroid)) {
                 // Find label match with nearest center
                 double min_dist = std::numeric_limits<double>::max();
                 long int min_dist_idx = -1;
