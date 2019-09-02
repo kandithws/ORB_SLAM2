@@ -278,7 +278,7 @@ KeyFrame::KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB, LocalMapping* p
         mBowVec(F.mBowVec), mFeatVec(F.mFeatVec), mnScaleLevels(F.mnScaleLevels), mfScaleFactor(F.mfScaleFactor),
         mfLogScaleFactor(F.mfLogScaleFactor), mvScaleFactors(F.mvScaleFactors), mvLevelSigma2(F.mvLevelSigma2),
         mvInvLevelSigma2(F.mvInvLevelSigma2), mnMinX(F.mnMinX), mnMinY(F.mnMinY), mnMaxX(F.mnMaxX),
-        mnMaxY(F.mnMaxY), mK(F.mK), mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB),
+        mnMaxY(F.mnMaxY), mImageBoundRect(F.mnMinX, F.mnMinY, F.mnMaxY-F.mnMinY, F.mnMaxX-F.mnMinX), mK(F.mK), mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB),
         mpORBvocabulary(F.mpORBvocabulary), mbFirstConnection(true), mpParent(NULL), mbNotErase(false),
         mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), mpLocalMapper(pLocalMapper),
         mpPrevKeyFrame(pPrevKF), mpNextKeyFrame(NULL), mvIMUData(vIMUData) //VI-ORB
@@ -317,7 +317,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, LocalMapping* p
     mBowVec(F.mBowVec), mFeatVec(F.mFeatVec), mnScaleLevels(F.mnScaleLevels), mfScaleFactor(F.mfScaleFactor),
     mfLogScaleFactor(F.mfLogScaleFactor), mvScaleFactors(F.mvScaleFactors), mvLevelSigma2(F.mvLevelSigma2),
     mvInvLevelSigma2(F.mvInvLevelSigma2), mnMinX(F.mnMinX), mnMinY(F.mnMinY), mnMaxX(F.mnMaxX),
-    mnMaxY(F.mnMaxY), mK(F.mK), mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB),
+    mnMaxY(F.mnMaxY), mImageBoundRect(F.mnMinX, F.mnMinY, F.mnMaxY-F.mnMinY, F.mnMaxX-F.mnMinX), mK(F.mK), mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB),
     mpORBvocabulary(F.mpORBvocabulary), mbFirstConnection(true), mpParent(NULL), mbNotErase(false),
     mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), mpLocalMapper(pLocalMapper)
 {
@@ -1090,6 +1090,10 @@ void KeyFrame::DrawDebugPointsInMask(cv::Mat &draw, const cv::Rect2f &bb, const 
 bool KeyFrame::IsInImage(const float &x, const float &y) const
 {
     return (x>=mnMinX && x<mnMaxX && y>=mnMinY && y<mnMaxY);
+}
+
+bool KeyFrame::IsIntersecImage(const cv::Rect &rect) const {
+    return ((rect & mImageBoundRect).area() > 0.0);
 }
 
 cv::Mat KeyFrame::UnprojectStereo(int i)

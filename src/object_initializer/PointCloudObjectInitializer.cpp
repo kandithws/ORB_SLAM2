@@ -378,6 +378,8 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe) {
             std::shared_ptr<std::vector<MapPoint*> > ptr(&vObjMapPoints);
             vPredictionMPs[i] = ptr;
         }
+
+        // TODO -- Initialize 3d measurement for all predictions
     }
 
     for (vector<KeyFrame *>::const_iterator vit_kf = vpNeighKFs.begin(), vend_kf = vpNeighKFs.end();
@@ -437,7 +439,8 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe) {
 
                     pMO->AddObservation(pKeyframe, min_dist_idx);
                     pMO->AddObservations(*vPredictionMPs[min_dist_idx]);
-                    pKeyframe->AddMapObject(pMO, min_dist_idx);
+
+                    pKeyframe->AddMapObject(pMO, min_dist_idx); // TODO -- Add map object measurement
                     mpMap->AddMapObject(pMO);
 
                     if(!pMO->IsReady())
@@ -559,7 +562,7 @@ void PointCloudObjectInitializer::InitializedObjectsWithGravity(ORB_SLAM2::KeyFr
             }
 
             if (pMO->IsPositiveToKeyFrame(pKeyframe)
-                && pMO->GetProjectedBoundingBox(pKeyframe, bb)) {
+                && pMO->GetProjectedBoundingBox(pKeyframe, bb, mbAccociateCentroid)) {
                 // Find label match with nearest center
                 double min_dist = std::numeric_limits<double>::max();
                 long int min_dist_idx = -1;

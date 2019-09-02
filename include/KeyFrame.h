@@ -234,6 +234,7 @@ class KeyFrame {
 
     // Image
     bool IsInImage(const float &x, const float &y) const;
+    bool IsIntersecImage(const cv::Rect &rect) const;
 
     // Enable/Disable bad flag changes
     void SetNotErase();
@@ -336,6 +337,7 @@ class KeyFrame {
     const int mnMinY;
     const int mnMaxX;
     const int mnMaxY;
+    const cv::Rect mImageBoundRect;
     const cv::Mat mK;
 
     std::mutex mMutexObject;

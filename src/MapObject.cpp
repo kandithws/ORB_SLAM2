@@ -198,10 +198,11 @@ bool MapObject::GetProjectedBoundingBox(ORB_SLAM2::KeyFrame *pTargetKF, cv::Rect
         st = pTargetKF->IsInImage(bb_center.x, bb_center.y);
     }
     else {
-        st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y);
-        st |= pTargetKF->IsInImage(bb.tl().x + bb.width, bb.tl().y);
-        st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y + bb.height);
-        st |= pTargetKF->IsInImage(bb.br().x, bb.br().y);
+//        st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y);
+//        st |= pTargetKF->IsInImage(bb.tl().x + bb.width, bb.tl().y);
+//        st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y + bb.height);
+//        st |= pTargetKF->IsInImage(bb.br().x, bb.br().y);
+        st = pTargetKF->IsIntersecImage(bb);
     }
 
     return st;
