@@ -45,7 +45,7 @@ class PointCloudObjectInitializer {
     }
 
     Cuboid CuboidFromPointCloud(pcl::PointCloud<PCLConverter::PCLPointT>::Ptr cloud);
-    Cuboid CuboidFromPointCloudWithGravity(
+    Cuboid* CuboidFromPointCloudWithGravity(
             pcl::PointCloud<PCLConverter::PCLPointT>::Ptr cloud,
             const Eigen::Vector3f& gNormalized);
 

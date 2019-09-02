@@ -58,6 +58,8 @@ class MapObject;
 
 class LocalMapping;
 
+class Cuboid;
+
 class KeyFrame {
 
   public:
@@ -260,6 +262,8 @@ class KeyFrame {
     bool IsObjectsReady();
 
     std::vector<std::shared_ptr<PredictedObject> > GetObjectPredictions();
+    std::vector<Cuboid* > GetObjectPredictionsCuboidEstimate();
+
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
   public:
@@ -314,6 +318,7 @@ class KeyFrame {
     // TODO : Migrate this to protected
     std::vector<uint32_t> mvKeysUnColor;
     std::vector<std::shared_ptr<PredictedObject> > mvObjectPrediction;
+    std::vector<Cuboid* > mvObjectPredictionCuboidEst;
     std::vector<MapObject *> mvpMapObjects;
     std::map<MapObject *, size_t> mvpMapObjectsInverse;
 

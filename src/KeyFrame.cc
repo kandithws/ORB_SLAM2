@@ -1156,6 +1156,11 @@ std::vector<std::shared_ptr<PredictedObject> > KeyFrame::GetObjectPredictions() 
     return mvObjectPrediction;
 }
 
+std::vector<Cuboid* > KeyFrame::GetObjectPredictionsCuboidEstimate() {
+    std::lock_guard<std::mutex> lock(mMutexObject);
+    return mvObjectPredictionCuboidEst;
+}
+
 void KeyFrame::AddMapObject(ORB_SLAM2::MapObject *pMO, const size_t &idx) {
     std::lock_guard<std::mutex> lock(mMutexObject);
     mvpMapObjects[idx]=pMO;

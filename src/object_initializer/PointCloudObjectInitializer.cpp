@@ -73,9 +73,9 @@ Cuboid PointCloudObjectInitializer::CuboidFromPointCloud(pcl::PointCloud<PointT>
 }
 
 
-Cuboid PointCloudObjectInitializer::CuboidFromPointCloudWithGravity(pcl::PointCloud<PointT>::Ptr cloud, const Eigen::Vector3f& gNormalized)  {
+Cuboid* PointCloudObjectInitializer::CuboidFromPointCloudWithGravity(pcl::PointCloud<PointT>::Ptr cloud, const Eigen::Vector3f& gNormalized)  {
 
-    Cuboid cuboid;
+    Cuboid* cuboid = new Cuboid();
     Eigen::Vector4f pcaCentroid;
     pcl::compute3DCentroid(*cloud, pcaCentroid);
 
@@ -131,9 +131,9 @@ Cuboid PointCloudObjectInitializer::CuboidFromPointCloudWithGravity(pcl::PointCl
                                    (maxPoint.y - minPoint.y) / 2.0,
                                    (maxPoint.z - minPoint.z) / 2.0};
 
-    cuboid.setRotation(bboxQuaternion.cast<double>());
-    cuboid.setTranslation(bboxTransform.cast<double>());
-    cuboid.setScale(scale);
+    cuboid->setRotation(bboxQuaternion.cast<double>());
+    cuboid->setTranslation(bboxTransform.cast<double>());
+    cuboid->setScale(scale);
     return cuboid;
 }
 
@@ -497,22 +497,25 @@ void PointCloudObjectInitializer::InitializedObjectsWithGravity(ORB_SLAM2::KeyFr
 
     SPDLOG_INFO("Associate {}", pKeyframe->mnId);
     std::vector< std::shared_ptr< std::vector<MapPoint*> > > vPredictionMPs(vPredictedObjects.size());
+    std::vector<Cuboid*> vPredictionCuboidEst(vPredictedObjects.size(), static_cast<Cuboid*>(NULL));
     // Preprocessing Measurements
     for (size_t i = 0; i < vPredictedObjects.size(); i++) {
         auto &pred = *vPredictedObjects[i];
         const auto box = pred.box();
         int bboxSizeThresh = min(pKeyframe->mnMaxX - pKeyframe->mnMinX, pKeyframe->mnMaxY - pKeyframe->mnMinY) / 10;
 
-        if (box.width < bboxSizeThresh || box.height < bboxSizeThresh){
+        if (box.width < bboxSizeThresh || box.height < bboxSizeThresh) {
             continue;
         }
 
         // if the keyframe does not have object then continue
-        if(mbUseMask && pred._mask_type == PredictedObject::MASK_TYPE::NO_MASK)
+        if (mbUseMask && pred._mask_type == PredictedObject::MASK_TYPE::NO_MASK)
             SPDLOG_WARN("Configure to use mask, but no mask provided");
 
         auto vObjMapPoints = mbUseMask && (pred._mask_type != PredictedObject::MASK_TYPE::NO_MASK) ?
-                             pKeyframe->GetMapPointsInMask(box, pred._mask, pred._mask_type) : pKeyframe->GetMapPointsInBoundingBox(box);
+                             pKeyframe->GetMapPointsInMask(box, pred._mask, pred._mask_type)
+                                                                                                   : pKeyframe->GetMapPointsInBoundingBox(
+                        box);
 
 
         if (vObjMapPoints.size() < 10) {
@@ -521,12 +524,13 @@ void PointCloudObjectInitializer::InitializedObjectsWithGravity(ORB_SLAM2::KeyFr
 
 
         if (mbUseStatRemoveOutlier) {
-            std::shared_ptr< std::vector<MapPoint *> > pvFilteredMapPoints = std::make_shared< std::vector<MapPoint *> >();
+            std::shared_ptr<std::vector<MapPoint *> > pvFilteredMapPoints = std::make_shared<std::vector<MapPoint *> >();
 
             if (mOutlierFilterType == 0)
                 FilterMapPointsSOR(vObjMapPoints, *pvFilteredMapPoints, mbProject2d, pKeyframe);
             else if (mOutlierFilterType == 1)
-                FilterMapPointsDistFromCentroid(vObjMapPoints, *pvFilteredMapPoints, pKeyframe, mOutlierFilterThreshold);
+                FilterMapPointsDistFromCentroid(vObjMapPoints, *pvFilteredMapPoints, pKeyframe,
+                                                mOutlierFilterThreshold);
             else if (mOutlierFilterType == 2)
                 FilterMapPointsDistFromCentroidNormalized(vObjMapPoints,
                                                           *pvFilteredMapPoints, pKeyframe, mOutlierFilterThreshold);
@@ -534,11 +538,24 @@ void PointCloudObjectInitializer::InitializedObjectsWithGravity(ORB_SLAM2::KeyFr
                 throw std::runtime_error("OUTLIER FILTER TYPE NOT IMPLEMENTED");
 
             vPredictionMPs[i] = pvFilteredMapPoints;
-        }
-        else{
-            std::shared_ptr<std::vector<MapPoint*> > ptr(&vObjMapPoints);
+        } else {
+            std::shared_ptr<std::vector<MapPoint *> > ptr(&vObjMapPoints);
             vPredictionMPs[i] = ptr;
         }
+
+        // Initial Cuboid HERE !
+
+        // auto vFilteredMapPoints = vPredictionMPs[i];
+        auto cuboid = CuboidFromPointCloudWithGravity(PCLConverter::toPointCloud(*vPredictionMPs[i]),
+                                                      gNormalized);
+        vPredictionCuboidEst[i] = cuboid;
+
+    }
+
+    {
+        // Too lazy to write setter
+        std::lock_guard<std::mutex> lock(pKeyframe->mMutexObject);
+        pKeyframe->mvObjectPredictionCuboidEst = vPredictionCuboidEst;
     }
 
     for (vector<KeyFrame *>::const_iterator vit_kf = vpNeighKFs.begin(), vend_kf = vpNeighKFs.end();
@@ -618,22 +635,13 @@ void PointCloudObjectInitializer::InitializedObjectsWithGravity(ORB_SLAM2::KeyFr
         if (!vPredictionMPs[i])
             continue;
 
-        auto &pred = *vPredictedObjects[i];
         // - Calculate Cuboid parameters
-        auto vFilteredMapPoints = vPredictionMPs[i];
-        auto inliers = PCLConverter::toPointCloud(*vFilteredMapPoints);
-        auto cuboid = CuboidFromPointCloudWithGravity(inliers, gNormalized);
-
-//        uint32_t color = (static_cast<uint32_t>(std::rand() % 255) << 16) |
-//                         (static_cast<uint32_t>(std::rand() % 255) << 8) |
-//                         (static_cast<uint32_t>(std::rand() % 255));
-//
-//        for (auto &pMP : *vFilteredMapPoints) {
-//            pMP->SetPointColor(color); // For Debuging
-//        }
+        // auto vFilteredMapPoints = vPredictionMPs[i];
+        // auto inliers = PCLConverter::toPointCloud(*vFilteredMapPoints);
+        // auto cuboid = CuboidFromPointCloudWithGravity(inliers, gNormalized);
 
         // Create new MapObject -- pattern from LocalMapping.cc MapPoint!
-        MapObject *pMO = new MapObject(cuboid, pred._label, pKeyframe, mpMap);
+        MapObject *pMO = new MapObject(*vPredictionCuboidEst[i], vPredictedObjects[i]->_label, pKeyframe, mpMap);
         pMO->AddObservation(pKeyframe, i);
         pMO->AddObservations(*vPredictionMPs[i]);
         pKeyframe->AddMapObject(pMO, i);

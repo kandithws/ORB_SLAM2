@@ -53,7 +53,7 @@ object_initialization:
   std_dev_mul_th: 0.8
   project_2d_outlier: 0 # DO NOT USE FOR NOW
   use_mask: 0
-  outlier_filter_type: 2 # 0: PCL SOR, 1: local dist diff, 2: local std diff
+  outlier_filter_type: 1 # 0: PCL SOR, 1: local dist diff, 2: local std diff
   outlier_threshold: 0.1 # For type 1(recommend: 0.2), 2(recommend: 0.15)
   associate_centroid_only: 0
 

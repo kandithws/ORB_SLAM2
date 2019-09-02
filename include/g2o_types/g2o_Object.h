@@ -4,6 +4,7 @@
 #include "Thirdparty/g2o/g2o/types/types_six_dof_expmap.h"
 #include "Thirdparty/g2o/g2o/core/base_unary_edge.h"
 #include "utils/matrix_utils.h"
+#include "utils/vector_utils.h"
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -176,6 +177,50 @@ class EdgeCuboidMapPointUnary : public BaseUnaryEdge<3, Eigen::Vector3d, VertexC
             std::max<double>(std::abs(_measurement[2]) - dm[2], 0.0)
                                  });
     }
+
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
+
+class EdgeCuboidMapPointUnaryBatch : public BaseUnaryEdge<3, Eigen::Vector3d, VertexCuboid> {
+  public:
+    EdgeCuboidMapPointUnaryBatch(const ORB_SLAM2::utils::eigen_aligned_vector<Eigen::Vector4d>& vMPWorldPosHomo){
+        mvMPWorldPos = vMPWorldPosHomo;
+    }
+
+    inline bool read(std::istream &is) override {
+        return true;
+    };
+
+    inline bool write(std::ostream &os) const override {
+        return os.good();
+    };
+
+    inline void computeError() override {
+        //const auto* pointVertex = dynamic_cast<const VertexSBAPointXYZ*>(_vertices[0]);
+        const auto *cuboidVertex = dynamic_cast<const VertexCuboid *>(_vertices[0]);
+        const auto &cuboid = cuboidVertex->estimate();
+        _error.setZero();
+
+        const auto cuboid_pose_inv = cuboid.mPose.inverse().to_homogeneous_matrix();
+        const auto &dm = cuboid.mScale;
+        for (const auto& point_pose : mvMPWorldPos){
+            Eigen::Vector4d point_pose_local =  cuboid_pose_inv * point_pose;
+
+            _error += Eigen::Vector3d({
+                                             std::max<double>(std::abs(point_pose_local[0]) - dm[0], 0.0),
+                                             std::max<double>(std::abs(point_pose_local[1]) - dm[1], 0.0),
+                                             std::max<double>(std::abs(point_pose_local[2]) - dm[2], 0.0)
+                                     });
+        }
+
+        // Normalizing Error
+
+        _error = _error / (double)mvMPWorldPos.size();
+    }
+
+    ORB_SLAM2::utils::eigen_aligned_vector<Eigen::Vector4d> mvMPWorldPos;
 
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
