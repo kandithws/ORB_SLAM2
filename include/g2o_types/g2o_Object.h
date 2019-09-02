@@ -259,7 +259,7 @@ class EdgeCuboidGravityConstraint : public BaseUnaryEdge<3, Eigen::Vector3d, Ver
 
   class EdgeCuboidGravityConstraint2 : public BaseUnaryEdge<1, double, VertexCuboid>{
   public:
-    EdgeCuboidGravityConstraint2(const Eigen::Vector3d& gNormalized, double info_scale=2.0){
+    EdgeCuboidGravityConstraint2(const Eigen::Vector3d& gNormalized, double info_scale=1.0){
         information()[0] = info_scale;
 
         _g_normalized_inverse = -gNormalized;
