@@ -21,6 +21,7 @@ PredictedObject::PredictedObject(const int &label, const float& conf, const cv::
 const cv::Rect2f& PredictedObject::box() const {
     return _bbox;
 }
+
 std::vector<std::string> BaseObjectDetector::parseLabelMap(std::string path, char delim) {
     std::vector<std::string> label_map;
     std::ifstream file(path);

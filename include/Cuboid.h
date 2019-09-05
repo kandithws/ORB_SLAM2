@@ -69,6 +69,10 @@ class Cuboid {
     // transform a global cuboid to local cuboid  Twc is camera pose. from camera to world
     Cuboid transformTo(const SE3Quat& Twc) const;
 
+    Eigen::Vector3d computePointBoundaryError(const Vector3d &world_point, const double& max_outside_margin_ratio) const;
+
+    // bool isOutlierPoint(const Vector3d &world_point, const double& max_outside_margin_ratio);
+
     // xyz roll pitch yaw half_scale
     Eigen::Vector9d toMinimalVector() const;
 

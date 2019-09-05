@@ -185,7 +185,9 @@ class EdgeCuboidMapPointUnary : public BaseUnaryEdge<3, Eigen::Vector3d, VertexC
 
 class EdgeCuboidMapPointUnaryBatch : public BaseUnaryEdge<3, Eigen::Vector3d, VertexCuboid> {
   public:
-    EdgeCuboidMapPointUnaryBatch(const ORB_SLAM2::utils::eigen_aligned_vector<Eigen::Vector4d>& vMPWorldPosHomo){
+    EdgeCuboidMapPointUnaryBatch(const ORB_SLAM2::utils::eigen_aligned_vector<Eigen::Vector3d>& vMPWorldPosHomo,
+            const double& max_margin_ratio=1.0): mMaxMarginRatio(max_margin_ratio)
+    {
         mvMPWorldPos = vMPWorldPosHomo;
     }
 
@@ -197,30 +199,53 @@ class EdgeCuboidMapPointUnaryBatch : public BaseUnaryEdge<3, Eigen::Vector3d, Ve
         return os.good();
     };
 
+//    inline void computeError() override {
+//        //const auto* pointVertex = dynamic_cast<const VertexSBAPointXYZ*>(_vertices[0]);
+//        const auto *cuboidVertex = dynamic_cast<const VertexCuboid *>(_vertices[0]);
+//        const auto &cuboid = cuboidVertex->estimate();
+//        _error.setZero();
+//
+//        const auto cuboid_pose_inv = cuboid.mPose.inverse().to_homogeneous_matrix();
+//        const auto &dm = cuboid.mScale;
+//        for (const auto& point_pose : mvMPWorldPos){
+//            Eigen::Vector4d point_pose_local =  cuboid_pose_inv * point_pose;
+//
+//            _error += Eigen::Vector3d({
+//                                             std::max<double>(std::abs(point_pose_local[0]) - dm[0], 0.0),
+//                                             std::max<double>(std::abs(point_pose_local[1]) - dm[1], 0.0),
+//                                             std::max<double>(std::abs(point_pose_local[2]) - dm[2], 0.0)
+//                                     });
+//        }
+//
+//        // Normalizing Error
+//
+//        _error = _error / (double)mvMPWorldPos.size();
+//    }
+
+
     inline void computeError() override {
         //const auto* pointVertex = dynamic_cast<const VertexSBAPointXYZ*>(_vertices[0]);
         const auto *cuboidVertex = dynamic_cast<const VertexCuboid *>(_vertices[0]);
         const auto &cuboid = cuboidVertex->estimate();
         _error.setZero();
+        Eigen::Vector3d points_error;
+        points_error.setZero();
 
-        const auto cuboid_pose_inv = cuboid.mPose.inverse().to_homogeneous_matrix();
-        const auto &dm = cuboid.mScale;
         for (const auto& point_pose : mvMPWorldPos){
-            Eigen::Vector4d point_pose_local =  cuboid_pose_inv * point_pose;
 
-            _error += Eigen::Vector3d({
-                                             std::max<double>(std::abs(point_pose_local[0]) - dm[0], 0.0),
-                                             std::max<double>(std::abs(point_pose_local[1]) - dm[1], 0.0),
-                                             std::max<double>(std::abs(point_pose_local[2]) - dm[2], 0.0)
-                                     });
+            points_error += cuboid.computePointBoundaryError(point_pose, mMaxMarginRatio).cwiseAbs();
         }
 
         // Normalizing Error
+        if(mvMPWorldPos.size() > 0)
+            points_error = points_error / (double)mvMPWorldPos.size();
 
-        _error = _error / (double)mvMPWorldPos.size();
+        _error = points_error;
     }
 
-    ORB_SLAM2::utils::eigen_aligned_vector<Eigen::Vector4d> mvMPWorldPos;
+    ORB_SLAM2::utils::eigen_aligned_vector<Eigen::Vector3d> mvMPWorldPos;
+
+    const double mMaxMarginRatio;
 
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

@@ -1696,21 +1696,19 @@ void Optimizer::LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool* pbStopFla
         // Adding Mappoint Constraints
 
         auto vMapPointObservations = pMO->GetMapPoints();
-        ORB_SLAM2::utils::eigen_aligned_vector<Eigen::Vector4d> vMPWorldPosHomo;
+        ORB_SLAM2::utils::eigen_aligned_vector<Eigen::Vector3d> vMPWorldPosHomo;
         vMPWorldPosHomo.reserve(vMapPointObservations.size());
         for (auto &pMP : vMapPointObservations) {
             if (pMP->isBad())
                 continue;
 
-            vMPWorldPosHomo.push_back(real_to_homo_coord_vec<double>(
-                    Converter::toVector3d(pMP->GetWorldPos()))
-            );
+            vMPWorldPosHomo.push_back(Converter::toVector3d(pMP->GetWorldPos()));
         }
 
         // Batch MP constriant
         auto* edgeMP = new g2o::EdgeCuboidMapPointUnaryBatch(vMPWorldPosHomo);
         edgeMP->setVertex(0, optimizer.vertex(landmark_id));
-        edgeMP->setInformation(Eigen::Matrix3d::Identity());
+        edgeMP->setInformation(Eigen::Matrix3d::Identity() * 2.0);
         optimizer.addEdge(edgeMP);
     }
 
@@ -2123,21 +2121,19 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool *pbStopFlag
         // Adding Mappoint Constraints
 
         auto vMapPointObservations = pMO->GetMapPoints();
-        ORB_SLAM2::utils::eigen_aligned_vector<Eigen::Vector4d> vMPWorldPosHomo;
+        ORB_SLAM2::utils::eigen_aligned_vector<Eigen::Vector3d> vMPWorldPosHomo;
         vMPWorldPosHomo.reserve(vMapPointObservations.size());
         for (auto &pMP : vMapPointObservations) {
             if (pMP->isBad())
                 continue;
 
-            vMPWorldPosHomo.push_back(real_to_homo_coord_vec<double>(
-                    Converter::toVector3d(pMP->GetWorldPos()))
-            );
+            vMPWorldPosHomo.push_back(Converter::toVector3d(pMP->GetWorldPos()));
         }
 
         // Batch MP constriant
         auto* edgeMP = new g2o::EdgeCuboidMapPointUnaryBatch(vMPWorldPosHomo);
         edgeMP->setVertex(0, optimizer.vertex(landmark_id));
-        edgeMP->setInformation(Eigen::Matrix3d::Identity());
+        edgeMP->setInformation(Eigen::Matrix3d::Identity() * 2.0);
         optimizer.addEdge(edgeMP);
 
         // Gravity Constriant
