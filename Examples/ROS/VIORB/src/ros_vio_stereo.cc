@@ -43,6 +43,7 @@ using namespace std;
  * @ A Node to Run VIORB with Stereo/RGB-D settings, only support 1 IMU for now
  * */
 
+
 int main(int argc, char **argv) {
     ros::init(argc, argv, "VI_ORBSLAM");
     //ros::start();
@@ -87,6 +88,7 @@ int main(int argc, char **argv) {
 
     } else {
         // Overiding VI-ORB file config with ROS Config (to use with internal SLAM classes)
+        ROS_INFO("Use real-time mode!, configured from ROS param");
         ORB_SLAM2::Config::getInstance().SetRealTimeFlag(realtime_mode);
     }
 
@@ -142,27 +144,26 @@ int main(int argc, char **argv) {
     }
 
 
+    std::string imutopic = ORB_SLAM2::Config::getInstance().RuntimeParams().imu_topic;
+    std::string imagetopic = ORB_SLAM2::Config::getInstance().RuntimeParams().image_topic;
+    std::string image2topic = ORB_SLAM2::Config::getInstance().RuntimeParams().image2_topic;
+
 
     /**
      * @brief added data sync
      */
     ROS_INFO("INITIALIZE MSG SYNC");
     double imageMsgDelaySec = ORB_SLAM2::Config::getInstance().RuntimeParams().image_delay_to_imu;
-    ORBVIO::StereoMsgSynchronizer msgsync(imageMsgDelaySec, imageMsgDelaySec, realtime_mode);
-    ros::Subscriber imagesub;
-    ros::Subscriber imusub;
-    ROS_INFO("INITIALIZED !");
-    if (realtime_mode) {
-        /*
-        imagesub = nh.subscribe(ORB_SLAM2::Config::getInstance().RuntimeParams().image_topic, 2,
-                                &ORBVIO::MsgSynchronizer::imageCallback, &msgsync);
-        imusub = nh.subscribe(ORB_SLAM2::Config::getInstance().RuntimeParams().imu_topic, 200,
-                              &ORBVIO::MsgSynchronizer::imuCallback, &msgsync);
-        */
-
-        ROS_FATAL("Not Implemented !");
-        exit(-1);
+    std::shared_ptr<ORBVIO::StereoMsgSynchronizer> msgsync;
+    if(realtime_mode){
+        msgsync = std::make_shared<ORBVIO::StereoMsgSynchronizer>(imagetopic, image2topic, imutopic, imageMsgDelaySec);
     }
+    else{
+        msgsync = std::make_shared<ORBVIO::StereoMsgSynchronizer>(imageMsgDelaySec, imageMsgDelaySec);
+    }
+
+    ROS_INFO("INITIALIZED !");
+
     sensor_msgs::ImageConstPtr imageMsg;
     sensor_msgs::ImageConstPtr image2Msg;
     std::vector<sensor_msgs::ImuConstPtr> vimuMsg;
@@ -171,7 +172,10 @@ int main(int argc, char **argv) {
     const double g3dm = 9.80665;
     const bool bAccMultiply98 = ORB_SLAM2::Config::getInstance().RuntimeParams().multiply_g;
     const bool bRGB = ORB_SLAM2::Config::getInstance().CameraParams().rgb;
-    ros::Rate r(1000);
+    int rate = realtime_mode ? 300 : 1000;
+
+    ros::Rate r(rate);
+
     double discard_time = ORB_SLAM2::Config::getInstance().RuntimeParams().discard_time;
     if (!realtime_mode) {
         std::string bagfile = bagfile_path;
@@ -180,9 +184,7 @@ int main(int argc, char **argv) {
         bag.open(bagfile, rosbag::bagmode::Read);
         ROS_WARN("---START----");
         std::vector<std::string> topics;
-        std::string imutopic = ORB_SLAM2::Config::getInstance().RuntimeParams().imu_topic;
-        std::string imagetopic = ORB_SLAM2::Config::getInstance().RuntimeParams().image_topic;
-        std::string image2topic = ORB_SLAM2::Config::getInstance().RuntimeParams().image2_topic;
+
         topics.push_back(imagetopic);
         topics.push_back(image2topic);
         topics.push_back(imutopic);
@@ -193,19 +195,19 @@ int main(int argc, char **argv) {
         for (rosbag::MessageInstance const m: view){
             sensor_msgs::ImuConstPtr simu = m.instantiate<sensor_msgs::Imu>();
             if (simu != NULL)
-                msgsync.addImuMsg(simu);
+                msgsync->addImuMsg(simu);
 
             sensor_msgs::ImageConstPtr simage = m.instantiate<sensor_msgs::Image>();
             if (simage != NULL){
                 if ( m.getTopic() == imagetopic ){
-                    msgsync.addImage1Msg(simage);
+                    msgsync->addImage1Msg(simage);
                 }
                 else{
-                    msgsync.addImage2Msg(simage);
+                    msgsync->addImage2Msg(simage);
                 }
             }
 
-            bool bdata = msgsync.getRecentMsgs(imageMsg, image2Msg, vimuMsg);
+            bool bdata = msgsync->getRecentMsgs(imageMsg, image2Msg, vimuMsg);
             if (bdata) {
                 ROS_DEBUG("Num IMUs between images: %d", (int)vimuMsg.size());
                 ORB_SLAM2::utils::eigen_aligned_vector<ORB_SLAM2::IMUData> vimuData;
@@ -314,7 +316,113 @@ int main(int argc, char **argv) {
         ros::spin();
     } else {
         ROS_WARN("Run realtime");
-        exit(-1);
+
+        while(ros::ok()){
+
+            bool bdata = msgsync->getRecentMsgs(imageMsg, image2Msg, vimuMsg);
+            if (bdata) {
+                ROS_DEBUG("Num IMUs between images: %d", (int)vimuMsg.size());
+                ORB_SLAM2::utils::eigen_aligned_vector<ORB_SLAM2::IMUData> vimuData;
+
+                for (unsigned int i = 0; i < vimuMsg.size(); i++) {
+                    sensor_msgs::ImuConstPtr imuMsg = vimuMsg[i];
+                    double ax = imuMsg->linear_acceleration.x;
+                    double ay = imuMsg->linear_acceleration.y;
+                    double az = imuMsg->linear_acceleration.z;
+                    if (bAccMultiply98) {
+                        ax *= g3dm;
+                        ay *= g3dm;
+                        az *= g3dm;
+                    }
+                    ORB_SLAM2::IMUData
+                            imudata(imuMsg->angular_velocity.x, imuMsg->angular_velocity.y,
+                                    imuMsg->angular_velocity.z,
+                                    ax, ay, az, imuMsg->header.stamp.toSec());
+                    vimuData.push_back(imudata);
+                    //ROS_INFO("imu time: %.3f",vimuMsg[i]->header.stamp.toSec());
+                }
+
+                // Copy the ros image message to cv::Mat.
+                cv_bridge::CvImageConstPtr cv_ptr;
+                cv_bridge::CvImageConstPtr cv_ptr2;
+                try {
+                    cv_ptr = cv_bridge::toCvShare(imageMsg);
+                    cv_ptr2 = cv_bridge::toCvShare(image2Msg);
+                }
+                catch (cv_bridge::Exception &e) {
+                    ROS_ERROR("cv_bridge exception: %s", e.what());
+                    return -1;
+                }
+
+
+                cv::Mat im = cv_ptr->image.clone();
+                cv::Mat im2 = cv_ptr2->image.clone();
+
+                if (im.channels() == 1){
+                    if (bRGB){
+                        cv::cvtColor(im, im, CV_GRAY2RGB);
+                    }
+                    else{
+                        cv::cvtColor(im, im, CV_GRAY2BGR);
+                    }
+                }
+
+                if (sensor_type == ORB_SLAM2::System::STEREO){
+                    if (im2.channels() == 1){
+                        if (bRGB){
+                            cv::cvtColor(im2, im2, CV_GRAY2RGB);
+                        }
+                        else{
+                            cv::cvtColor(im2, im2, CV_GRAY2BGR);
+                        }
+                    }
+                }
+
+                {
+                    // To test relocalization
+                    static double startT = -1;
+                    if (startT < 0)
+                        startT = imageMsg->header.stamp.toSec();
+                    // Below to test relocalizaiton
+                    //if(imageMsg->header.stamp.toSec() > startT+25 && imageMsg->header.stamp.toSec() < startT+25.3)
+                    if (imageMsg->header.stamp.toSec() < startT + discard_time){
+                        im = cv::Mat::zeros(im.size(), im.type());
+                        im2 = cv::Mat::zeros(im2.size(), im2.type());
+                    }
+
+                }
+                if (sensor_type == ORB_SLAM2::System::STEREO){
+                    if (pre_rectify_images){
+                        cv::Mat imLeftRect, imRightRect;
+                        cv::remap(im,imLeftRect,M1l,M2l,cv::INTER_LINEAR);
+                        cv::remap(im2,imRightRect,M1r,M2r,cv::INTER_LINEAR);
+                        SLAM.TrackStereoVI(imLeftRect, imRightRect, vimuData, imageMsg->header.stamp.toSec() - imageMsgDelaySec);
+                    }
+                    else{
+                        SLAM.TrackStereoVI(im, im2, vimuData, imageMsg->header.stamp.toSec() - imageMsgDelaySec);
+                    }
+
+                }
+                else {
+                    SLAM.TrackRGBDVI(im, im2, vimuData, imageMsg->header.stamp.toSec() - imageMsgDelaySec);
+                }
+
+                // Wait local mapping end.
+                bool bstop = false;
+                while (!SLAM.bLocalMapAcceptKF()) {
+                    if (!ros::ok()) {
+                        bstop = true;
+                    }
+                };
+                if (bstop)
+                    break;
+
+            }
+
+
+            ros::spinOnce();
+            r.sleep();
+        }
     }
 
 

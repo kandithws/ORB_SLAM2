@@ -38,7 +38,12 @@ class StereoMsgSynchronizer {
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> sync_policy;
 
     StereoMsgSynchronizer(const double &imagedelay1 = 0.,
-            const double &imagedelay2 = 0., bool bRealtime = true);
+            const double &imagedelay2 = 0.);
+
+    StereoMsgSynchronizer(const std::string &image1_topic,
+            const std::string &image2_topic,
+            const std::string &imu_topic,
+            const double& imagedelay1 = 0.);
 
     ~StereoMsgSynchronizer() = default;
 
@@ -67,6 +72,10 @@ class StereoMsgSynchronizer {
     std::shared_ptr<message_filters::PassThrough< sensor_msgs::Image> > _img1MsgFilter;
     std::shared_ptr<message_filters::PassThrough< sensor_msgs::Image> > _img2MsgFilter;
 
+
+    std::shared_ptr<message_filters::Subscriber< sensor_msgs::Image> > _img1MsgSubFilter;
+    std::shared_ptr<message_filters::Subscriber< sensor_msgs::Image> > _img2MsgSubFilter;
+    ros::Subscriber _imu_sub;
 
     // TODO -- Do we need Time Sequencer to chain from passthrough ??
     std::mutex _mutexImageQueue;
