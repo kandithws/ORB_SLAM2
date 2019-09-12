@@ -86,27 +86,27 @@ class KeyFrameInit {
 };
 
 bool LocalMapping::GetUpdatingInitPoses(void) {
-    unique_lock<mutex> lock(mMutexUpdatingInitPoses);
+    unique_lock <mutex> lock(mMutexUpdatingInitPoses);
     return mbUpdatingInitPoses;
 }
 
 void LocalMapping::SetUpdatingInitPoses(bool flag) {
-    unique_lock<mutex> lock(mMutexUpdatingInitPoses);
+    unique_lock <mutex> lock(mMutexUpdatingInitPoses);
     mbUpdatingInitPoses = flag;
 }
 
 KeyFrame *LocalMapping::GetMapUpdateKF() {
-    unique_lock<mutex> lock(mMutexMapUpdateFlag);
+    unique_lock <mutex> lock(mMutexMapUpdateFlag);
     return mpMapUpdateKF;
 }
 
 bool LocalMapping::GetMapUpdateFlagForTracking() {
-    unique_lock<mutex> lock(mMutexMapUpdateFlag);
+    unique_lock <mutex> lock(mMutexMapUpdateFlag);
     return mbMapUpdateFlagForTracking;
 }
 
 void LocalMapping::SetMapUpdateFlagInTracking(bool bflag) {
-    unique_lock<mutex> lock(mMutexMapUpdateFlag);
+    unique_lock <mutex> lock(mMutexMapUpdateFlag);
     mbMapUpdateFlagForTracking = bflag;
     if (bflag) {
         mpMapUpdateKF = mpCurrentKeyFrame;
@@ -114,22 +114,35 @@ void LocalMapping::SetMapUpdateFlagInTracking(bool bflag) {
 }
 
 bool LocalMapping::GetVINSInited(void) {
-    unique_lock<mutex> lock(mMutexVINSInitFlag);
+    unique_lock <mutex> lock(mMutexVINSInitFlag);
     return mbVINSInited;
 }
 
-void LocalMapping::SetVINSInited(bool flag) {
+bool LocalMapping::GetUseIMUFlag() {
     unique_lock<mutex> lock(mMutexVINSInitFlag);
+    bool ret = mbUseIMU;
+    if (!mbMonocular)
+        ret &= !mbVINSInited;
+    return ret;
+}
+
+void LocalMapping::SetVINSInited(bool flag) {
+    unique_lock <mutex> lock(mMutexVINSInitFlag);
+    if (flag){
+        // When true, copy Gravity Vector to a map
+        mpMap->SetGravityVec(mGravityVec);
+    }
+
     mbVINSInited = flag;
 }
 
 bool LocalMapping::GetFirstVINSInited(void) {
-    unique_lock<mutex> lock(mMutexFirstVINSInitFlag);
+    unique_lock <mutex> lock(mMutexFirstVINSInitFlag);
     return mbFirstVINSInited;
 }
 
 void LocalMapping::SetFirstVINSInited(bool flag) {
-    unique_lock<mutex> lock(mMutexFirstVINSInitFlag);
+    unique_lock <mutex> lock(mMutexFirstVINSInitFlag);
     mbFirstVINSInited = flag;
 }
 
@@ -150,8 +163,8 @@ void LocalMapping::VINSInitThread() {
             if (!GetVINSInited() && mpCurrentKeyFrame->mnId > initedid) {
                 initedid = mpCurrentKeyFrame->mnId;
 
-                bool tmpbool = TryInitVIO();
-                //cout << "called TryInitVIO() from VINSInitThread() \n";
+                bool tmpbool = mbMonocular ? TryInitVIO() : TryInitVIONoScale();
+
                 if (tmpbool) {
                     break;
                 }
@@ -214,13 +227,13 @@ bool LocalMapping::TryInitVIO(void) {
     SetFlagCopyInitKFs(true);
 
     // Use all KeyFrames in map to compute
-    vector<KeyFrame *> vScaleGravityKF = mpMap->GetAllKeyFrames();
+    vector < KeyFrame * > vScaleGravityKF = mpMap->GetAllKeyFrames();
     int N = vScaleGravityKF.size();
     KeyFrame *pNewestKF = vScaleGravityKF[N - 1];
-    vector<cv::Mat> vTwc;
+    vector <cv::Mat> vTwc;
     utils::eigen_aligned_vector<IMUPreintegrator> vIMUPreInt;
     // Store initialization-required KeyFrame data
-    vector<KeyFrameInit *> vKFInit;
+    vector < KeyFrameInit * > vKFInit;
 
     for (int i = 0; i < N; i++) {
         KeyFrame *pKF = vScaleGravityKF[i];
@@ -513,7 +526,7 @@ bool LocalMapping::TryInitVIO(void) {
 
         SetUpdatingInitPoses(true);
         {
-            unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
+            unique_lock <mutex> lock(mpMap->mMutexMapUpdate);
 
             int cnt = 0;
             for (vector<KeyFrame *>::const_iterator vit = vScaleGravityKF.begin(), vend = vScaleGravityKF.end();
@@ -587,7 +600,7 @@ bool LocalMapping::TryInitVIO(void) {
             }
 
             // Update poses (multiply metric scale)
-            vector<KeyFrame *> mspKeyFrames = mpMap->GetAllKeyFrames();
+            vector < KeyFrame * > mspKeyFrames = mpMap->GetAllKeyFrames();
             for (std::vector<KeyFrame *>::iterator sit = mspKeyFrames.begin(), send = mspKeyFrames.end();
                  sit != send; sit++) {
                 KeyFrame *pKF = *sit;
@@ -596,7 +609,7 @@ bool LocalMapping::TryInitVIO(void) {
                 tcw.copyTo(Tcw.rowRange(0, 3).col(3));
                 pKF->SetPose(Tcw);
             }
-            vector<MapPoint *> mspMapPoints = mpMap->GetAllMapPoints();
+            vector < MapPoint * > mspMapPoints = mpMap->GetAllMapPoints();
             for (std::vector<MapPoint *>::iterator sit = mspMapPoints.begin(), send = mspMapPoints.end();
                  sit != send; sit++) {
                 MapPoint *pMP = *sit;
@@ -679,7 +692,7 @@ bool LocalMapping::TryInitVIO(void) {
 
             }
 
-           // std::cout << std::endl << "... Map NavState updated ..." << std::endl << std::endl;
+            // std::cout << std::endl << "... Map NavState updated ..." << std::endl << std::endl;
             SPDLOG_INFO("\n ... Map NavState updated ... \n");
             SetFirstVINSInited(true);
             SetVINSInited(true);
@@ -711,10 +724,10 @@ bool LocalMapping::TryInitVIO(void) {
             cv::Mat cvTbc = Config::getInstance().IMUParams().GetMatTbc();
 
             {
-                unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
+                unique_lock <mutex> lock(mpMap->mMutexMapUpdate);
 
                 // Correct keyframes starting at map first keyframe
-                list<KeyFrame *> lpKFtoCheck(mpMap->mvpKeyFrameOrigins.begin(), mpMap->mvpKeyFrameOrigins.end());
+                list < KeyFrame * > lpKFtoCheck(mpMap->mvpKeyFrameOrigins.begin(), mpMap->mvpKeyFrameOrigins.end());
 
                 while (!lpKFtoCheck.empty()) {
                     KeyFrame *pKF = lpKFtoCheck.front();
@@ -809,6 +822,354 @@ bool LocalMapping::TryInitVIO(void) {
     return bVIOInited;
 }
 
+
+bool LocalMapping::TryInitVIONoScale() {
+
+    if (mpMap->KeyFramesInMap() <= mnLocalWindowSize)
+        return false;
+
+    static bool fopened = false;
+    static ofstream fgw, fscale, fbiasa, fcondnum, ftime, fbiasg;
+    string tmpfilepath = Config::getInstance().RuntimeParams().log_file_path;
+    if (!fopened) {
+        // Need to modify this to correct path
+        fgw.open(tmpfilepath + "gw.txt");
+        fscale.open(tmpfilepath + "scale.txt");
+        fbiasa.open(tmpfilepath + "biasa.txt");
+        fcondnum.open(tmpfilepath + "condnum.txt");
+        ftime.open(tmpfilepath + "computetime.txt");
+        fbiasg.open(tmpfilepath + "biasg.txt");
+        if (fgw.is_open() && fscale.is_open() && fbiasa.is_open() &&
+            fcondnum.is_open() && ftime.is_open() && fbiasg.is_open())
+            fopened = true;
+        else {
+            cerr << "file open error in TryInitVIO" << endl;
+            fopened = false;
+        }
+        fgw << std::fixed << std::setprecision(6);
+        fscale << std::fixed << std::setprecision(6);
+        fbiasa << std::fixed << std::setprecision(6);
+        fcondnum << std::fixed << std::setprecision(6);
+        ftime << std::fixed << std::setprecision(6);
+        fbiasg << std::fixed << std::setprecision(6);
+    }
+
+    Optimizer::GlobalBundleAdjustemnt(mpMap, 10);
+
+    // Extrinsics
+    cv::Mat Tbc = Config::getInstance().IMUParams().GetMatTbc();
+    cv::Mat Rbc = Tbc.rowRange(0, 3).colRange(0, 3);
+    cv::Mat pbc = Tbc.rowRange(0, 3).col(3);
+    cv::Mat Rcb = Rbc.t();
+    cv::Mat pcb = -Rcb * pbc;
+
+    if (Config::getInstance().SystemParams().real_time) {
+        // Wait KeyFrame Culling.
+        // 1. if KeyFrame Culling is running, wait until finished.
+        // 2. if KFs are being copied, then don't run KeyFrame Culling (in KeyFrameCulling function)
+        while (GetFlagCopyInitKFs()) {
+            usleep(1000);
+        }
+    }
+    SetFlagCopyInitKFs(true);
+
+    // Use all KeyFrames in map to compute
+    vector < KeyFrame * > vScaleGravityKF = mpMap->GetAllKeyFrames();
+    int N = vScaleGravityKF.size();
+    KeyFrame *pNewestKF = vScaleGravityKF[N - 1];
+    vector <cv::Mat> vTwc;
+    utils::eigen_aligned_vector<IMUPreintegrator> vIMUPreInt;
+    // Store initialization-required KeyFrame data
+    vector < KeyFrameInit * > vKFInit;
+
+    for (int i = 0; i < N; i++) {
+        KeyFrame *pKF = vScaleGravityKF[i];
+        vTwc.push_back(pKF->GetPoseInverse());
+        vIMUPreInt.push_back(pKF->GetIMUPreInt());
+        KeyFrameInit *pkfi = new KeyFrameInit(*pKF);
+        if (i != 0) {
+            pkfi->mpPrevKeyFrame = vKFInit[i - 1];
+        }
+        vKFInit.push_back(pkfi);
+    }
+
+    SetFlagCopyInitKFs(false);
+
+    // Step 1.
+    // Try to compute initial gyro bias, using optimization with Gauss-Newton
+    Vector3d bgest = Optimizer::OptimizeInitialGyroBias(vTwc, vIMUPreInt);
+
+    // Update biasg and pre-integration in LocalWindow. Remember to reset back to zero
+    for (int i = 0; i < N; i++) {
+        vKFInit[i]->bg = bgest;
+    }
+    for (int i = 0; i < N; i++) {
+        vKFInit[i]->ComputePreInt();
+    }
+
+    // Solve A*x=B for x=[s,gw] 4x1 vector
+    cv::Mat A = cv::Mat::zeros(3 * (N - 2), 4, CV_32F);
+    cv::Mat B = cv::Mat::zeros(3 * (N - 2), 1, CV_32F);
+    cv::Mat I3 = cv::Mat::eye(3, 3, CV_32F);
+
+    // Step 2.
+    // Approx Scale and Gravity vector in 'world' frame (first KF's camera frame)
+    for (int i = 0; i < N - 2; i++) {
+        //KeyFrameInit* pKF1 = vKFInit[i];//vScaleGravityKF[i];
+        KeyFrameInit *pKF2 = vKFInit[i + 1];
+        KeyFrameInit *pKF3 = vKFInit[i + 2];
+        // Delta time between frames
+        double dt12 = pKF2->mIMUPreInt.getDeltaTime();
+        double dt23 = pKF3->mIMUPreInt.getDeltaTime();
+        // Pre-integrated measurements
+        cv::Mat dp12 = Converter::toCvMat(pKF2->mIMUPreInt.getDeltaP());
+        cv::Mat dv12 = Converter::toCvMat(pKF2->mIMUPreInt.getDeltaV());
+        cv::Mat dp23 = Converter::toCvMat(pKF3->mIMUPreInt.getDeltaP());
+
+        // Pose of camera in world frame
+        cv::Mat Twc1 = vTwc[i].clone();//pKF1->GetPoseInverse();
+        cv::Mat Twc2 = vTwc[i + 1].clone();//pKF2->GetPoseInverse();
+        cv::Mat Twc3 = vTwc[i + 2].clone();//pKF3->GetPoseInverse();
+        // Position of camera center
+        cv::Mat pc1 = Twc1.rowRange(0, 3).col(3);
+        cv::Mat pc2 = Twc2.rowRange(0, 3).col(3);
+        cv::Mat pc3 = Twc3.rowRange(0, 3).col(3);
+        // Rotation of camera, Rwc
+        cv::Mat Rc1 = Twc1.rowRange(0, 3).colRange(0, 3);
+        cv::Mat Rc2 = Twc2.rowRange(0, 3).colRange(0, 3);
+        cv::Mat Rc3 = Twc3.rowRange(0, 3).colRange(0, 3);
+
+        // Stack to A/B matrix
+        // lambda*s + beta*g = gamma
+        cv::Mat lambda = (pc2 - pc1) * dt23 + (pc2 - pc3) * dt12;
+        cv::Mat beta = 0.5 * I3 * (dt12 * dt12 * dt23 + dt12 * dt23 * dt23);
+        cv::Mat gamma = (Rc3 - Rc2) * pcb * dt12 + (Rc1 - Rc2) * pcb * dt23 + Rc1 * Rcb * dp12 * dt23 -
+                        Rc2 * Rcb * dp23 * dt12 - Rc1 * Rcb * dv12 * dt12 * dt23;
+        lambda.copyTo(A.rowRange(3 * i + 0, 3 * i + 3).col(0));
+        beta.copyTo(A.rowRange(3 * i + 0, 3 * i + 3).colRange(1, 4));
+        gamma.copyTo(B.rowRange(3 * i + 0, 3 * i + 3));
+        // Tested the formulation in paper, -gamma. Then the scale and gravity vector is -xx
+
+        // Debug log
+        //cout<<"iter "<<i<<endl;
+    }
+    // Use svd to compute A*x=B, x=[s,gw] 4x1 vector
+    // A = u*w*vt, u*w*vt*x=B
+    // Then x = vt'*winv*u'*B
+    cv::Mat w, u, vt;
+    // Note w is 4x1 vector by SVDecomp()
+    // A is changed in SVDecomp() with cv::SVD::MODIFY_A for speed
+    cv::SVDecomp(A, w, u, vt, cv::SVD::MODIFY_A);
+    // Debug log
+    //cout<<"u:"<<endl<<u<<endl;
+    //cout<<"vt:"<<endl<<vt<<endl;
+    //cout<<"w:"<<endl<<w<<endl;
+
+    // Compute winv
+    cv::Mat winv = cv::Mat::eye(4, 4, CV_32F);
+    for (int i = 0; i < 4; i++) {
+        if (fabs(w.at<float>(i)) < 1e-10) {
+            w.at<float>(i) += 1e-10;
+        }
+
+        winv.at<float>(i, i) = 1. / w.at<float>(i);
+    }
+    // Then x = vt'*winv*u'*B
+    cv::Mat x = vt.t() * winv * u.t() * B;
+
+    // x=[s,gw] 4x1 vector
+    double sstar = x.at<float>(0);    // scale should be positive
+    cv::Mat gwstar = x.rowRange(1, 4);   // gravity should be about ~9.8
+
+    // Debug log
+    //cout<<"scale sstar: "<<sstar<<endl;
+
+    std::stringstream ss;
+    ss << gwstar.t();
+    SPDLOG_DEBUG("Initial approx g (step2) gwstar: {}, |gwstar|= {}", ss.str(), cv::norm(gwstar));
+
+    // Step 3.
+    // Use gravity magnitude 9.8 as constraint
+    // gI = [0;0;1], the normalized gravity vector in an inertial frame, NED type with no orientation.
+    cv::Mat gI = cv::Mat::zeros(3, 1, CV_32F);
+    gI.at<float>(2) = 1;
+    // Normalized approx. gravity vecotr in world frame
+    cv::Mat gwn = gwstar / cv::norm(gwstar);
+    // Debug log
+    //cout<<"gw normalized: "<<gwn<<endl;
+
+    // vhat = (gI x gw) / |gI x gw|
+    cv::Mat gIxgwn = gI.cross(gwn);
+    double normgIxgwn = cv::norm(gIxgwn);
+    cv::Mat vhat = gIxgwn / normgIxgwn;
+    double theta = std::atan2(normgIxgwn, gI.dot(gwn));
+    // Debug log
+    //cout<<"vhat: "<<vhat<<", theta: "<<theta*180.0/M_PI<<endl;
+
+    Eigen::Vector3d vhateig = Converter::toVector3d(vhat);
+    Eigen::Matrix3d RWIeig = Sophus::SO3::exp(vhateig * theta).matrix();
+    cv::Mat Rwi = Converter::toCvMat(RWIeig);
+    cv::Mat GI = gI * Config::getInstance().IMUParams().g;//9.8012;
+    // Solve C*x=D for x=[s,dthetaxy,ba] (1+2+3)x1 vector
+    cv::Mat C = cv::Mat::zeros(3 * (N - 2), 6, CV_32F);
+    cv::Mat D = cv::Mat::zeros(3 * (N - 2), 1, CV_32F);
+
+    for (int i = 0; i < N - 2; i++) {
+        //KeyFrameInit* pKF1 = vKFInit[i];//vScaleGravityKF[i];
+        KeyFrameInit *pKF2 = vKFInit[i + 1];
+        KeyFrameInit *pKF3 = vKFInit[i + 2];
+        // Delta time between frames
+        double dt12 = pKF2->mIMUPreInt.getDeltaTime();
+        double dt23 = pKF3->mIMUPreInt.getDeltaTime();
+        // Pre-integrated measurements
+        cv::Mat dp12 = Converter::toCvMat(pKF2->mIMUPreInt.getDeltaP());
+        cv::Mat dv12 = Converter::toCvMat(pKF2->mIMUPreInt.getDeltaV());
+        cv::Mat dp23 = Converter::toCvMat(pKF3->mIMUPreInt.getDeltaP());
+        cv::Mat Jpba12 = Converter::toCvMat(pKF2->mIMUPreInt.getJPBiasa());
+        cv::Mat Jvba12 = Converter::toCvMat(pKF2->mIMUPreInt.getJVBiasa());
+        cv::Mat Jpba23 = Converter::toCvMat(pKF3->mIMUPreInt.getJPBiasa());
+        // Pose of camera in world frame
+        cv::Mat Twc1 = vTwc[i].clone();//pKF1->GetPoseInverse();
+        cv::Mat Twc2 = vTwc[i + 1].clone();//pKF2->GetPoseInverse();
+        cv::Mat Twc3 = vTwc[i + 2].clone();//pKF3->GetPoseInverse();
+        // Position of camera center
+        cv::Mat pc1 = Twc1.rowRange(0, 3).col(3);
+        cv::Mat pc2 = Twc2.rowRange(0, 3).col(3);
+        cv::Mat pc3 = Twc3.rowRange(0, 3).col(3);
+        // Rotation of camera, Rwc
+        cv::Mat Rc1 = Twc1.rowRange(0, 3).colRange(0, 3);
+        cv::Mat Rc2 = Twc2.rowRange(0, 3).colRange(0, 3);
+        cv::Mat Rc3 = Twc3.rowRange(0, 3).colRange(0, 3);
+        // Stack to C/D matrix
+        // lambda*s + phi*dthetaxy + zeta*ba = psi
+        cv::Mat lambda = (pc2 - pc1) * dt23 + (pc2 - pc3) * dt12;
+        cv::Mat phi = -0.5 * (dt12 * dt12 * dt23 + dt12 * dt23 * dt23) * Rwi *
+                      SkewSymmetricMatrix(GI);  // note: this has a '-', different to paper
+        cv::Mat zeta = Rc2 * Rcb * Jpba23 * dt12 + Rc1 * Rcb * Jvba12 * dt12 * dt23 - Rc1 * Rcb * Jpba12 * dt23;
+        cv::Mat psi = (Rc1 - Rc2) * pcb * dt23 + Rc1 * Rcb * dp12 * dt23 - (Rc2 - Rc3) * pcb * dt12
+                      - Rc2 * Rcb * dp23 * dt12 - Rc1 * Rcb * dv12 * dt23 * dt12 -
+                      0.5 * Rwi * GI * (dt12 * dt12 * dt23 + dt12 * dt23 * dt23); // note:  - paper
+        lambda.copyTo(C.rowRange(3 * i + 0, 3 * i + 3).col(0));
+        phi.colRange(0, 2).copyTo(C.rowRange(3 * i + 0, 3 * i + 3).colRange(1,
+                                                                            3)); //only the first 2 columns, third term in dtheta is zero, here compute dthetaxy 2x1.
+        zeta.copyTo(C.rowRange(3 * i + 0, 3 * i + 3).colRange(3, 6));
+        psi.copyTo(D.rowRange(3 * i + 0, 3 * i + 3));
+
+        // Debug log
+        //cout<<"iter "<<i<<endl;
+    }
+
+    // Use svd to compute C*x=D, x=[s,dthetaxy,ba] 6x1 vector
+    // C = u*w*vt, u*w*vt*x=D
+    // Then x = vt'*winv*u'*D
+    cv::Mat w2, u2, vt2;
+    // Note w2 is 6x1 vector by SVDecomp()
+    // C is changed in SVDecomp() with cv::SVD::MODIFY_A for speed
+    cv::SVDecomp(C, w2, u2, vt2, cv::SVD::MODIFY_A);
+    // Debug log
+    //cout<<"u2:"<<endl<<u2<<endl;
+    //cout<<"vt2:"<<endl<<vt2<<endl;
+    //cout<<"w2:"<<endl<<w2<<endl;
+
+    // Compute winv
+    cv::Mat w2inv = cv::Mat::eye(6, 6, CV_32F);
+    for (int i = 0; i < 6; i++) {
+        if (fabs(w2.at<float>(i)) < 1e-10) {
+            w2.at<float>(i) += 1e-10;
+        }
+
+        w2inv.at<float>(i, i) = 1. / w2.at<float>(i);
+    }
+    // Then y = vt'*winv*u'*D
+    cv::Mat y = vt2.t() * w2inv * u2.t() * D;
+
+    double s_ = y.at<float>(0);
+    cv::Mat dthetaxy = y.rowRange(1, 3);
+    cv::Mat dbiasa_ = y.rowRange(3, 6);
+    Vector3d dbiasa_eig = Converter::toVector3d(dbiasa_);
+
+    // dtheta = [dx;dy;0]
+    cv::Mat dtheta = cv::Mat::zeros(3, 1, CV_32F);
+    dthetaxy.copyTo(dtheta.rowRange(0, 2));
+    Eigen::Vector3d dthetaeig = Converter::toVector3d(dtheta);
+    // Rwi_ = Rwi*exp(dtheta)
+    Eigen::Matrix3d Rwieig_ = RWIeig * Sophus::SO3::exp(dthetaeig).matrix();
+    cv::Mat Rwi_ = Converter::toCvMat(Rwieig_);
+
+
+    // Debug log
+    {
+        cv::Mat gwbefore = Rwi * GI;
+        cv::Mat gwafter = Rwi_ * GI;
+        //cout << "Time: " << mpCurrentKeyFrame->mTimeStamp - mnStartTime << ", sstar: " << sstar << ", s: " << s_
+        //     << endl;
+
+        fgw << mpCurrentKeyFrame->mTimeStamp << " "
+            << gwafter.at<float>(0) << " " << gwafter.at<float>(1) << " " << gwafter.at<float>(2) << " "
+            << gwbefore.at<float>(0) << " " << gwbefore.at<float>(1) << " " << gwbefore.at<float>(2) << " "
+            << endl;
+        fscale << mpCurrentKeyFrame->mTimeStamp << " "
+               << s_ << " " << sstar << " " << endl;
+        fbiasa << mpCurrentKeyFrame->mTimeStamp << " "
+               << dbiasa_.at<float>(0) << " " << dbiasa_.at<float>(1) << " " << dbiasa_.at<float>(2) << " " << endl;
+        fcondnum << mpCurrentKeyFrame->mTimeStamp << " "
+                 << w2.at<float>(0) << " " << w2.at<float>(1) << " " << w2.at<float>(2) << " " << w2.at<float>(3) << " "
+                 << w2.at<float>(4) << " " << w2.at<float>(5) << " " << endl;
+        //        ftime<<mpCurrentKeyFrame->mTimeStamp<<" "
+        //             <<(t3-t0)/cv::getTickFrequency()*1000<<" "<<endl;
+        fbiasg << mpCurrentKeyFrame->mTimeStamp << " "
+               << bgest(0) << " " << bgest(1) << " " << bgest(2) << " " << endl;
+
+        ofstream fRwi(tmpfilepath + "Rwi.txt");
+        fRwi << Rwieig_(0, 0) << " " << Rwieig_(0, 1) << " " << Rwieig_(0, 2) << " "
+             << Rwieig_(1, 0) << " " << Rwieig_(1, 1) << " " << Rwieig_(1, 2) << " "
+             << Rwieig_(2, 0) << " " << Rwieig_(2, 1) << " " << Rwieig_(2, 2) << endl;
+        fRwi.close();
+    }
+
+
+    // ********************************
+    // Todo:
+    // Add some logic or strategy to confirm init status
+    bool bVIOInited = false;
+    if (mbFirstTry) {
+        mbFirstTry = false;
+        mnStartTime = mpCurrentKeyFrame->mTimeStamp;
+    }
+    // TODO -- Change init by time! into keyframes instead !
+    if (pNewestKF->mTimeStamp - mnStartTime >= Config::getInstance().IMUParams().vins_init_time) {
+        bVIOInited = true;
+    }
+
+    if (bVIOInited) {
+        //cout << "bVIOInited is true! \n";
+        // Set NavState , scale and bias for all KeyFrames
+        // Scale
+        //double scale = s_;
+        mnVINSInitScale = s_;
+        // gravity vector in world frame, w
+        cv::Mat gw = Rwi_ * GI;
+        mGravityVec = gw.clone();
+        //Vector3d gweig = Converter::toVector3d(gw);
+        mRwiInit = Rwi_.clone();
+
+        SPDLOG_INFO("-------- Gravity Init Complete! ------");
+
+        // Set for now cuz we won't do GBA again for NoScale
+        SetFlagInitGBAFinish(true);
+        SetFirstVINSInited(true);
+        SetVINSInited(true);
+
+    }
+
+    for (int i = 0; i < N; i++) {
+        if (vKFInit[i])
+            delete vKFInit[i];
+    }
+
+    return bVIOInited;
+}
+
 void LocalMapping::AddToLocalWindow(KeyFrame *pKF) {
     mlLocalKeyFrames.push_back(pKF);
     if (mlLocalKeyFrames.size() > mnLocalWindowSize) {
@@ -840,17 +1201,19 @@ void LocalMapping::DeleteBadInLocalWindow(void) {
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
 
-LocalMapping::LocalMapping(Map *pMap, const float bMonocular) :
+LocalMapping::LocalMapping(Map *pMap, const bool bMonocular) :
         mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
         mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true),
         mbVINSInited(false), mbFirstTry(true), mbFirstVINSInited(false), mbUpdatingInitPoses(false),
         mbCopyInitKFs(false), mbInitGBAFinish(false) {
     mbUseObject = Config::getInstance().SystemParams().use_object;
+
     if (mbUseObject)
-        mpObjInitializer = std::make_shared<PointCloudObjectInitializer>();
+        mpObjInitializer = std::shared_ptr<PointCloudObjectInitializer>(new PointCloudObjectInitializer(pMap));
 
     mnLocalWindowSize = Config::getInstance().LocalMappingParams().window_size;
     mfObjectInitTimeOut = Config::getInstance().LocalMappingParams().object_detect_timeout;
+    mbUseIMU = Config::getInstance().SystemParams().use_imu;
 }
 
 void LocalMapping::SetLoopCloser(LoopClosing *pLoopCloser) {
@@ -874,7 +1237,8 @@ void LocalMapping::Run() {
 
         // Check if there are keyframes in the queue
         if (CheckNewKeyFrames()) {
-            bool bUseIMU = Config::getInstance().SystemParams().use_imu;
+
+            bool bIMUCond = GetUseIMUFlag();;
             // BoW conversion and insertion in Map
             ProcessNewKeyFrame();
 
@@ -899,43 +1263,47 @@ void LocalMapping::Run() {
 
                 // Local BA
                 if (mpMap->KeyFramesInMap() > 2) {
-                    if (bUseIMU) {
-                        if (mbUseObject) {
-                            // TODO!!
-                            throw std::runtime_error("Not Implemented!");
-                        } else {
-                            if (!GetVINSInited()) {
-                                //Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, this);
-                                Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap, this);
-                            } else {
-                                //Optimizer::LocalBundleAdjustmentNavStatePRV(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, mGravityVec, this);
+
+                    if (mbUseIMU) {
+
+                        if (!GetVINSInited()) {
+                            //Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, this);
+                            Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap, this);
+                            if (!Config::getInstance().SystemParams().real_time) {
+                                if (!GetVINSInited()){
+                                    bool tmpbool = mbMonocular ? TryInitVIO() : TryInitVIONoScale();
+                                    // SetVINSInited(tmpbool);
+                                    if (tmpbool) {
+                                        // Update map scale
+                                        if(mbMonocular){
+                                            mpMap->UpdateScale(mnVINSInitScale);
+                                            cout << "... scale updated from localmapping run...\n";
+                                        }
+                                        // Set initialization flag
+                                        SetFirstVINSInited(true);
+                                    }
+                                }
+                            }
+                        }
+                        else{
+                            if (mbUseObject) {
+                                // TODO -- Object + Gravity Optimization!!
+                                assert(!mbMonocular);
+                                // Optimizer::LocalBundleAdjustmentWithObjects2(mpCurrentKeyFrame, &mbAbortBA, mpMap);
+                                Optimizer::LocalBundleAdjustmentWithObjects(
+                                        mpCurrentKeyFrame, &mbAbortBA,
+                                        mpMap, mGravityVec
+                                        );
+                            }
+                            else {
                                 Optimizer::LocalBAPRVIDP(mpCurrentKeyFrame, mlLocalKeyFrames, &mbAbortBA, mpMap,
                                                          mGravityVec, this);
                             }
                         }
-
-
-                        // Visual-Inertial initialization for non-realtime mode
-                        if (!Config::getInstance().SystemParams().real_time) {
-                            // Try to initialize VIO, if not inited
-                            if (!GetVINSInited()) {
-                                bool tmpbool = TryInitVIO();
-                                SetVINSInited(tmpbool);
-                                if (tmpbool) {
-                                    // Update map scale
-                                    mpMap->UpdateScale(mnVINSInitScale);
-                                    cout << "... scale updated from localmapping run...\n";
-                                    // Set initialization flag
-                                    SetFirstVINSInited(true);
-                                }
-                            }
-                        }
-
                     } else {
                         auto start = utils::time::time_now();
                         if (mbUseObject) {
                             Optimizer::LocalBundleAdjustmentWithObjects2(mpCurrentKeyFrame, &mbAbortBA, mpMap);
-                            // Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
                         } else {
                             Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap);
                         }
@@ -949,11 +1317,10 @@ void LocalMapping::Run() {
                     ObjectCulling();
             }
 
-            if (bUseIMU){
+            if (bIMUCond) {
                 if (GetFlagInitGBAFinish())
                     mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
-            }
-            else{
+            } else {
                 mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
             }
 
@@ -982,20 +1349,20 @@ void LocalMapping::Run() {
 }
 
 void LocalMapping::InsertKeyFrame(KeyFrame *pKF) {
-    unique_lock<mutex> lock(mMutexNewKFs);
+    unique_lock <mutex> lock(mMutexNewKFs);
     mlNewKeyFrames.push_back(pKF);
     mbAbortBA = true;
 }
 
 
 bool LocalMapping::CheckNewKeyFrames() {
-    unique_lock<mutex> lock(mMutexNewKFs);
+    unique_lock <mutex> lock(mMutexNewKFs);
     return (!mlNewKeyFrames.empty());
 }
 
 void LocalMapping::ProcessNewKeyFrame() {
     {
-        unique_lock<mutex> lock(mMutexNewKFs);
+        unique_lock <mutex> lock(mMutexNewKFs);
         mpCurrentKeyFrame = mlNewKeyFrames.front();
         mlNewKeyFrames.pop_front();
     }
@@ -1025,7 +1392,9 @@ void LocalMapping::ProcessNewKeyFrame() {
     // Update links in the Covisibility Graph
     mpCurrentKeyFrame->UpdateConnections();
 
-    if (Config::getInstance().SystemParams().use_imu){
+    bool bUseIMU = GetUseIMUFlag();
+
+    if (bUseIMU) {
         // Delete bad KF in LocalWindow
         DeleteBadInLocalWindow();
         // Local (Sliding) Window
@@ -1120,7 +1489,7 @@ void LocalMapping::CreateNewMapPoints() {
         cv::Mat F12 = ComputeF12(mpCurrentKeyFrame, pKF2);
 
         // Search matches that fullfil epipolar constraint
-        vector<pair<size_t, size_t> > vMatchedIndices;
+        vector <pair<size_t, size_t>> vMatchedIndices;
         matcher.SearchForTriangulation(mpCurrentKeyFrame, pKF2, F12, vMatchedIndices, false);
 
         cv::Mat Rcw2 = pKF2->GetRotation();
@@ -1301,7 +1670,7 @@ void LocalMapping::SearchInNeighbors() {
     if (mbMonocular)
         nn = 20;
     const vector<KeyFrame *> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
-    vector<KeyFrame *> vpTargetKFs;
+    vector < KeyFrame * > vpTargetKFs;
     for (vector<KeyFrame *>::const_iterator vit = vpNeighKFs.begin(), vend = vpNeighKFs.end(); vit != vend; vit++) {
         KeyFrame *pKFi = *vit;
         if (pKFi->isBad() || pKFi->mnFuseTargetForKF == mpCurrentKeyFrame->mnId)
@@ -1324,7 +1693,7 @@ void LocalMapping::SearchInNeighbors() {
 
     // Search matches by projection from current KF in target KFs
     ORBmatcher matcher;
-    vector<MapPoint *> vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
+    vector < MapPoint * > vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
     for (vector<KeyFrame *>::iterator vit = vpTargetKFs.begin(), vend = vpTargetKFs.end(); vit != vend; vit++) {
         KeyFrame *pKFi = *vit;
 
@@ -1332,14 +1701,14 @@ void LocalMapping::SearchInNeighbors() {
     }
 
     // Search matches by projection from target KFs in current KF
-    vector<MapPoint *> vpFuseCandidates;
+    vector < MapPoint * > vpFuseCandidates;
     vpFuseCandidates.reserve(vpTargetKFs.size() * vpMapPointMatches.size());
 
     for (vector<KeyFrame *>::iterator vitKF = vpTargetKFs.begin(), vendKF = vpTargetKFs.end();
          vitKF != vendKF; vitKF++) {
         KeyFrame *pKFi = *vitKF;
 
-        vector<MapPoint *> vpMapPointsKFi = pKFi->GetMapPointMatches();
+        vector < MapPoint * > vpMapPointsKFi = pKFi->GetMapPointMatches();
 
         for (vector<MapPoint *>::iterator vitMP = vpMapPointsKFi.begin(), vendMP = vpMapPointsKFi.end();
              vitMP != vendMP; vitMP++) {
@@ -1391,14 +1760,14 @@ cv::Mat LocalMapping::ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2) {
 }
 
 void LocalMapping::RequestStop() {
-    unique_lock<mutex> lock(mMutexStop);
+    unique_lock <mutex> lock(mMutexStop);
     mbStopRequested = true;
-    unique_lock<mutex> lock2(mMutexNewKFs);
+    unique_lock <mutex> lock2(mMutexNewKFs);
     mbAbortBA = true;
 }
 
 bool LocalMapping::Stop() {
-    unique_lock<mutex> lock(mMutexStop);
+    unique_lock <mutex> lock(mMutexStop);
     if (mbStopRequested && !mbNotStop) {
         mbStopped = true;
         cout << "Local Mapping STOP" << endl;
@@ -1409,18 +1778,18 @@ bool LocalMapping::Stop() {
 }
 
 bool LocalMapping::isStopped() {
-    unique_lock<mutex> lock(mMutexStop);
+    unique_lock <mutex> lock(mMutexStop);
     return mbStopped;
 }
 
 bool LocalMapping::stopRequested() {
-    unique_lock<mutex> lock(mMutexStop);
+    unique_lock <mutex> lock(mMutexStop);
     return mbStopRequested;
 }
 
 void LocalMapping::Release() {
-    unique_lock<mutex> lock(mMutexStop);
-    unique_lock<mutex> lock2(mMutexFinish);
+    unique_lock <mutex> lock(mMutexStop);
+    unique_lock <mutex> lock2(mMutexFinish);
     if (mbFinished)
         return;
     mbStopped = false;
@@ -1433,17 +1802,17 @@ void LocalMapping::Release() {
 }
 
 bool LocalMapping::AcceptKeyFrames() {
-    unique_lock<mutex> lock(mMutexAccept);
+    unique_lock <mutex> lock(mMutexAccept);
     return mbAcceptKeyFrames;
 }
 
 void LocalMapping::SetAcceptKeyFrames(bool flag) {
-    unique_lock<mutex> lock(mMutexAccept);
+    unique_lock <mutex> lock(mMutexAccept);
     mbAcceptKeyFrames = flag;
 }
 
 bool LocalMapping::SetNotStop(bool flag) {
-    unique_lock<mutex> lock(mMutexStop);
+    unique_lock <mutex> lock(mMutexStop);
 
     if (flag && mbStopped)
         return false;
@@ -1459,7 +1828,7 @@ void LocalMapping::InterruptBA() {
 
 
 void LocalMapping::KeyFrameCulling() {
-    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
+    bool bUseIMU = GetUseIMUFlag();
 
     if (bUseIMU) {
         if (Config::getInstance().SystemParams().real_time && GetFlagCopyInitKFs())
@@ -1471,7 +1840,7 @@ void LocalMapping::KeyFrameCulling() {
     // A keyframe is considered redundant if the 90% of the MapPoints it sees, are seen
     // in at least other 3 keyframes (in the same or finer scale)
     // We only consider close stereo points
-    vector<KeyFrame *> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
+    vector < KeyFrame * > vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
 
     if (bUseIMU) {
         // Visual-Inertial SLAM
@@ -1630,13 +1999,13 @@ cv::Mat LocalMapping::SkewSymmetricMatrix(const cv::Mat &v) {
 
 void LocalMapping::RequestReset() {
     {
-        unique_lock<mutex> lock(mMutexReset);
+        unique_lock <mutex> lock(mMutexReset);
         mbResetRequested = true;
     }
 
     while (1) {
         {
-            unique_lock<mutex> lock2(mMutexReset);
+            unique_lock <mutex> lock2(mMutexReset);
             if (!mbResetRequested)
                 break;
         }
@@ -1645,7 +2014,7 @@ void LocalMapping::RequestReset() {
 }
 
 void LocalMapping::ResetIfRequested() {
-    unique_lock<mutex> lock(mMutexReset);
+    unique_lock <mutex> lock(mMutexReset);
     if (mbResetRequested) {
         mlNewKeyFrames.clear();
         mlpRecentAddedMapPoints.clear();
@@ -1659,24 +2028,24 @@ void LocalMapping::ResetIfRequested() {
 }
 
 void LocalMapping::RequestFinish() {
-    unique_lock<mutex> lock(mMutexFinish);
+    unique_lock <mutex> lock(mMutexFinish);
     mbFinishRequested = true;
 }
 
 bool LocalMapping::CheckFinish() {
-    unique_lock<mutex> lock(mMutexFinish);
+    unique_lock <mutex> lock(mMutexFinish);
     return mbFinishRequested;
 }
 
 void LocalMapping::SetFinish() {
-    unique_lock<mutex> lock(mMutexFinish);
+    unique_lock <mutex> lock(mMutexFinish);
     mbFinished = true;
-    unique_lock<mutex> lock2(mMutexStop);
+    unique_lock <mutex> lock2(mMutexStop);
     mbStopped = true;
 }
 
 bool LocalMapping::isFinished() {
-    unique_lock<mutex> lock(mMutexFinish);
+    unique_lock <mutex> lock(mMutexFinish);
     return mbFinished;
 }
 
@@ -1691,18 +2060,24 @@ void LocalMapping::CleanUpInitializeObjectQueue() {
     if (mlObjectDetectWaitQueue.empty())
         return;
 
-    for (auto it = mlObjectDetectWaitQueue.begin(), end = mlObjectDetectWaitQueue.end(); it != end; it++){
-        if (it->first->IsObjectsReady() || it->first->isBad()){
+    for (auto it = mlObjectDetectWaitQueue.begin(), end = mlObjectDetectWaitQueue.end(); it != end; it++) {
+        if (it->first->IsObjectsReady() || it->first->isBad()) {
             SPDLOG_INFO("Cleaning Init KF: {}", it->first->mnId);
-            if (!it->first->isBad())
-                mpObjInitializer->InitializeObjects(it->first, mpMap);
+            if (!it->first->isBad()){
+                if(Config::getInstance().SystemParams().use_imu){
+                    mpObjInitializer->InitializedObjectsWithGravity(it->first, mGravityVec);
+                }
+                else{
+                    mpObjInitializer->InitializeObjects(it->first);
+                }
+            }
 
             it->second = true;
             //mlObjectDetectWaitQueue.erase(it);
         }
     }
 
-    mlObjectDetectWaitQueue.remove_if([](std::pair<KeyFrame* , bool> p){ return p.second; });
+    mlObjectDetectWaitQueue.remove_if([](std::pair<KeyFrame *, bool> p) { return p.second; });
 }
 
 void LocalMapping::InitializeCurrentKeyFrameObjects() {
@@ -1718,7 +2093,7 @@ void LocalMapping::InitializeCurrentKeyFrameObjects() {
     SPDLOG_INFO("INIT objects for KF {}", mpCurrentKeyFrame->mnId);
     auto start_time = utils::time::time_now();
     bool skip = false;
-    if(!mpCurrentKeyFrame->IsObjectsReady()){
+    if (!mpCurrentKeyFrame->IsObjectsReady()) {
         SPDLOG_INFO("Objects in KF {} not ready! waiting", mpCurrentKeyFrame->mnId);
         while (!mpCurrentKeyFrame->IsObjectsReady()) {
             usleep(100);
@@ -1733,9 +2108,15 @@ void LocalMapping::InitializeCurrentKeyFrameObjects() {
         }
     }
 
-    if (!skip){
+    if (!skip) {
         auto start_time2 = utils::time::time_now();
-        mpObjInitializer->InitializeObjects(mpCurrentKeyFrame, mpMap);
+        if(Config::getInstance().SystemParams().use_imu){
+            mpObjInitializer->InitializedObjectsWithGravity(mpCurrentKeyFrame, mGravityVec);
+        }
+        else{
+            mpObjInitializer->InitializeObjects(mpCurrentKeyFrame);
+        }
+
         SPDLOG_INFO("INIT objects DONE for KF {}, time={}", mpCurrentKeyFrame->mnId,
                     utils::time::time_diff_from_now_second(start_time2));
     }
@@ -1750,12 +2131,11 @@ bool LocalMapping::DetectWaitQueueAvaliable() {
     return mlObjectDetectWaitQueue.size() < mnObjectDetectWaitQueueSize;
 }
 
-void LocalMapping::PushDetectWaitQueue(KeyFrame* pKeyFrame) {
+void LocalMapping::PushDetectWaitQueue(KeyFrame *pKeyFrame) {
     std::unique_lock<std::mutex> lock(mMutexObjectDetectWaitQueue);
     if (mlObjectDetectWaitQueue.size() < mnObjectDetectWaitQueueSize)
-        mlObjectDetectWaitQueue.push_back(std::pair<KeyFrame*, bool>(pKeyFrame, false));
-    else
-        SPDLOG_WARN("Detect wait queue full, skipping process KF: {}", pKeyFrame->mnId);
+        mlObjectDetectWaitQueue.push_back(std::pair<KeyFrame *, bool>(pKeyFrame, false));
+    else SPDLOG_WARN("Detect wait queue full, skipping process KF: {}", pKeyFrame->mnId);
 }
 
 } //namespace ORB_SLAM

@@ -1,0 +1,14 @@
+<launch>
+    <arg name="bagfile" default="/media/backup/EuRoc/MH_01_easy.bag"/>
+    <arg name="realtime" default="false"/>
+    <node pkg="VIORB" type="stereo" name="VIORB"
+          args="$(find VIORB)/../../../Vocabulary/ORBvoc.txt $(find VIORB)/config/stereo_vi/EuRoC.yaml"
+          cwd="node" output="screen">
+        <param name="realtime_mode" value="$(arg realtime)"/>
+        <param name="sensor_type_str" value="STEREO"/>
+    </node>
+
+
+    <node pkg="rosbag" type="play" name="player" args="--clock $(arg bagfile)" if="$(arg realtime)" />
+
+</launch>

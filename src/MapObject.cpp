@@ -77,11 +77,13 @@ cv::Mat MapObject::GetScale() {
 void MapObject::AddObservation(KeyFrame* pKF, size_t idx)
 {
     unique_lock<mutex> lock(mMutexObservations);
+    msKeyFrames.insert(pKF);
     if(mObservations.count(pKF))
         return;
     mObservations[pKF]=idx;
-
     nObs++;
+
+
 //    if(pKF->mvuRight[idx]>=0)
 //        nObs+=2;
 //    else
@@ -122,6 +124,11 @@ map<KeyFrame*, size_t> MapObject::GetObservations()
 {
     unique_lock<mutex> lock(mMutexObservations);
     return mObservations;
+}
+
+std::vector<KeyFrame*> MapObject::GetObservingKeyFrames() {
+    unique_lock<mutex> lock(mMutexObservations);
+    return std::vector<KeyFrame*>(msKeyFrames.begin(), msKeyFrames.end());
 }
 
 std::vector<MapPoint*> MapObject::GetMapPoints() {
@@ -198,10 +205,11 @@ bool MapObject::GetProjectedBoundingBox(ORB_SLAM2::KeyFrame *pTargetKF, cv::Rect
         st = pTargetKF->IsInImage(bb_center.x, bb_center.y);
     }
     else {
-        st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y);
-        st |= pTargetKF->IsInImage(bb.tl().x + bb.width, bb.tl().y);
-        st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y + bb.height);
-        st |= pTargetKF->IsInImage(bb.br().x, bb.br().y);
+//        st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y);
+//        st |= pTargetKF->IsInImage(bb.tl().x + bb.width, bb.tl().y);
+//        st |= pTargetKF->IsInImage(bb.tl().x, bb.tl().y + bb.height);
+//        st |= pTargetKF->IsInImage(bb.br().x, bb.br().y);
+        st = pTargetKF->IsIntersecImage(bb);
     }
 
     return st;

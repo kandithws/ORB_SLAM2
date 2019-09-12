@@ -56,13 +56,18 @@ class FrameDrawer;
 
 class MapObject;
 
+class LocalMapping;
+
+class Cuboid;
+
 class KeyFrame {
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    //KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, std::vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
-    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, utils::eigen_aligned_vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
+    // KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, std::vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
+    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, LocalMapping* pLocalMapper, utils::eigen_aligned_vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
+    // KeyFrame(Frame &F, LocalMapper *pLocalMapper, Map *pMap, KeyFrameDatabase *pKFDB, utils::eigen_aligned_vector<IMUData>& vIMUData, KeyFrame *pLastKF = NULL);
 
     KeyFrame *GetPrevKeyFrame(void);
 
@@ -130,9 +135,9 @@ class KeyFrame {
     IMUPreintegrator mIMUPreInt;
 
   public:
-    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB);
+    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, LocalMapping* pLocalMapper);
 
-    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB,
+    KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB, LocalMapping* pLocalMapper,
              const cv::Mat &imColor, const cv::Mat &imGray,
              bool rgb = false);
 
@@ -231,6 +236,7 @@ class KeyFrame {
 
     // Image
     bool IsInImage(const float &x, const float &y) const;
+    bool IsIntersecImage(const cv::Rect &rect) const;
 
     // Enable/Disable bad flag changes
     void SetNotErase();
@@ -256,6 +262,8 @@ class KeyFrame {
     bool IsObjectsReady();
 
     std::vector<std::shared_ptr<PredictedObject> > GetObjectPredictions();
+    std::vector<Cuboid* > GetObjectPredictionsCuboidEstimate();
+
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
   public:
@@ -310,6 +318,7 @@ class KeyFrame {
     // TODO : Migrate this to protected
     std::vector<uint32_t> mvKeysUnColor;
     std::vector<std::shared_ptr<PredictedObject> > mvObjectPrediction;
+    std::vector<Cuboid* > mvObjectPredictionCuboidEst;
     std::vector<MapObject *> mvpMapObjects;
     std::map<MapObject *, size_t> mvpMapObjectsInverse;
 
@@ -333,6 +342,7 @@ class KeyFrame {
     const int mnMinY;
     const int mnMaxX;
     const int mnMaxY;
+    const cv::Rect mImageBoundRect;
     const cv::Mat mK;
 
     std::mutex mMutexObject;
@@ -380,6 +390,7 @@ class KeyFrame {
     float mHalfBaseline; // Only for visualization
 
     Map *mpMap;
+    LocalMapping *mpLocalMapper;
 
     std::mutex mMutexPose;
     std::mutex mMutexConnections;

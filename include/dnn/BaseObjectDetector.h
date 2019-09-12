@@ -8,6 +8,7 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include <memory>
+#include "Converter.h"
 
 namespace ORB_SLAM2 {
 
@@ -29,6 +30,7 @@ class PredictedObject {
     const MASK_TYPE _mask_type;
 
     // box getters to alias the legacy version
+
 
     const cv::Rect2f& box() const;
 

@@ -73,6 +73,7 @@ void Viewer::Run()
     pangolin::Var<bool> menuShowGraph("menu.Show Graph",true,true);
     pangolin::Var<bool> menuShowObjects("menu.Show Objects",true,true);
     pangolin::Var<bool> menuShowObjectGraph("menu.Show ObjectGraph",true,true);
+    pangolin::Var<bool> menuShowGravity("menu.Show Gravity",true,true);
     pangolin::Var<bool> menuLocalizationMode("menu.Localization Mode",false,true);
     pangolin::Var<bool> menuReset("menu.Reset",false,false);
 
@@ -141,6 +142,9 @@ void Viewer::Run()
             mpMapDrawer->DrawObjects(menuShowObjects, menuShowObjectGraph);
         }
 
+        if(menuShowGravity){
+            mpMapDrawer->DrawGravity();
+        }
 
         pangolin::FinishFrame();
 #endif

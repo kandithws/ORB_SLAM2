@@ -50,7 +50,7 @@ class Map {
 
     //-----------------------------------------
   public:
-    typedef pcl::PointXYZRGBL PCLPointT;
+    typedef pcl::PointXYZRGB PCLPointT;
     Map();
     ~Map();
     void AddKeyFrame(KeyFrame *pKF);
@@ -62,6 +62,7 @@ class Map {
     void SetReferenceMapPoints(const std::vector<MapPoint *> &vpMPs);
     void InformNewBigChange();
     int GetLastBigChangeIdx();
+    KeyFrame* GetInitialKeyFrame();
 
     std::vector<KeyFrame *> GetAllKeyFrames();
     std::vector<MapPoint *> GetAllMapPoints();
@@ -77,17 +78,16 @@ class Map {
 
     vector<KeyFrame *> mvpKeyFrameOrigins;
 
-    std::mutex mMutexMapUpdate;
-
-
-    pcl::PointCloud<PCLPointT>::Ptr GetCloudPtr();
-    void NotifyMapUpdated();
-
     // This avoid that two points are created simultaneously in separate threads (id conflict)
     std::mutex mMutexPointCreation;
     std::mutex mMutexObjectCreation;
 
+    std::mutex mMutexMapUpdate;
+
     void ShutDown();
+
+    void SetGravityVec(const cv::Mat& g);
+    bool GetGravityVec(cv::Mat& g);
 
   protected:
     std::set<MapPoint *> mspMapPoints;
@@ -95,16 +95,6 @@ class Map {
     std::set<MapObject *> mspMapObjects;
 
     std::vector<MapPoint *> mvpReferenceMapPoints;
-
-    // Notify Condition variable wheter map is updated
-
-    bool mbMapUpdate = false; // Trigger RenderPointCloud
-    std::condition_variable mcvMapUpdate;
-
-    // PCL Related FN
-    void InitPointCloudThread();
-    void RenderPointCloudThread();
-    void RenderPointCloud();
 
     long unsigned int mnMaxKFid;
 
@@ -116,13 +106,15 @@ class Map {
     // Point Cloud related attributes
     bool mbIsShutdown = false;
     std::mutex mMutexCloud;
-    pcl::PointCloud<PCLPointT>::Ptr mpCloudMap;
     std::shared_ptr<std::thread> mtPointcloudRendererThread;
 
-
-    friend class PCLViewer;
     bool mbRenderReady = false; // for PCLViewer
 
+    std::mutex mMutexGravityVec;
+    cv::Mat mGravityVec;
+    bool mbGravityVecInited = false;
+    float mfGravityVecScale = 1.0;
+    KeyFrame* mpInitialKeyFrame;
 };
 } //namespace ORB_SLAM
 

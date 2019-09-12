@@ -87,6 +87,11 @@ class Tracking {
 
     cv::Mat GrabImageMonoVI(const cv::Mat &im, const utils::eigen_aligned_vector<IMUData> &vimu, const double &timestamp);
 
+    cv::Mat GrabImageStereoVI(const cv::Mat &imRectLeft, const cv::Mat &imRectRight,
+            const utils::eigen_aligned_vector<IMUData> &vimu, const double &timestamp);
+
+    cv::Mat GrabImageRGBDVI(const cv::Mat &imRGB, const cv::Mat &imD,
+            const utils::eigen_aligned_vector<IMUData> &vimu, const double &timestamp);
     // IMU Data since last KF. Append when new data is provided
     // Should be cleared in 1. initialization beginning, 2. new keyframe created.
     utils::eigen_aligned_vector<IMUData> mvIMUSinceLastKF;

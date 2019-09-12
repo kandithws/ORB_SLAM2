@@ -39,6 +39,7 @@ class Cuboid {
     void fromVector(const Eigen::Vector10d& v);
 
     inline const Eigen::Vector3d& getTranslation() const { return mPose.translation(); }
+    inline const Eigen::Quaterniond& getRotation() const { return mPose.rotation(); }
     inline void setTranslation(const Eigen::Vector3d& t_) { mPose.setTranslation(t_); }
     inline void setRotation(const Eigen::Quaterniond& r_) { mPose.setRotation(r_); }
     inline void setRotation(const Eigen::Matrix3d& R) { mPose.setRotation(Eigen::Quaterniond(R)); }
@@ -67,6 +68,10 @@ class Cuboid {
 
     // transform a global cuboid to local cuboid  Twc is camera pose. from camera to world
     Cuboid transformTo(const SE3Quat& Twc) const;
+
+    Eigen::Vector3d computePointBoundaryError(const Vector3d &world_point, const double& max_outside_margin_ratio) const;
+
+    // bool isOutlierPoint(const Vector3d &world_point, const double& max_outside_margin_ratio);
 
     // xyz roll pitch yaw half_scale
     Eigen::Vector9d toMinimalVector() const;

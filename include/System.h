@@ -81,11 +81,16 @@ class System {
     // Returns the camera pose (empty if tracking fails).
     cv::Mat TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp);
 
+    cv::Mat TrackStereoVI(const cv::Mat &imLeft, const cv::Mat &imRight,
+            const utils::eigen_aligned_vector<IMUData> &vimu, const double &timestamp);
     // Process the given rgbd frame. Depthmap must be registered to the RGB frame.
     // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Input depthmap: Float (CV_32F).
     // Returns the camera pose (empty if tracking fails).
     cv::Mat TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp);
+
+    cv::Mat TrackRGBDVI(const cv::Mat &im, const cv::Mat &depthmap,
+            const utils::eigen_aligned_vector<IMUData> &vimu, const double &timestamp);
 
     // Proccess the given monocular frame
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
@@ -94,6 +99,7 @@ class System {
 
     // Track Visual Inertial SLAM
     cv::Mat TrackMonoVI(const cv::Mat &im, const utils::eigen_aligned_vector<IMUData> &vimu, const double &timestamp);
+
 
     // This stops local mapping thread (map building) and performs only camera tracking.
     void ActivateLocalizationMode();

@@ -37,11 +37,12 @@ class MapObject {
     void AddObservation(KeyFrame *pKF, size_t idx);
     void EraseObservation(KeyFrame *pKF);
 
+
     void AddObservation(MapPoint *pMP);
     void AddObservations(std::vector<MapPoint*> &vpMP);
 
     std::map<KeyFrame *, size_t> GetObservations();
-    //std::vector<KeyFrame*> GetObservingKeyFrames();
+    std::vector<KeyFrame*> GetObservingKeyFrames();
     int Observations();
 
     std::vector<MapPoint*> GetMapPoints(); // TODO -- add counts
@@ -87,11 +88,14 @@ class MapObject {
     // Keyframes observing the object and associated index in keyframe
     std::mutex mMutexObservations;
     std::map<KeyFrame *, size_t> mObservations;
+    std::set<KeyFrame*> msKeyFrames;
+
     int nObs = 0;
 
     // Object has_many map points, map point belongs to one object at a time
     //std::set<MapPoint *> mspMPObservations;
     std::map<MapPoint *, int> mmapMPObservations;
+
 
     KeyFrame* mpRefKeyframe;
     Map *mpMap;

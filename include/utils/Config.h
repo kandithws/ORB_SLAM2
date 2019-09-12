@@ -30,6 +30,7 @@ typedef struct {
     double std_dev_mul_th = 0.8;
     bool project_2d_outlier = true;
     bool use_mask = true;
+    bool associate_centroid_only = true; // On Object association, full BB check or centroid only?
 } ObjectInitializer;
 
 typedef struct {
@@ -104,8 +105,10 @@ typedef struct {
     std::string bagfile;
     std::string imu_topic;
     std::string image_topic;
+    std::string image2_topic;
     bool multiply_g =  false; // _bAccMultiply9p8
     double discard_time = 0.0;
+    bool pre_rectify_images = false;
 } Runtime;
 
 }

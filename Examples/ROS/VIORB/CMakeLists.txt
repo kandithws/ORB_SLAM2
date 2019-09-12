@@ -4,7 +4,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rosbuild_init()
 
 IF(NOT ROS_BUILD_TYPE)
-  SET(ROS_BUILD_TYPE Release)
+  SET(ROS_BUILD_TYPE RelWithDebInfo)
 ENDIF()
 
 MESSAGE("Build type: " ${ROS_BUILD_TYPE})
@@ -91,5 +91,15 @@ src/MsgSync/MsgSynchronizer.h
 target_link_libraries(VIORB
 ${LIBS}
 )
+
+rosbuild_add_executable(stereo
+        src/ros_vio_stereo.cc
+        src/MsgSync/StereoMsgSynchronizer.cpp
+        src/MsgSync/StereoMsgSynchronizer.h
+        )
+
+target_link_libraries(stereo
+        ${LIBS}
+        )
 
 

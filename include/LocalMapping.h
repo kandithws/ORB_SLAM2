@@ -53,6 +53,8 @@ class LocalMapping {
 
     bool TryInitVIO(void);
 
+    bool TryInitVIONoScale(void);
+
     bool GetVINSInited(void);
 
     void SetVINSInited(bool flag);
@@ -92,6 +94,8 @@ class LocalMapping {
         mbInitGBAFinish = flag;
     }
 
+    bool GetUseIMUFlag();
+
   protected:
     double mnStartTime;
     bool mbFirstTry;
@@ -128,7 +132,7 @@ class LocalMapping {
     }
 
   public:
-    LocalMapping(Map *pMap, const float bMonocular);
+    LocalMapping(Map *pMap, const bool bMonocular);
 
     void SetLoopCloser(LoopClosing *pLoopCloser);
 
@@ -241,11 +245,11 @@ class LocalMapping {
     std::mutex mMutexLocalBA;
 
     float mfObjectInitTimeOut = 2.5f;
-    int mnObjectDetectWaitQueueSize = 20;
+    int mnObjectDetectWaitQueueSize = 5;
     void PushDetectWaitQueue(KeyFrame* pKeyFrame);
     std::mutex mMutexObjectDetectWaitQueue;
     std::list<std::pair<KeyFrame *, bool> > mlObjectDetectWaitQueue;
-
+    bool mbUseIMU;
 
 };
 

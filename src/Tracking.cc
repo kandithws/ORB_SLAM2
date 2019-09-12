@@ -468,6 +468,86 @@ cv::Mat Tracking::GrabImageMonoVI(const cv::Mat &im, const utils::eigen_aligned_
     return mCurrentFrame.mTcw.clone();
 }
 
+
+cv::Mat Tracking::GrabImageStereoVI(const cv::Mat &imRectLeft, const cv::Mat &imRectRight,
+                          const ORB_SLAM2::utils::eigen_aligned_vector<IMUData> &vimu, const double &timestamp){
+
+    mvIMUSinceLastKF.insert(mvIMUSinceLastKF.end(), vimu.begin(), vimu.end());
+
+    {
+        std::unique_lock<std::mutex> lock(mMutexImColor);
+        mImColor = imRectLeft;
+        mImColorRight = imRectRight;
+
+
+        cv::Mat imGrayRight;
+
+        if (mImColor.channels() == 3) {
+            if (mbRGB) {
+                cvtColor(mImColor, mImGray, CV_RGB2GRAY);
+                cvtColor(mImColorRight, imGrayRight, CV_RGB2GRAY);
+            } else {
+                cvtColor(mImColor, mImGray, CV_BGR2GRAY);
+                cvtColor(mImColorRight, imGrayRight, CV_BGR2GRAY);
+            }
+        } else if (mImColor.channels() == 4) {
+            if (mbRGB) {
+                cvtColor(mImColor, mImGray, CV_RGBA2GRAY);
+                cvtColor(mImColorRight, imGrayRight, CV_RGBA2GRAY);
+            } else {
+                cvtColor(mImColor, mImGray, CV_BGRA2GRAY);
+                cvtColor(mImColorRight, imGrayRight, CV_BGRA2GRAY);
+            }
+        }
+
+
+        mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, vimu, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK,
+                              mDistCoef, mbf, mThDepth);
+    }
+    Track();
+    //TrackIMUStereo();
+
+    return mCurrentFrame.mTcw.clone();
+}
+
+cv::Mat Tracking::GrabImageRGBDVI(const cv::Mat &imRGB, const cv::Mat &imD,
+                                  const ORB_SLAM2::utils::eigen_aligned_vector<ORB_SLAM2::IMUData> &vimu,
+                                  const double &timestamp) {
+
+    mvIMUSinceLastKF.insert(mvIMUSinceLastKF.end(), vimu.begin(), vimu.end());
+
+    {
+        std::unique_lock<std::mutex> lock(mMutexImColor);
+        mImColor = imRGB;
+
+        cv::Mat imDepth = imD;
+
+        assert(mImColor.channels() >= 3);
+
+        if (mImColor.channels() == 3) {
+            if (mbRGB)
+                cvtColor(mImColor, mImGray, CV_RGB2GRAY);
+            else
+                cvtColor(mImColor, mImGray, CV_BGR2GRAY);
+        } else if (mImColor.channels() == 4) {
+            if (mbRGB)
+                cvtColor(mImColor, mImGray, CV_RGBA2GRAY);
+            else
+                cvtColor(mImColor, mImGray, CV_BGRA2GRAY);
+        }
+
+        if ((fabs(mDepthMapFactor - 1.0f) > 1e-5) || imDepth.type() != CV_32F)
+            imDepth.convertTo(imDepth, CV_32F, mDepthMapFactor);
+
+        mCurrentFrame = Frame(mImGray, imDepth, timestamp, vimu, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef, mbf,
+                              mThDepth);
+    }
+    Track();
+    // TrackIMUStereo();
+
+    return mCurrentFrame.mTcw.clone();
+}
+
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
@@ -617,7 +697,6 @@ void Tracking::SetViewer(Viewer *pViewer) {
 
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp) {
-    // TODO -- 2 rgb images for stereo vision
 
     {
         std::unique_lock<std::mutex> lock(mMutexImColor);
@@ -727,7 +806,7 @@ void Tracking::Track() {
     // Get Map Mutex -> Map cannot be changed
     unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
     //auto lock = Map::CreateUpdateLock(mpMap);
-    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
+    bool bUseIMU = mpLocalMapper->GetUseIMUFlag();
     // Different operation, according to whether the map is updated
     bool bMapUpdated = false;
     if (bUseIMU) {
@@ -1033,12 +1112,23 @@ void Tracking::StereoInitialization() {
     if (mCurrentFrame.N > 500) {
         // Set Frame pose to the origin
         mCurrentFrame.SetPose(cv::Mat::eye(4, 4, CV_32F));
+
         KeyFrame *pKFini;
         // Create KeyFrame
-        if (mbUseObject) {
-            pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mImColor, mImGray);
-        } else {
-            pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+        if (Config::getInstance().SystemParams().use_imu) {
+            utils::eigen_aligned_vector<IMUData> vimu;
+            for (size_t i = 0; i < mvIMUSinceLastKF.size(); i++) {
+                // TODO -- maybe we can copy, cuz we have only 1 frame ??
+                IMUData imu = mvIMUSinceLastKF[i];
+                if (imu._t < mCurrentFrame.mTimeStamp)
+                    vimu.push_back(imu);
+            }
+
+            pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper, vimu, NULL);
+            pKFini->ComputePreInt();
+        }
+        else {
+            pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper);
         }
 
 
@@ -1168,15 +1258,15 @@ void Tracking::CreateInitialMapMonocular() {
     KeyFrame *pKFcur;
 
     if (Config::getInstance().SystemParams().use_imu) {
-        pKFini = new KeyFrame(mInitialFrame, mpMap, mpKeyFrameDB, vimu1, NULL);
+        pKFini = new KeyFrame(mInitialFrame, mpMap, mpKeyFrameDB, mpLocalMapper, vimu1, NULL);
         pKFini->ComputePreInt();
-        pKFcur = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, vimu2, pKFini);
+        pKFcur = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper, vimu2, pKFini);
         pKFcur->ComputePreInt();
         // Clear IMUData buffer
         mvIMUSinceLastKF.clear();
     } else {
-        pKFini = new KeyFrame(mInitialFrame, mpMap, mpKeyFrameDB);
-        pKFcur = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+        pKFini = new KeyFrame(mInitialFrame, mpMap, mpKeyFrameDB, mpLocalMapper);
+        pKFcur = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper);
     }
 
     pKFini->ComputeBoW();
@@ -1267,7 +1357,6 @@ void Tracking::CreateInitialMapMonocular() {
 
     mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
-    //KeyFrame::nInitId = pKFcur->mnId;
     mState = OK;
 }
 
@@ -1487,7 +1576,7 @@ bool Tracking::NeedNewKeyFrame() {
     if (mbOnlyTracking)
         return false;
 
-    auto bUseIMU = Config::getInstance().SystemParams().use_imu;
+    bool bUseIMU = mpLocalMapper->GetUseIMUFlag();
 
     // While updating initial poses
     if (bUseIMU && mpLocalMapper->GetUpdatingInitPoses()) {
@@ -1599,47 +1688,46 @@ void Tracking::CreateNewKeyFrame() {
     bool bUseIMU = Config::getInstance().SystemParams().use_imu;
     if (mbUseObject) {
 
-        // TODO
         std::unique_lock<std::mutex> lock(mMutexImColor);
-        if (bUseIMU) {
-            SPDLOG_ERROR("Use object + IMU is not yet implemented");
-            throw std::runtime_error("NOT IMPLEMENTED YET");
+        if (bUseIMU && !mpLocalMapper->GetVINSInited()) {
+            assert (mSensor != System::MONOCULAR);
+            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper, mvIMUSinceLastKF, mpLastKeyFrame);
+            // Set initial NavState for KeyFrame
+            pKF->SetInitialNavStateAndBias(mCurrentFrame.GetNavState());
+            // Compute pre-integrator
+            pKF->ComputePreInt();
         } else {
-//            if ((mSensor == System::MONOCULAR) || (mSensor == System::RGBD)) {
-//                pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mImColor, mImGray);
-//            } else {
-//                pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB); // TODO: Stereo Vision support
-//            }
+            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper);
 
-            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+            if (KeyFrame::nInitId < 0) {
+                KeyFrame::nInitId = pKF->mnId; // First KF to consider objects
+            }
+
+            // Make a copy of current imcolor;
+            if (mpLocalMapper->DetectWaitQueueAvaliable()){
+                auto start_time2 = utils::time::time_now();
+                QueueDetectionThread(pKF,
+                                     mImColor.clone(),
+                                     Config::getInstance().ObjectDetectionParams().allow_skip);
+                SPDLOG_INFO("RGB Image Clone time {}", utils::time::time_diff_from_now_second(start_time2));
+            }
         }
-
-        if (KeyFrame::nInitId < 0) {
-            KeyFrame::nInitId = pKF->mnId; // First KF to consider objects
-        }
-
-        // Make a copy of current imcolor;
-        if (mpLocalMapper->DetectWaitQueueAvaliable()){
-            auto start_time2 = utils::time::time_now();
-            QueueDetectionThread(pKF,
-                                 mImColor.clone(),
-                                 Config::getInstance().ObjectDetectionParams().allow_skip);
-            SPDLOG_INFO("RGB Image Clone time {}", utils::time::time_diff_from_now_second(start_time2));
-        }
-
     } else {
         if (bUseIMU) {
-            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mvIMUSinceLastKF, mpLastKeyFrame);
+            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper, mvIMUSinceLastKF, mpLastKeyFrame);
             // Set initial NavState for KeyFrame
             pKF->SetInitialNavStateAndBias(mCurrentFrame.GetNavState());
             // Compute pre-integrator
             pKF->ComputePreInt();
             // Clear IMUData buffer
-            mvIMUSinceLastKF.clear();
+            // mvIMUSinceLastKF.clear();
         } else {
-            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+            pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper);
         }
     }
+
+    // Clear IMUData buffer
+    mvIMUSinceLastKF.clear();
 
     // TODO -- Add Keypoint Color Rendering (or perform as a Thread)
     // AddColorToKeyPoints(pKF);
@@ -1786,7 +1874,7 @@ void Tracking::UpdateLocalPoints() {
 
 
 void Tracking::UpdateLocalKeyFrames() {
-    bool bUseIMU = Config::getInstance().SystemParams().use_imu;
+    bool bUseIMU = mpLocalMapper->GetUseIMUFlag();
     // Each map point vote for the keyframes in which it has been observed
     map<KeyFrame *, int> keyframeCounter;
     for (int i = 0; i < mCurrentFrame.N; i++) {
@@ -2146,6 +2234,8 @@ void Tracking::DetectObjectInKeyFrame(KeyFrame *pKeyFrame, const cv::Mat &ImColo
         std::lock_guard<std::mutex> lock(pKeyFrame->mMutexObject);
         mpObjectDetector->detectObject(ImColor, pKeyFrame->mvObjectPrediction, false);
         pKeyFrame->mvpMapObjects.resize(pKeyFrame->mvObjectPrediction.size(), static_cast<MapObject *>(NULL));
+        pKeyFrame->mvObjectPredictionCuboidEst.resize(pKeyFrame->mvObjectPrediction.size(),
+                static_cast<Cuboid *>(NULL));
     }
 
     {

@@ -115,6 +115,7 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_BOOL_CONFIG(ObjectInitializer, use_stat_rm_outlier)
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, int, outlier_filter_type)
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, outlier_threshold)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(ObjectInitializer, associate_centroid_only)
         }
 
         ORB_SLAM2_PARSE_CONFIG_SCOPE("system") {
@@ -158,10 +159,12 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, bagfile)
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, imu_topic)
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, image_topic)
+            ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, image2_topic)
             ORB_SLAM2_PARSE_CONFIG(Runtime, std::string, log_file_path)
             ORB_SLAM2_PARSE_CONFIG(Runtime, double, image_delay_to_imu)
             ORB_SLAM2_PARSE_CONFIG(Runtime, double, discard_time)
             ORB_SLAM2_PARSE_BOOL_CONFIG(Runtime, multiply_g)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(Runtime, pre_rectify_images)
         }
         SPDLOG_INFO("\n-------Config Summary------\n"
                     "System:\n"

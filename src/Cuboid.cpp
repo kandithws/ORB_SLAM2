@@ -93,6 +93,43 @@ Cuboid Cuboid::transformTo(const SE3Quat& Twc) const
 }
 
 
+Eigen::Vector3d Cuboid::computePointBoundaryError(const Vector3d &world_point, const double& max_outside_margin_ratio) const {
+    // Shameless copy from cuboid latest release
+
+    Vector3d local_pt = (mPose.inverse() * world_point).cwiseAbs(); // change global point to local cuboid body frame.  make it positive.
+    Vector3d error;
+
+    // if point is within the cube, error=0, otherwise penalty how far it is outside cube
+    for (int i = 0; i < 3; i++){
+        if (mScale(i) <= 0.01){
+            // fix scale zero from projection error
+            error(i) = max_outside_margin_ratio * local_pt(i);
+        }
+        else{
+            if (local_pt(i) < mScale(i))
+                error(i) = 0;
+            else if (local_pt(i) < (max_outside_margin_ratio + 1) * mScale(i))
+                error(i) = local_pt(i) - mScale(i);
+            else
+                error(i) = max_outside_margin_ratio * mScale(i); // if points two far, give a constant error, don't optimize.
+        }
+    }
+
+    return error;
+}
+
+//bool Cuboid::isOutlierPoint(const Eigen::Vector3d &world_point, const double &max_outside_margin_ratio) {
+//
+//    // Opitimize later
+//    double dist = (mPose.inverse() * world_point).cwiseAbs().norm(); // change global point to local cuboid body frame.  make it positive.
+//
+//    for (int i = 0; i < 3; i++){
+//        if (dist < (max_outside_margin_ratio + 1) * mScale(i))
+//
+//    }
+//}
+
+
 Eigen::Vector9d Cuboid::toMinimalVector() const
 {
     Eigen::Vector9d v;

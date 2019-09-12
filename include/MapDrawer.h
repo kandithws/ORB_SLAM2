@@ -45,6 +45,7 @@ public:
     void SetReferenceKeyFrame(KeyFrame *pKF);
     void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M);
     void DrawObjects(const bool bDrawObj, const bool bDrawGraph);
+    void DrawGravity();
 
 private:
     void GenerateColorMap(int N=256);
@@ -56,11 +57,18 @@ private:
     float mCameraSize;
     float mCameraLineWidth;
     float mMapObjectLineWidth = 3;
+    float mMapObjectAxisWidth = 4;
+    float mMapObjectAxisScale = 0.75;
     std::vector<std::array<float, 3>> mLabelColorMap;
 
     cv::Mat mCameraPose;
 
     std::mutex mMutexCamera;
+
+    bool mbGravityReady = false;
+    cv::Mat mGravityVec;
+    float mGravityLineWidth = 4.0f;
+    float mGravityLineLength = 0.5f;
 };
 
 } //namespace ORB_SLAM

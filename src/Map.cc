@@ -31,7 +31,7 @@ bool KFIdComapre::operator ()(const KeyFrame* kfleft,const KeyFrame* kfright) co
 }
 
 void Map::UpdateScale(const double &scale) {
-    unique_lock<mutex> lock(mMutexMapUpdate);
+    unique_lock<mutex> lock(mMutexMap);
     for(std::set<KeyFrame*,KFIdComapre>::iterator sit=mspKeyFrames.begin(), send=mspKeyFrames.end(); sit!=send; sit++){
         KeyFrame* pKF = *sit;
         cv::Mat Tcw = pKF->GetPose();
@@ -59,6 +59,9 @@ void Map::AddKeyFrame(KeyFrame *pKF)
     mspKeyFrames.insert(pKF);
     if(pKF->mnId>mnMaxKFid)
         mnMaxKFid=pKF->mnId;
+
+//    if(pKF->mnId == 0)
+//        mpInitialKeyFrame = pKF;
 }
 
 void Map::AddMapPoint(MapPoint *pMP)
@@ -158,6 +161,12 @@ long unsigned int Map::GetMaxKFid()
     return mnMaxKFid;
 }
 
+KeyFrame* Map::GetInitialKeyFrame(){
+    unique_lock<mutex> lock(mMutexMap);
+    KeyFrame* pKF = *mspKeyFrames.begin();
+    return pKF;
+}
+
 void Map::clear()
 {
     for(set<MapPoint*>::iterator sit=mspMapPoints.begin(), send=mspMapPoints.end(); sit!=send; sit++)
@@ -175,86 +184,25 @@ void Map::clear()
 
 // ----------------------------- Pointcloud Related
 
-pcl::PointCloud<Map::PCLPointT>::Ptr Map::GetCloudPtr() {
-    std::lock_guard<std::mutex> lock(mMutexCloud);
-    return mpCloudMap;
-}
-
-void Map::InitPointCloudThread() {
-    mbIsShutdown = false;
-    mpCloudMap = BOOST_MAKE_SHARED(pcl::PointCloud<PCLPointT >);
-    //mtPointcloudRendererThread = std::make_shared<std::thread>(std::bind(&Map::RenderPointCloudThread, this));
-}
 
 void Map::ShutDown() {
-    if(mtPointcloudRendererThread){
-        mbIsShutdown = true;
-        NotifyMapUpdated();
-        mtPointcloudRendererThread->join();
-    }
 }
 
 Map::~Map() {
     ShutDown();
 }
 
-void Map::RenderPointCloudThread() {
-    while (!mbIsShutdown){
-        std::unique_lock<std::mutex> lock(mMutexMapUpdate);
-        mcvMapUpdate.wait(lock, [this]{ return mbMapUpdate || mbIsShutdown;});
-        mbMapUpdate = false;
-        lock.unlock(); //unlock update signal
-        RenderPointCloud(); //dispatch event
-    }
+void Map::SetGravityVec(const cv::Mat &g) {
+    std::unique_lock<std::mutex> lock(mMutexGravityVec);
+    mGravityVec = g.clone();
+    mbGravityVecInited = true;
 }
 
-void Map::RenderPointCloud() {
-    SPDLOG_DEBUG("Rendering PointCloud");
-    {
-        std::lock_guard<std::mutex> lock(mMutexCloud);
-        if(mbRenderReady)
-            return;
-    }
-
-    pcl::PointCloud<PCLPointT>::Ptr map_cloud_ptr = BOOST_MAKE_SHARED(pcl::PointCloud<PCLPointT>);
-    {
-        const std::vector<MapPoint*> &map_points = GetAllMapPoints();
-        if(map_points.empty())
-            return;
-
-        const vector<MapPoint*> &ref_map_points = GetReferenceMapPoints();
-        std::set<MapPoint*> set_ref_map_points(ref_map_points.begin(), ref_map_points.end());
-        for(size_t i=0, iend=map_points.size(); i < iend; i++){
-
-            if(map_points[i]->isBad() || set_ref_map_points.count(map_points[i])) // if map point is bad or it is a ref
-                continue;
-
-            map_cloud_ptr->push_back(map_points[i]->GetPCLPoint());
-        }
-
-        for (std::set<MapPoint*>::iterator sit=set_ref_map_points.begin(),
-                     send=set_ref_map_points.end(); sit != send; sit++){
-
-            if((*sit)->isBad())
-                continue;
-
-            map_cloud_ptr->push_back((*sit)->GetPCLPoint());
-        }
-    }
-
-    {
-        // TODO -- CV notify spin thread to update, naive impl for now
-        std::lock_guard<std::mutex> lock(mMutexCloud);
-        mpCloudMap = map_cloud_ptr;
-        mbRenderReady = true;
-    }
-
-
-}
-
-void Map::NotifyMapUpdated() {
-    mbMapUpdate = true;
-    mcvMapUpdate.notify_all();
+bool Map::GetGravityVec(cv::Mat& g){
+    std::unique_lock<std::mutex> lock(mMutexGravityVec);
+    if (mbGravityVecInited)
+        g = mGravityVec.clone();
+    return mbGravityVecInited;
 }
 
 } //namespace ORB_SLAM

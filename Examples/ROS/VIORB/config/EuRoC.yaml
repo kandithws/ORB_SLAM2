@@ -30,15 +30,15 @@ local_mapping:
 #--------------------------------------------------------------------------------------------
 
 # Camera calibration and distortion parameters (OpenCV)
-Camera.fx: 458.654
-Camera.fy: 457.296
-Camera.cx: 367.215
-Camera.cy: 248.375
+Camera.fx: 435.2046959714599
+Camera.fy: 435.2046959714599
+Camera.cx: 367.4517211914062
+Camera.cy: 252.2008514404297
 
-Camera.k1: -0.28340811
-Camera.k2: 0.07395907
-Camera.p1: 0.00019359
-Camera.p2: 0.00001762
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
 
 Camera.width: 752
 Camera.height: 480
@@ -47,13 +47,13 @@ Camera.height: 480
 Camera.fps: 20.0
 
 # IR projector baseline times fx (aprox.)
-Camera.bf: 40.0
+Camera.bf: 47.90639384423901
 
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
 Camera.RGB: 1
 
 # Close/Far threshold. Baseline times.
-ThDepth: 40.0
+ThDepth: 35
 
 # Deptmap values factor
 DepthMapFactor: 1.0
@@ -63,7 +63,7 @@ DepthMapFactor: 1.0
 #--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 1000
+ORBextractor.nFeatures: 1200
 
 # ORB Extractor: Scale factor between levels in the scale pyramid
 ORBextractor.scaleFactor: 1.2
