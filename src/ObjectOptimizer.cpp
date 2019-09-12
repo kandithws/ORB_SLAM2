@@ -1482,6 +1482,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool* pbStopFla
     unsigned long maxKFId = 0;
     unsigned long  maxLandmarkId = 0;
 
+
     // Set Local KeyFrame vertices
     unordered_set<uint32_t> sLandmarkIds;
     list<MapObject* > lLocalLandmarks;
@@ -1577,7 +1578,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool* pbStopFla
 
     const float thHuberMono = sqrtf(5.991f);
     const float thHuberStereo = sqrtf(7.815f);
-
+    const float thHuberObject = sqrt(900);
 
     // -----------------------------------------------------------
     for (auto pMP : lLocalMapPoints) {
@@ -1686,8 +1687,11 @@ void Optimizer::LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool* pbStopFla
                 edgeSE3CuboidProj->setVertex(1, optimizer.vertex(landmark_id));
                 auto obs = vObservations[vObservationsMap[pMO]];
                 edgeSE3CuboidProj->setMeasurement(Converter::toVector4d(obs->box()));
-                Eigen::Matrix4d info = Eigen::Matrix4d::Identity() * obs->_confidence;
+                Eigen::Matrix4d info = Eigen::Matrix4d::Identity() * obs->_confidence * obs->_confidence;
                 edgeSE3CuboidProj->setInformation(info);
+                g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
+                edgeSE3CuboidProj->setRobustKernel(rk);
+                rk->setDelta(thHuberObject);
                 optimizer.addEdge(edgeSE3CuboidProj);
             }
         }
@@ -2002,7 +2006,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool *pbStopFlag
 
     const float thHuberMono = sqrtf(5.991f);
     const float thHuberStereo = sqrtf(7.815f);
-
+    const float thHuberObject = sqrt(900);
 
     // -----------------------------------------------------------
     for (auto pMP : lLocalMapPoints) {
@@ -2111,8 +2115,11 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool *pbStopFlag
                 edgeSE3CuboidProj->setVertex(1, optimizer.vertex(landmark_id));
                 auto obs = vObservations[vObservationsMap[pMO]];
                 edgeSE3CuboidProj->setMeasurement(Converter::toVector4d(obs->box()));
-                Eigen::Matrix4d info = Eigen::Matrix4d::Identity() * obs->_confidence;
+                Eigen::Matrix4d info = Eigen::Matrix4d::Identity() * obs->_confidence * obs->_confidence;
                 edgeSE3CuboidProj->setInformation(info);
+                g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
+                edgeSE3CuboidProj->setRobustKernel(rk);
+                rk->setDelta(thHuberObject);
                 optimizer.addEdge(edgeSE3CuboidProj);
             }
         }

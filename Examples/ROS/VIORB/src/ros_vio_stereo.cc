@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
 
     } else {
         // Overiding VI-ORB file config with ROS Config (to use with internal SLAM classes)
-        ROS_INFO("Use real-time mode!, configured from ROS param");
+        ROS_INFO("Use real-time mode!, configured from ROS param %d", realtime_mode);
         ORB_SLAM2::Config::getInstance().SetRealTimeFlag(realtime_mode);
     }
 

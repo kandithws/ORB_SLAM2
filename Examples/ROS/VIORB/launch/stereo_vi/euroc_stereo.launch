@@ -1,6 +1,6 @@
 <launch>
     <arg name="bagfile" default="/media/backup/EuRoc/MH_01_easy.bag"/>
-    <arg name="realtime" default="true"/>
+    <arg name="realtime" default="false"/>
     <node pkg="VIORB" type="stereo" name="VIORB"
           args="$(find VIORB)/../../../Vocabulary/ORBvoc.txt $(find VIORB)/config/stereo_vi/EuRoC.yaml"
           cwd="node" output="screen">
