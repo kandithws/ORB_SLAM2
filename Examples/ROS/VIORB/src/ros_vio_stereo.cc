@@ -194,8 +194,10 @@ int main(int argc, char **argv) {
 
         for (rosbag::MessageInstance const m: view){
             sensor_msgs::ImuConstPtr simu = m.instantiate<sensor_msgs::Imu>();
-            if (simu != NULL)
+            if ( (simu != NULL) && (m.getTopic() == imutopic) ) {
                 msgsync->addImuMsg(simu);
+            }
+
 
             sensor_msgs::ImageConstPtr simage = m.instantiate<sensor_msgs::Image>();
             if (simage != NULL){
@@ -292,6 +294,8 @@ int main(int argc, char **argv) {
 
                 }
                 else {
+                    assert(image2Msg.encoding == "mono16");
+                    ROS_INFO("TRACKING RGB-D");
                     SLAM.TrackRGBDVI(im, im2, vimuData, imageMsg->header.stamp.toSec() - imageMsgDelaySec);
                 }
 
