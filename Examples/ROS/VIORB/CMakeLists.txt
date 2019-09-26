@@ -102,4 +102,13 @@ target_link_libraries(stereo
         ${LIBS}
         )
 
+rosbuild_add_executable(bag_view_test
+        src/bag_view_test.cpp
+        )
+
+target_link_libraries(bag_view_test
+        ${Boost_LIBRARIES}
+        ${OpenCV_LIBS}
+        )
+
 
