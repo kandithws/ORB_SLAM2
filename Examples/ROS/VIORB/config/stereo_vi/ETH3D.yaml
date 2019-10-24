@@ -6,7 +6,7 @@ runtime:
   bagfile: "/media/backup/ETH3D/table_3/table_3.bag"
   imu_topic: "/imu0"
   image_topic: "/cam0/image_raw"
-  image2_topic: "/depth/image_raw"
+  image2_topic: "/cam1/image_raw"
   multiply_g: 0
   discard_time: 0
   pre_rectify_images: 0
@@ -124,3 +124,57 @@ Viewer.ViewpointX: 0
 Viewer.ViewpointY: -0.7
 Viewer.ViewpointZ: -1.8
 Viewer.ViewpointF: 500
+
+
+#--------------------------------------------------------------------------------------------
+# Stereo Rectification. Only if you need to pre-rectify the images.
+# Camera.fx, .fy, etc must be the same as in LEFT.P
+#--------------------------------------------------------------------------------------------
+
+LEFT.height: 458
+LEFT.width: 739
+LEFT.D: !!opencv-matrix
+  rows: 1
+  cols: 5
+  dt: d
+  data: [0, 0, 0, 0, 0]
+LEFT.K: !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [726.28741455078, 0.0, 354.6496887207, 0.0, 726.28741455078, 186.46566772461, 0.0, 0.0, 1.0]
+LEFT.R:  !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+LEFT.P:  !!opencv-matrix
+  rows: 3
+  cols: 4
+  dt: d
+  data: [726.28741455078, 0, 354.6496887207, 0,  0, 726.28741455078, 186.46566772461, 0,  0, 0, 1, 0]
+
+RIGHT.height: 464
+RIGHT.width: 742
+RIGHT.D: !!opencv-matrix
+  rows: 1
+  cols: 5
+  dt: d
+  data: [0, 0, 0, 0, 0]
+RIGHT.K: !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [726.04388427734, 0.0, 385.73248291016, 0.0, 726.04388427734, 262.19641113281, 0.0, 0.0, 1]
+RIGHT.R:  !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [0.99992114305496, 0.012319358065724, -0.0024491893127561, -0.012328315526247, 0.99991726875305, -0.0036764072719961, 0.00240369560197, 0.0037063115742058, 0.99999022483826]
+RIGHT.P:  !!opencv-matrix
+  rows: 3
+  cols: 4
+  dt: d
+  data: [726.91381415,  10.37403935, 383.95049339, -64.98430195, -8.32065773, 726.95559935, 259.5246151 ,  -0.17179992, 0,   0,   1,   0]
+
+# RIGHT.P = RIGHT.K * [R|t]
