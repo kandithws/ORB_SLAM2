@@ -9,7 +9,7 @@ runtime:
   image2_topic: "/cam1/image_raw"
   multiply_g: 0
   discard_time: 0
-  pre_rectify_images: 0
+  pre_rectify_images: 1
 
 system:
   use_object: 1
@@ -130,9 +130,18 @@ Viewer.ViewpointF: 500
 # Stereo Rectification. Only if you need to pre-rectify the images.
 # Camera.fx, .fy, etc must be the same as in LEFT.P
 #--------------------------------------------------------------------------------------------
+T_RIGHT_TO_LEFT: !!opencv-matrix
+  rows: 3
+  cols: 4
+  dt: d
+  data: [0.99992114305496, 0.012319358065724, -0.0024491893127561, -0.089768312871456, -0.012328315526247, 0.99991726875305, -0.0036764072719961, -0.00041584763675928, 0.00240369560197, 0.0037063115742058, 0.99999022483826, 0.00049628334818408]
+
 
 LEFT.height: 458
 LEFT.width: 739
+# For undistorted images
+LEFT.original_height: 480
+LEFT.original_width: 752
 LEFT.D: !!opencv-matrix
   rows: 1
   cols: 5
@@ -178,3 +187,5 @@ RIGHT.P:  !!opencv-matrix
   data: [726.91381415,  10.37403935, 383.95049339, -64.98430195, -8.32065773, 726.95559935, 259.5246151 ,  -0.17179992, 0,   0,   1,   0]
 
 # RIGHT.P = RIGHT.K * [R|t]
+
+# Original ETH3D (Before undistorted): 480 (height) x 752 (width)

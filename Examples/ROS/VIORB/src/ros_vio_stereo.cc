@@ -109,31 +109,60 @@ int main(int argc, char **argv) {
                 return -1;
             }
 
-            cv::Mat K_l, K_r, P_l, P_r, R_l, R_r, D_l, D_r;
+            cv::Mat K_l, K_r, P_l, P_r, R_l, R_r, D_l, D_r, T;
             fsSettings["LEFT.K"] >> K_l;
             fsSettings["RIGHT.K"] >> K_r;
 
-            fsSettings["LEFT.P"] >> P_l;
-            fsSettings["RIGHT.P"] >> P_r;
 
-            fsSettings["LEFT.R"] >> R_l;
-            fsSettings["RIGHT.R"] >> R_r;
 
             fsSettings["LEFT.D"] >> D_l;
             fsSettings["RIGHT.D"] >> D_r;
 
             int rows_l = fsSettings["LEFT.height"];
+            int rows_l_org = fsSettings["LEFT.original_height"];
             int cols_l = fsSettings["LEFT.width"];
+            int cols_l_org = fsSettings["LEFT.original_width"];
             int rows_r = fsSettings["RIGHT.height"];
             int cols_r = fsSettings["RIGHT.width"];
 
-            if(K_l.empty() || K_r.empty() || P_l.empty() || P_r.empty() || R_l.empty() || R_r.empty() || D_l.empty() || D_r.empty() ||
+
+
+            fsSettings["T_LEFT_TO_RIGHT"] >> T;
+
+
+
+            if(K_l.empty() || K_r.empty() || D_l.empty() || D_r.empty() ||
                rows_l==0 || rows_r==0 || cols_l==0 || cols_r==0)
             {
-                cerr << "ERROR: Calibration parameters to rectify stereo are missing!" << endl;
+                ROS_FATAL("[PRERECT Stereo] Calibration parameters to rectify stereo are missing!");
                 return -1;
             }
 
+            if (!T.empty()) {
+                ROS_INFO("[PRERECT Stereo]T_LEFT_TO_RIGHT given, automatically identify P and R");
+                if ( (rows_l_org == 0) || (cols_l_org == 0) ){
+                    rows_l_org = rows_l;
+                    cols_l_org = cols_l;
+                }
+
+                cv::stereoRectify(K_l, D_l, K_r, D_r, cv::Size(cols_l_org, rows_l_org),
+                        T.rowRange(0,3).colRange(0,3), T.rowRange(0,3).col(3), R_l, R_r, P_l, P_r, cv::Mat());
+            }
+            else {
+                fsSettings["LEFT.P"] >> P_l;
+                fsSettings["RIGHT.P"] >> P_r;
+
+                fsSettings["LEFT.R"] >> R_l;
+                fsSettings["RIGHT.R"] >> R_r;
+
+                if (P_l.empty() || P_r.empty() || R_l.empty() || R_r.empty()) {
+                    ROS_FATAL("[PRERECT Stereo] LEFT/RIGHT P, R are missing!");
+                    return -1;
+                }
+            }
+
+            std::cout << "P_l: " << P_l << std::endl;
+            std::cout << "P_r: " << P_r << std::endl;
             cv::initUndistortRectifyMap(K_l,D_l,R_l,P_l.rowRange(0,3).colRange(0,3),cv::Size(cols_l,rows_l),CV_32F,M1l,M2l);
             cv::initUndistortRectifyMap(K_r,D_r,R_r,P_r.rowRange(0,3).colRange(0,3),cv::Size(cols_r,rows_r),CV_32F,M1r,M2r);
         }
@@ -448,3 +477,27 @@ int main(int argc, char **argv) {
 }
 
 
+/*
+ *     def set_alpha(self, a):
+        """
+        Set the alpha value for the calibrated camera solution. The
+        alpha value is a zoom, and ranges from 0 (zoomed in, all pixels
+        in calibrated image are valid) to 1 (zoomed out, all pixels in
+        original image are in calibrated image).
+        """
+
+        cv2.stereoRectify(self.l.intrinsics,
+                         self.l.distortion,
+                         self.r.intrinsics,
+                         self.r.distortion,
+                         self.size,
+                         self.R,
+                         self.T,
+                         self.l.R, self.r.R, self.l.P, self.r.P,
+                         alpha = a)
+
+        cv2.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.P, self.size, cv2.CV_32FC1,
+                                   self.l.mapx, self.l.mapy)
+        cv2.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.P, self.size, cv2.CV_32FC1,
+                                   self.r.mapx, self.r.mapy)
+ * */
