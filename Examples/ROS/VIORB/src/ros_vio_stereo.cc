@@ -345,7 +345,7 @@ int main(int argc, char **argv) {
             if (!ros::ok())
                 break;
         }
-        ROS_INFO("------Bag DONE-----");
+        ROS_INFO("------Bag DONE, press CTRL+C to save output-----");
         ros::spin();
     } else {
         ROS_WARN("Run realtime");
@@ -458,21 +458,14 @@ int main(int argc, char **argv) {
         }
     }
 
-
-
-    // Save camera trajectory
-    //SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
-
-
-    SLAM.SaveKeyFrameTrajectoryNavState(
-            ORB_SLAM2::Config::getInstance().RuntimeParams().log_file_path + "KeyFrameNavStateTrajectory.txt");
-
-    cout << endl << endl << "Trajectory Saved!" << endl;
-
     // Stop all threads
-
+    ROS_INFO("Shutting down ROS");
     ros::shutdown();
+    ROS_INFO("Shutting down SLAM");
     SLAM.Shutdown();
+    ROS_INFO("Saving Trajectory Output");
+    SLAM.SaveKeyFrameTrajectoryTUMWithObjects(ORB_SLAM2::Config::getInstance().RuntimeParams().log_file_path);
+    ROS_INFO("Trajectory Saved at %s", ORB_SLAM2::Config::getInstance().RuntimeParams().log_file_path.c_str());
     return 0;
 }
 

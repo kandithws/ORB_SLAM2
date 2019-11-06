@@ -32,6 +32,7 @@
 #include "dnn/GrpcObjectDetectorV2.h"
 
 #include "utils/Config.h"
+#include <boost/filesystem.hpp>
 
 bool has_suffix(const std::string &str, const std::string &suffix) {
     std::size_t index = str.find(suffix, str.size() - suffix.size());
@@ -737,6 +738,70 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
     }
 
     f.close();
+    cout << endl << "trajectory saved!" << endl;
+}
+
+
+void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
+{
+
+    std::string outdir = outdir_str;
+    cout << endl << "Saving keyframe trajectory and Objects to " << outdir << " ..." << endl;
+
+    vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+    sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+
+    auto vpMOs = mpMap->GetAllMapObjects();
+
+    // Transform all keyframes so that the first keyframe is at the origin.
+    // After a loop closure the first keyframe might not be at the origin.
+    //cv::Mat Two = vpKFs[0]->GetPoseInverse();
+
+    ofstream f, fobj;
+
+    if (outdir.back() != '/'){
+        outdir += '/';
+    }
+
+    f.open(outdir + "keyframes.txt");
+    f << fixed;
+
+    for(size_t i=0; i<vpKFs.size(); i++)
+    {
+        KeyFrame* pKF = vpKFs[i];
+
+        // pKF->SetPose(pKF->GetPose()*Two);
+
+        if(pKF->isBad())
+            continue;
+
+        cv::Mat R = pKF->GetRotation().t();
+        vector<float> q = Converter::toQuaternion(R);
+        cv::Mat t = pKF->GetCameraCenter();
+        f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
+          << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
+
+    }
+
+    f.close();
+
+    fobj.open(outdir + "objects.txt");
+    fobj << "# label tx ty tz qx qy qz qw sx/2 sy/2 sz/2" << std::endl;
+    fobj << fixed;
+
+    for (auto& pMO : vpMOs){
+        Eigen::Vector10d c = pMO->GetCuboidPtr()->toVector();
+
+        fobj << pMO->mLabel << setprecision(6);
+        for (int i=0; i < 10; i++)
+            fobj << " " << c[i];
+
+        fobj << std::endl;
+    }
+
+    fobj.close();
+
+
     cout << endl << "trajectory saved!" << endl;
 }
 
