@@ -37,6 +37,7 @@
 #include <rosbag/view.h>
 
 #include <boost/foreach.hpp>
+#include <sensor_msgs/CompressedImage.h>
 
 using namespace std;
 /**
@@ -201,6 +202,7 @@ int main(int argc, char **argv) {
     const double g3dm = 9.80665;
     const bool bAccMultiply98 = ORB_SLAM2::Config::getInstance().RuntimeParams().multiply_g;
     const bool bRGB = ORB_SLAM2::Config::getInstance().CameraParams().rgb;
+    const std::string encoding = bRGB ? "rgb8" : "bgr8";
     int rate = realtime_mode ? 300 : 1000;
 
     ros::Rate r(rate);
@@ -237,6 +239,22 @@ int main(int argc, char **argv) {
                     msgsync->addImage2Msg(simage);
                 }
             }
+
+
+            sensor_msgs::CompressedImageConstPtr simage_compressed = m.instantiate<sensor_msgs::CompressedImage>();
+            if (simage_compressed != NULL) {
+
+
+                auto img_msg_ptr = cv_bridge::toCvCopy(simage_compressed, encoding)->toImageMsg();
+
+                if ( m.getTopic() == imagetopic ){
+                    msgsync->addImage1Msg(img_msg_ptr);
+                }
+                else{
+                    msgsync->addImage2Msg(img_msg_ptr);
+                }
+            }
+
 
             bool bdata = msgsync->getRecentMsgs(imageMsg, image2Msg, vimuMsg);
             if (bdata) {

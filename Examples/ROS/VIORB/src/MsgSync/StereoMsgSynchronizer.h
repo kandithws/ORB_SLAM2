@@ -51,6 +51,7 @@ class StereoMsgSynchronizer {
     void addImage1Msg(const sensor_msgs::ImageConstPtr &imgmsg); // RGB or Left
     void addImage2Msg(const sensor_msgs::ImageConstPtr &imgmsg); // Depth or Right
 
+
     void addImuMsg(const sensor_msgs::ImuConstPtr &imumsg);
 
     void stereoSyncCallback(const sensor_msgs::ImageConstPtr& img1_msg,
