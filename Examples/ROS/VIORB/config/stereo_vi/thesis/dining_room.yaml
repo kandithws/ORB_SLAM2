@@ -1,8 +1,32 @@
 %YAML:1.0
 
+runtime:
+  image_delay_to_imu: 0.008922152649677474 # Timestamp shift. Timage = Timu + image_delay
+  log_file_path: "/home/kandithws/ait_workspace/viorb_log/"
+  bagfile: "/media/backup/thesis_dataset/dinning_room/ds2.bag"
+  imu_topic: "/imu0"
+  image_topic: "/cam0/image_raw/compressed"
+  image2_topic: "/cam1/image_raw/compressed"
+  multiply_g: 0
+  discard_time: 0
+  pre_rectify_images: 1
+
 system:
   use_object: 1
-  use_imu: 0
+  use_imu: 1
+  real_time: 0
+
+imu:
+  vins_init_time: 10.0
+  # camera-imu frame transformation, Pi = Tic * Pc
+#  Tbc: [ 0.06874696, 0.66486579, -0.74379254, -0.07,
+#         0.05826041, 0.74160844, 0.66829832, -0.045,
+#         0.99593151, -0.08927713,  0.01224797, -0.0325,
+#         0, 0, 0, 1.]
+  Tbc: [0.04765112, -0.9633001,   0.26416338, -0.07,
+        0.33348022,  0.26463197,  0.90485405, -0.045,
+        -0.94155208,  0.04497596,  0.33385154, -0.0325,
+        0.,          0.,          0.,          1.]
 
 #--------------------------------------------------
 # Object Detection parameters
@@ -30,6 +54,10 @@ object_initialization:
   use_mask: 0
   outlier_filter_type: 1 # 0: PCL SOR, 1: local dist diff, 2: local std diff
   outlier_threshold: 0.2 # For type 1(recommend: 0.2), 2(recommend: 0.15)
+
+local_mapping:
+  window_size: 20
+  object_detect_timeout: 0.5
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!
