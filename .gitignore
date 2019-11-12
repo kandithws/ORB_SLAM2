@@ -14,6 +14,7 @@ Examples/ROS/VIORB/build/
 Examples/ROS/VIORB/VIORB
 Examples/Stereo/stereo_euroc
 Examples/Stereo/stereo_kitti
+Examples/Stereo/stereo_tum
 KeyFrameTrajectory.txt
 Thirdparty/DBoW2/build/
 Thirdparty/DBoW2/lib/

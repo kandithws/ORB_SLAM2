@@ -155,6 +155,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
 add_executable(stereo_kitti
   Examples/Stereo/stereo_kitti.cc)
 target_link_libraries(stereo_kitti ${PROJECT_NAME} ${PCL_LIBRARIES})
+
+add_executable(stereo_tum
+        Examples/Stereo/stereo_tum.cc)
+target_link_libraries(stereo_tum ${PROJECT_NAME} ${PCL_LIBRARIES})
+
 #
 #add_executable(stereo_euroc
 #  Examples/Stereo/stereo_euroc.cc)

@@ -1,62 +1,54 @@
-/**
-* This file is part of ORB-SLAM2.
-*
-* Copyright (C) 2014-2016 Raúl Mur-Artal <raulmur at unizar dot es> (University of Zaragoza)
-* For more information see <https://github.com/raulmur/ORB_SLAM2>
-*
-* ORB-SLAM2 is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM2 is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
-*/
-
-
-#include <iostream>
-#include <algorithm>
-#include <fstream>
-#include <iomanip>
-#include <chrono>
 
 #include <opencv2/core/core.hpp>
 
 #include <System.h>
 
-using namespace std;
+void LoadImages(const string &strAssociationFilename, vector<string> &vstrImageFilenamesL,
+                vector<string> &vstrImageFilenamesR, vector<double> &vTimestamps){
+    ifstream fAssociation;
+    fAssociation.open(strAssociationFilename.c_str());
+    while(!fAssociation.eof()){
+        string s;
+        getline(fAssociation,s);
+        if(!s.empty()){
+            stringstream ss;
+            ss << s;
+            double t;
+            string sL, sR;
+            ss >> t;
+            vTimestamps.push_back(t);
+            ss >> sL;
+            vstrImageFilenamesL.push_back(sL);
+            ss >> t;
+            ss >> sR;
+            vstrImageFilenamesR.push_back(sR);
+        }
+    }
+}
 
-void LoadImages(const string &strPathLeft, const string &strPathRight, const string &strPathTimes,
-                vector<string> &vstrImageLeft, vector<string> &vstrImageRight, vector<double> &vTimeStamps);
-
-int main(int argc, char **argv)
-{
-    if(argc != 6)
+int main(int argc, char** argv) {
+    if(argc != 5)
     {
-        cerr << endl << "Usage: ./stereo_euroc path_to_vocabulary path_to_settings path_to_left_folder path_to_right_folder path_to_times_file" << endl;
+        cerr << endl << "Usage: ./stereo_euroc path_to_vocabulary path_to_settings path_to_sequence path_to_association.txt" << endl;
         return 1;
     }
 
-    // Retrieve paths to images
     vector<string> vstrImageLeft;
     vector<string> vstrImageRight;
-    vector<double> vTimeStamp;
-    LoadImages(string(argv[3]), string(argv[4]), string(argv[5]), vstrImageLeft, vstrImageRight, vTimeStamp);
+    vector<double> vTimestamps;
 
-    if(vstrImageLeft.empty() || vstrImageRight.empty())
+    string strAssociationFilename = string(argv[4]);
+
+    LoadImages(strAssociationFilename, vstrImageLeft, vstrImageRight, vTimestamps);
+    int nImages = vstrImageLeft.size();
+    if(vstrImageLeft.empty())
     {
-        cerr << "ERROR: No images in provided path." << endl;
+        cerr << endl << "No images found in provided path." << endl;
         return 1;
     }
-
-    if(vstrImageLeft.size()!=vstrImageRight.size())
+    else if(vstrImageLeft.size()!=vstrImageRight.size())
     {
-        cerr << "ERROR: Different number of left and right images." << endl;
+        cerr << endl << "Different number of images for left and right cams." << endl;
         return 1;
     }
 
@@ -67,6 +59,11 @@ int main(int argc, char **argv)
         cerr << "ERROR: Wrong path to settings" << endl;
         return -1;
     }
+
+
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO, true);
+
+    // TODO -- Configure Prerectrify params, should be same as stereo_vio
 
     cv::Mat K_l, K_r, P_l, P_r, R_l, R_r, D_l, D_r;
     fsSettings["LEFT.K"] >> K_l;
@@ -87,7 +84,7 @@ int main(int argc, char **argv)
     int cols_r = fsSettings["RIGHT.width"];
 
     if(K_l.empty() || K_r.empty() || P_l.empty() || P_r.empty() || R_l.empty() || R_r.empty() || D_l.empty() || D_r.empty() ||
-            rows_l==0 || rows_r==0 || cols_l==0 || cols_r==0)
+       rows_l==0 || rows_r==0 || cols_l==0 || cols_r==0)
     {
         cerr << "ERROR: Calibration parameters to rectify stereo are missing!" << endl;
         return -1;
@@ -97,12 +94,6 @@ int main(int argc, char **argv)
     cv::initUndistortRectifyMap(K_l,D_l,R_l,P_l.rowRange(0,3).colRange(0,3),cv::Size(cols_l,rows_l),CV_32F,M1l,M2l);
     cv::initUndistortRectifyMap(K_r,D_r,R_r,P_r.rowRange(0,3).colRange(0,3),cv::Size(cols_r,rows_r),CV_32F,M1r,M2r);
 
-
-    const int nImages = vstrImageLeft.size();
-
-    // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,true);
-
     // Vector for tracking time statistics
     vector<float> vTimesTrack;
     vTimesTrack.resize(nImages);
@@ -110,14 +101,14 @@ int main(int argc, char **argv)
     cout << endl << "-------" << endl;
     cout << "Start processing sequence ..." << endl;
     cout << "Images in the sequence: " << nImages << endl << endl;
-
+    std::string sequence_dir = std::string(argv[3])+"/";
     // Main loop
     cv::Mat imLeft, imRight, imLeftRect, imRightRect;
     for(int ni=0; ni<nImages; ni++)
     {
         // Read left and right images from file
-        imLeft = cv::imread(vstrImageLeft[ni],CV_LOAD_IMAGE_UNCHANGED);
-        imRight = cv::imread(vstrImageRight[ni],CV_LOAD_IMAGE_UNCHANGED);
+        imLeft = cv::imread(sequence_dir + vstrImageLeft[ni],CV_LOAD_IMAGE_UNCHANGED);
+        imRight = cv::imread(sequence_dir + vstrImageRight[ni],CV_LOAD_IMAGE_UNCHANGED);
 
         if(imLeft.empty())
         {
@@ -136,7 +127,7 @@ int main(int argc, char **argv)
         cv::remap(imLeft,imLeftRect,M1l,M2l,cv::INTER_LINEAR);
         cv::remap(imRight,imRightRect,M1r,M2r,cv::INTER_LINEAR);
 
-        double tframe = vTimeStamp[ni];
+        double tframe = vTimestamps[ni];
 
 
 #ifdef COMPILEDWITHC11
@@ -161,9 +152,9 @@ int main(int argc, char **argv)
         // Wait to load the next frame
         double T=0;
         if(ni<nImages-1)
-            T = vTimeStamp[ni+1]-tframe;
+            T = vTimestamps[ni+1]-tframe;
         else if(ni>0)
-            T = tframe-vTimeStamp[ni-1];
+            T = tframe-vTimestamps[ni-1];
 
         if(ttrack<T)
             usleep((T-ttrack)*1e6);
@@ -187,30 +178,4 @@ int main(int argc, char **argv)
     SLAM.SaveTrajectoryTUM("CameraTrajectory.txt");
 
     return 0;
-}
-
-void LoadImages(const string &strPathLeft, const string &strPathRight, const string &strPathTimes,
-                vector<string> &vstrImageLeft, vector<string> &vstrImageRight, vector<double> &vTimeStamps)
-{
-    ifstream fTimes;
-    fTimes.open(strPathTimes.c_str());
-    vTimeStamps.reserve(5000);
-    vstrImageLeft.reserve(5000);
-    vstrImageRight.reserve(5000);
-    while(!fTimes.eof())
-    {
-        string s;
-        getline(fTimes,s);
-        if(!s.empty())
-        {
-            stringstream ss;
-            ss << s;
-            vstrImageLeft.push_back(strPathLeft + "/" + ss.str() + ".png");
-            vstrImageRight.push_back(strPathRight + "/" + ss.str() + ".png");
-            double t;
-            ss >> t;
-            vTimeStamps.push_back(t/1e9);
-
-        }
-    }
 }
