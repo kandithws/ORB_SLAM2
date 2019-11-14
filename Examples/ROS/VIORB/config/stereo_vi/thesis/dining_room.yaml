@@ -3,7 +3,7 @@
 runtime:
   image_delay_to_imu: 0.008922152649677474 # Timestamp shift. Timage = Timu + image_delay
   log_file_path: "/home/kandithws/ait_workspace/viorb_log/"
-  bagfile: "/media/backup/thesis_dataset/dinning_room/ds2.bag"
+  bagfile: "/media/backup/thesis_dataset/dinning_room/ds1.bag"
   imu_topic: "/imu0"
   image_topic: "/cam0/image_raw/compressed"
   image2_topic: "/cam1/image_raw/compressed"
@@ -17,16 +17,18 @@ system:
   real_time: 0
 
 imu:
-  vins_init_time: 10.0
+  vins_init_time: 5.0
   # camera-imu frame transformation, Pi = Tic * Pc
 #  Tbc: [ 0.06874696, 0.66486579, -0.74379254, -0.07,
 #         0.05826041, 0.74160844, 0.66829832, -0.045,
 #         0.99593151, -0.08927713,  0.01224797, -0.0325,
 #         0, 0, 0, 1.]
-  Tbc: [0.04765112, -0.9633001,   0.26416338, -0.07,
-        0.33348022,  0.26463197,  0.90485405, -0.045,
-        -0.94155208,  0.04497596,  0.33385154, -0.0325,
-        0.,          0.,          0.,          1.]
+#  Tbc: [0.04765112, -0.9633001,   0.26416338, -0.07,
+#        0.33348022,  0.26463197,  0.90485405, -0.045,
+#        -0.94155208,  0.04497596,  0.33385154, -0.0325,
+#        0.,          0.,          0.,          1.]
+  Tbc: [-0.9999987317275397, 0.0015926529164868287, -0.0, 0.06994815000114198, 0.00015678707401552464, 0.09844384394350442, 0.9951425953135765, 0.04654672974233385, 0.0015849167567464392, 0.9951413332016286, -0.09844396879727894, -0.03737523594188913, 0.0, 0.0, 0.0, 1.0]
+
 
 #--------------------------------------------------
 # Object Detection parameters

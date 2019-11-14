@@ -23,6 +23,7 @@
 #include "KeyFrame.h"
 #include <pangolin/pangolin.h>
 #include <mutex>
+#include "utils/Config.h"
 
 namespace ORB_SLAM2
 {
@@ -40,6 +41,38 @@ MapDrawer::MapDrawer(Map* pMap, const string &strSettingPath):mpMap(pMap)
     mCameraLineWidth = fSettings["Viewer.CameraLineWidth"];
     GenerateColorMap(); // TODO -- read size from Label names!
 
+    if (Config::getInstance().SystemParams().use_imu){
+        mbUseIMU = true;
+        auto tmpTcb = Config::getInstance().IMUParams().GetMatTcb();
+
+        cv::Mat Rwc(3,3,CV_32F);
+        cv::Mat twc(3,1,CV_32F);
+
+
+        Rwc = tmpTcb.rowRange(0,3).colRange(0,3);
+        twc = tmpTcb.rowRange(0,3).col(3);
+
+
+        mTcb.m[0] = Rwc.at<float>(0,0);
+        mTcb.m[1] = Rwc.at<float>(1,0);
+        mTcb.m[2] = Rwc.at<float>(2,0);
+        mTcb.m[3]  = 0.0;
+
+        mTcb.m[4] = Rwc.at<float>(0,1);
+        mTcb.m[5] = Rwc.at<float>(1,1);
+        mTcb.m[6] = Rwc.at<float>(2,1);
+        mTcb.m[7]  = 0.0;
+
+        mTcb.m[8] = Rwc.at<float>(0,2);
+        mTcb.m[9] = Rwc.at<float>(1,2);
+        mTcb.m[10] = Rwc.at<float>(2,2);
+        mTcb.m[11]  = 0.0;
+
+        mTcb.m[12] = twc.at<float>(0);
+        mTcb.m[13] = twc.at<float>(1);
+        mTcb.m[14] = twc.at<float>(2);
+        mTcb.m[15]  = 1.0;
+    }
 }
 
 // From python's VOC Labelmap
@@ -383,7 +416,30 @@ void MapDrawer::DrawCurrentCamera(pangolin::OpenGlMatrix &Twc)
     glVertex3f(w,-h,z);
     glEnd();
 
+
+
+    if (mbUseIMU) {
+        // pangolin::OpenGlMatrix Twb = Twc * mTcb;
+        glMultMatrixd(mTcb.m);
+        glBegin(GL_LINES);
+        // x-axis
+        glColor3f(1.0f, 0, 0);
+        glVertex3f(0, 0, 0);
+        glVertex3f(z, 0, 0);
+
+        glColor3f(0, 1.0f, 0);
+        glVertex3f(0, 0, 0);
+        glVertex3f(0, z, 0);
+
+        glColor3f(0.0,0.0,1.0f);
+        glVertex3f(0, 0, 0);
+        glVertex3f(0, 0, z);
+        glEnd();
+    }
+
     glPopMatrix();
+
+
 }
 
 

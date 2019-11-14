@@ -66,6 +66,8 @@ private:
     std::mutex mMutexCamera;
 
     bool mbGravityReady = false;
+    bool mbUseIMU = false;
+    pangolin::OpenGlMatrix mTcb;
     cv::Mat mGravityVec;
     float mGravityLineWidth = 4.0f;
     float mGravityLineLength = 0.5f;
