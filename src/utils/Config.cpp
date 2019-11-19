@@ -133,6 +133,8 @@ void Config::parseConfig() {
         ORB_SLAM2_PARSE_CONFIG_SCOPE("imu") {
             ORB_SLAM2_PARSE_CONFIG(IMU, double, vins_init_time)
             ORB_SLAM2_PARSE_BOOL_CONFIG(IMU, fast_init)
+            ORB_SLAM2_PARSE_CONFIG(IMU, int, fast_init_num_msgs)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(IMU, fast_init_inverse_g)
 
             // Legacy Matrix
             auto tbc_node = node["Tbc"];
@@ -188,11 +190,15 @@ void Config::parseConfig() {
                         "\tmultiply_g: {}\n"
                         "\tg: {}\n"
                         "\tvins_init_time: {}\n"
-                        "\tfast_init: {}",
+                        "\tfast_init: {}"
+                        "\t\tnum_msgs: {}"
+                        "\t\tinverse_g: {}",
                         mRuntimeParam.multiply_g,
                         mIMUParam.g,
                         mIMUParam.vins_init_time,
-                        mIMUParam.fast_init);
+                        mIMUParam.fast_init,
+                        mIMUParam.fast_init_num_msgs,
+                        mIMUParam.fast_init_inverse_g);
         }
 
 

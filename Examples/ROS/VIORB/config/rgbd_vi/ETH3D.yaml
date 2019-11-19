@@ -19,6 +19,7 @@ system:
 
 imu:
   vins_init_time: 10.0
+  fast_init: 1
   # camera-imu frame transformation, Pi = Tic * Pc
   Tbc: [-0.99987545, -0.01531016,  0.00383257,  0.09372005,
         0.01531,    -0.99988279, -0.00007083,  0.00822336,
