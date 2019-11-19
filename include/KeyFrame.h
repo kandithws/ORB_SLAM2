@@ -118,6 +118,11 @@ class KeyFrame {
     NavState mNavStateGBA;       //mTcwGBA
     NavState mNavStateBefGBA;    //mTcwBefGBA
 
+    // IMU Data from lask KeyFrame to this KeyFrame
+    std::mutex mMutexIMUData;
+    utils::eigen_aligned_vector<IMUData> mvIMUData;
+    utils::eigen_aligned_vector<IMUData> mvIMUDataLastFrame;
+
   protected:
 
     std::mutex mMutexPrevKF;
@@ -129,9 +134,7 @@ class KeyFrame {
     std::mutex mMutexNavState;
     NavState mNavState;
 
-    // IMU Data from lask KeyFrame to this KeyFrame
-    std::mutex mMutexIMUData;
-    utils::eigen_aligned_vector<IMUData> mvIMUData;
+
     IMUPreintegrator mIMUPreInt;
 
   public:

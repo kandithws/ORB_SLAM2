@@ -55,6 +55,8 @@ class LocalMapping {
 
     bool TryInitVIONoScale(void);
 
+    bool TryInitVIOFast(void);
+
     bool GetVINSInited(void);
 
     void SetVINSInited(bool flag);
@@ -64,6 +66,7 @@ class LocalMapping {
     void SetFirstVINSInited(bool flag);
 
     cv::Mat GetGravityVec(void);
+    //bool GetGravityVec(cv::Mat& gVec);
 
     cv::Mat GetRwiInit(void);
 
@@ -95,12 +98,16 @@ class LocalMapping {
     }
 
     bool GetUseIMUFlag();
+    bool GetUseIMUFastInit();
+
+    std::mutex mMutexGravityVec;
+    cv::Mat mGravityVec; // gravity vector in world frame
 
   protected:
     double mnStartTime;
     bool mbFirstTry;
     double mnVINSInitScale;
-    cv::Mat mGravityVec; // gravity vector in world frame
+
     cv::Mat mRwiInit;
 
     std::mutex mMutexVINSInitFlag;
@@ -250,6 +257,7 @@ class LocalMapping {
     std::mutex mMutexObjectDetectWaitQueue;
     std::list<std::pair<KeyFrame *, bool> > mlObjectDetectWaitQueue;
     bool mbUseIMU;
+    bool mbUseIMUFastInit = false;
 
 };
 

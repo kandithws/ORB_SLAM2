@@ -358,7 +358,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
-    if (Config::getInstance().SystemParams().use_imu && Config::getInstance().SystemParams().real_time){
+    if (Config::getInstance().SystemParams().use_imu && !Config::getInstance().IMUParams().fast_init && Config::getInstance().SystemParams().real_time){
         mptLocalMappingVIOInit = std::make_shared<std::thread>(
                 &ORB_SLAM2::LocalMapping::VINSInitThread,
                 mpLocalMapper

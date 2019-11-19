@@ -78,6 +78,7 @@ typedef struct imu {
 
     double g = 9.810;
     double vins_init_time = 15.0;
+    bool fast_init = false; // only consider measurement @ first KF, assuming no movements
 
     imu() {
         Tbc = cv::Mat::eye(4,4, CV_32F);

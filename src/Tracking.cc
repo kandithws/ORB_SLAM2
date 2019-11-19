@@ -672,6 +672,14 @@ Tracking::Tracking(System *pSys,
         : Tracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB, strSettingPath, sensor) {
     mpObjectDetector = pObjectDetector;
     mbUseObject = Config::getInstance().SystemParams().use_object;
+//    if (Config::getInstance().SystemParams().use_imu && Config::getInstance().IMUParams().fast_init){
+//        mpComplementaryFilter = std::make_shared<imu_tools::ComplementaryFilter>();
+//        mpComplementaryFilter->setDoBiasEstimation(true);
+//        mpComplementaryFilter->setDoAdaptiveGain(true);
+//        mpComplementaryFilter->setBiasAlpha(0.01);
+//        mpComplementaryFilter->setGainAcc(0.01);
+//    }
+
 }
 
 Tracking::~Tracking() {
@@ -1117,15 +1125,28 @@ void Tracking::StereoInitialization() {
         // Create KeyFrame
         if (Config::getInstance().SystemParams().use_imu) {
             utils::eigen_aligned_vector<IMUData> vimu;
-            for (size_t i = 0; i < mvIMUSinceLastKF.size(); i++) {
-                // TODO -- maybe we can copy, cuz we have only 1 frame ??
-                IMUData imu = mvIMUSinceLastKF[i];
-                if (imu._t < mCurrentFrame.mTimeStamp)
-                    vimu.push_back(imu);
+//            for (size_t i = 0; i < mvIMUSinceLastKF.size(); i++) {
+//                // TODO -- maybe we can copy, cuz we have only 1 frame ??
+//                IMUData imu = mvIMUSinceLastKF[i];
+//                if (imu._t < mCurrentFrame.mTimeStamp)
+//                    vimu.push_back(imu);
+//            }
+            auto it = mvIMUSinceLastKF.begin();
+            for (auto end = mvIMUSinceLastKF.end(); it != end; it++){
+                if ( it->_t < mCurrentFrame.mTimeStamp){
+                    vimu.push_back(*it);
+                }
+                else{
+                    break;
+                }
             }
 
             pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper, vimu, NULL);
-            pKFini->ComputePreInt();
+            if (!mpLocalMapper->GetUseIMUFastInit()){
+                pKFini->ComputePreInt();
+            }
+
+            mvIMUSinceLastKF.erase(mvIMUSinceLastKF.begin(), it);
         }
         else {
             pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper);
@@ -1692,10 +1713,16 @@ void Tracking::CreateNewKeyFrame() {
         if (bUseIMU && !mpLocalMapper->GetVINSInited()) {
             assert (mSensor != System::MONOCULAR);
             pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper, mvIMUSinceLastKF, mpLastKeyFrame);
-            // Set initial NavState for KeyFrame
-            pKF->SetInitialNavStateAndBias(mCurrentFrame.GetNavState());
-            // Compute pre-integrator
-            pKF->ComputePreInt();
+            // mCurrentFrame.mvIMUDataSinceLastFrame; ?? or use this
+
+            if (!Config::getInstance().IMUParams().fast_init){
+                // Set initial NavState for KeyFrame
+                pKF->SetInitialNavStateAndBias(mCurrentFrame.GetNavState());
+                // Compute pre-integrator
+                pKF->ComputePreInt();
+            }
+
+
         } else {
             pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper);
 
