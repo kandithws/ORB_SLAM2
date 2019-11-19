@@ -121,9 +121,18 @@ bool LocalMapping::GetVINSInited(void) {
 bool LocalMapping::GetUseIMUFlag() {
     unique_lock<mutex> lock(mMutexVINSInitFlag);
     bool ret = mbUseIMU;
-    if (!mbMonocular)
-        ret &= !mbVINSInited;
+    if (!mbMonocular){
+
+        ret &= (!mbVINSInited) && (!mbUseIMUFastInit);
+    }
+
     return ret;
+}
+
+
+bool LocalMapping::GetUseIMUFastInit() {
+
+    return mbUseIMU && mbUseIMUFastInit;
 }
 
 void LocalMapping::SetVINSInited(bool flag) {
@@ -147,6 +156,7 @@ void LocalMapping::SetFirstVINSInited(bool flag) {
 }
 
 cv::Mat LocalMapping::GetGravityVec() {
+    std::unique_lock<std::mutex> lock(mMutexGravityVec);
     return mGravityVec.clone();
 }
 
@@ -508,7 +518,11 @@ bool LocalMapping::TryInitVIO(void) {
         mnVINSInitScale = s_;
         // gravity vector in world frame
         cv::Mat gw = Rwi_ * GI;
-        mGravityVec = gw.clone();
+        {
+            std::unique_lock<std::mutex> lock(mMutexGravityVec);
+            mGravityVec = gw.clone();
+        }
+
         Vector3d gweig = Converter::toVector3d(gw);
         mRwiInit = Rwi_.clone();
 
@@ -1170,6 +1184,80 @@ bool LocalMapping::TryInitVIONoScale() {
     return bVIOInited;
 }
 
+
+bool LocalMapping::TryInitVIOFast() {
+    // bool bVIOInited = false;
+
+    // TODO -- Use Last KF vs Last F ??
+    int num_msgs = Config::getInstance().IMUParams().fast_init_num_msgs;
+    utils::eigen_aligned_vector<IMUData> vIMUDataSinceLastFrame;
+    {
+        std::unique_lock<std::mutex> lock(mpCurrentKeyFrame->mMutexIMUData);
+        // Must copy naively due to Eigen Memory Alignment
+        vIMUDataSinceLastFrame = mpCurrentKeyFrame->mvIMUData;
+    }
+
+    size_t vIMUSize = vIMUDataSinceLastFrame.size();
+    std::cout << "IMU MSG SIZE: " << vIMUDataSinceLastFrame.size() << std::endl;
+    if (vIMUSize >= num_msgs+1){
+        auto pComplementaryFilter = std::make_shared<imu_tools::ComplementaryFilter>();
+        pComplementaryFilter->setDoBiasEstimation(true);
+        pComplementaryFilter->setDoAdaptiveGain(true);
+        pComplementaryFilter->setBiasAlpha(0.01);
+        pComplementaryFilter->setGainAcc(0.01);
+        double last_t = vIMUDataSinceLastFrame[vIMUSize-num_msgs-1]._t;
+        assert(vIMUSize-num_msgs-1 > 0);
+        for (int i = vIMUSize-num_msgs; i < vIMUSize; i++){
+            auto imu = vIMUDataSinceLastFrame[i];
+            std::cout << "i=" << i << ": a=" << imu._a << " g=" << imu._g << std::endl;
+            pComplementaryFilter->update(imu._a[0], imu._a[1], imu._a[2],
+                                          imu._g[0], imu._g[1], imu._g[2], imu._t - last_t);
+            last_t = imu._t;
+        }
+
+        // Update IMU Init status!
+
+
+        //     qw , qx, qy, qz
+        double q0, q1, q2, q3;
+
+        pComplementaryFilter->getOrientation(q0, q1, q2, q3);
+        std::cout << "QUATERNION: " << q0 << "," << q1 << "," << q2 << "," << q3 << std::endl;
+        // Use homogeneous point (0 , 0,-gscale, 1) to represent g unit vector in IMU frame
+        cv::Mat gb = cv::Mat::zeros(4, 1, CV_32F);
+        cv::Mat gw;
+
+        gb.at<float>(2) = -(float)Config::getInstance().IMUParams().g;
+
+        if (Config::getInstance().IMUParams().fast_init_inverse_g)
+            gb.at<float>(2) *= -1.0f;
+
+        gb.at<float>(3) = 1.0f;
+
+        Eigen::Quaterniond q(q0, q1, q2, q3);
+        Eigen::Matrix3d R_imu = q.normalized().toRotationMatrix();
+        std::cout << R_imu << std::endl;
+        cv::Mat Tb_g = cv::Mat::eye(4, 4, CV_32F);
+        cv::Mat R_imu_mat = Converter::toCvMat(R_imu);
+        R_imu_mat.copyTo(Tb_g.rowRange(0,3).colRange(0,3));
+        cv::Mat Tcb = Config::getInstance().IMUParams().GetMatTcb();
+        std::cout << Tb_g << std::endl;
+        // Transfrom gb to world: gw = Twc * Tcb * gb;
+        gw = mpCurrentKeyFrame->GetPose() * Tcb * Tb_g * gb;
+
+        {
+            // TOO lazy to write fn
+            std::unique_lock<std::mutex> lock(mMutexGravityVec);
+            mGravityVec = gw.rowRange(0,3).clone();
+        }
+
+        SetVINSInited(true);
+        return true;
+    }
+
+    return false;
+}
+
 void LocalMapping::AddToLocalWindow(KeyFrame *pKF) {
     mlLocalKeyFrames.push_back(pKF);
     if (mlLocalKeyFrames.size() > mnLocalWindowSize) {
@@ -1214,6 +1302,7 @@ LocalMapping::LocalMapping(Map *pMap, const bool bMonocular) :
     mnLocalWindowSize = Config::getInstance().LocalMappingParams().window_size;
     mfObjectInitTimeOut = Config::getInstance().LocalMappingParams().object_detect_timeout;
     mbUseIMU = Config::getInstance().SystemParams().use_imu;
+    mbUseIMUFastInit = Config::getInstance().IMUParams().fast_init;
 }
 
 void LocalMapping::SetLoopCloser(LoopClosing *pLoopCloser) {
@@ -1269,8 +1358,17 @@ void LocalMapping::Run() {
                         if (!GetVINSInited()) {
                             //Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,mlLocalKeyFrames,&mbAbortBA, mpMap, this);
                             Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap, this);
-                            if (!Config::getInstance().SystemParams().real_time) {
-                                if (!GetVINSInited()){
+
+                            if (mbUseIMUFastInit){
+                                // Use this on both real-time and non-realtime
+                                assert(!mbMonocular);
+
+                                SPDLOG_INFO("Initializing FAST IMU");
+                                TryInitVIOFast();
+                                SPDLOG_INFO("DONE FAST IMU");
+                            }
+                            else{
+                                if (!Config::getInstance().SystemParams().real_time) {
                                     bool tmpbool = mbMonocular ? TryInitVIO() : TryInitVIONoScale();
                                     // SetVINSInited(tmpbool);
                                     if (tmpbool) {
@@ -1284,6 +1382,7 @@ void LocalMapping::Run() {
                                     }
                                 }
                             }
+
                         }
                         else{
                             if (mbUseObject) {
@@ -1300,6 +1399,7 @@ void LocalMapping::Run() {
                                                          mGravityVec, this);
                             }
                         }
+
                     } else {
                         auto start = utils::time::time_now();
                         if (mbUseObject) {

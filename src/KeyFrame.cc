@@ -299,6 +299,7 @@ KeyFrame::KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB, LocalMapping* p
             mGrid[i][j] = F.mGrid[i][j];
     }
 
+    mvIMUDataLastFrame = F.mvIMUDataSinceLastFrame;
     SetPose(F.mTcw);
 }
 

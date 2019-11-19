@@ -92,6 +92,7 @@ set(OBJECT_INIT_SRC_FILES
         src/object_initializer/PointCloudObjectInitializer.cpp)
 
 set(VIORB_SRC_FILES
+        src/imu/complementary_filter.cpp
         src/imu/g2o_types.cpp
         src/imu/IMUData.cpp
         src/imu/IMUPreintegrator.cpp

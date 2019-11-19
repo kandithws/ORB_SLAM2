@@ -47,6 +47,8 @@
 #include "utils/vector_utils.h"
 //#include "IMU/configparam.h"
 
+#include "imu/complementary_filter.h"
+
 namespace ORB_SLAM2 {
 
 class Viewer;
@@ -258,6 +260,9 @@ class Tracking {
     //Map
     Map *mpMap;
 
+    // Complementary Filter (Fast Init)
+    //std::shared_ptr<imu_tools::ComplementaryFilter> mpComplementaryFilter;
+
     //Calibration matrix
     cv::Mat mK;
     cv::Mat mDistCoef;
@@ -283,6 +288,9 @@ class Tracking {
     Frame mLastFrame;
     unsigned int mnLastKeyFrameId;
     unsigned int mnLastRelocFrameId;
+
+    size_t mnIMUMeasCount=0;
+    double mfLastIMUMsgStamp=0;
 
     //Motion Model
     cv::Mat mVelocity;
