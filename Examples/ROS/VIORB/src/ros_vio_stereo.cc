@@ -219,7 +219,6 @@ int main(int argc, char **argv) {
         topics.push_back(imagetopic);
         topics.push_back(image2topic);
         topics.push_back(imutopic);
-
         rosbag::View view(bag, rosbag::TopicQuery(topics));
 
 

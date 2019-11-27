@@ -104,7 +104,8 @@ typedef struct imu {
 typedef struct eval {
   public:
     bool enable = false;
-    int num_save_kf_images = 10;
+    int num_save_kf_images = 20;
+    int num_initial_skip = 0;
 } Eval;
 
 // For "main"
@@ -119,6 +120,7 @@ typedef struct {
     bool multiply_g =  false; // _bAccMultiply9p8
     double discard_time = 0.0;
     bool pre_rectify_images = false;
+    bool track_time = true; // Enable when real-time = false, track time will make direct bagfile read looks like real time
 } Runtime;
 
 }

@@ -235,8 +235,8 @@ bool StereoMsgSynchronizer::getRecentMsgs(sensor_msgs::ImageConstPtr &img1_msg,
     }
 
     // the camera fps 20Hz, imu message 100Hz. so there should be not more than 5 imu messages between images
-    if (vimumsgs.size() > 10)
-        ROS_WARN("%lu imu messages between images, note", vimumsgs.size());
+//    if (vimumsgs.size() > 10)
+//        ROS_WARN("%lu imu messages between images, note", vimumsgs.size());
     if (vimumsgs.size() == 0)
         ROS_ERROR("no imu message between images!");
 

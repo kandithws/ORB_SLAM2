@@ -764,44 +764,46 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
     }
 
     // Save All Frames trajectory
-
-    ftrack.open(outdir + "full_trajectory.txt");
-    ftrack << fixed;
-
-    cv::Mat Two = vpKFs[0]->GetPoseInverse();
-    list<ORB_SLAM2::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
-    list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
-    list<bool>::iterator lbL = mpTracker->mlbLost.begin();
-    for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(),
-                lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++, lbL++)
+    if(mSensor!=MONOCULAR)
     {
-        if(*lbL)
-            continue;
+        ftrack.open(outdir + "full_trajectory.txt");
+        ftrack << fixed;
 
-        KeyFrame* pKF = *lRit;
-
-        cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
-
-        // If the reference keyframe was culled, traverse the spanning tree to get a suitable keyframe.
-        while(pKF->isBad())
+        cv::Mat Two = vpKFs[0]->GetPoseInverse();
+        list<ORB_SLAM2::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
+        list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
+        list<bool>::iterator lbL = mpTracker->mlbLost.begin();
+        for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(),
+                    lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++, lbL++)
         {
-            Trw = Trw*pKF->mTcp;
-            pKF = pKF->GetParent();
+            if(*lbL)
+                continue;
+
+            KeyFrame* pKF = *lRit;
+
+            cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
+
+            // If the reference keyframe was culled, traverse the spanning tree to get a suitable keyframe.
+            while(pKF->isBad())
+            {
+                Trw = Trw*pKF->mTcp;
+                pKF = pKF->GetParent();
+            }
+
+            Trw = Trw*pKF->GetPose()*Two;
+
+            cv::Mat Tcw = (*lit)*Trw;
+            cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
+            cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
+
+            vector<float> q = Converter::toQuaternion(Rwc);
+
+            ftrack << setprecision(6) << *lT << " " <<  setprecision(9) << twc.at<float>(0) << " " << twc.at<float>(1) << " " << twc.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
         }
 
-        Trw = Trw*pKF->GetPose()*Two;
 
-        cv::Mat Tcw = (*lit)*Trw;
-        cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
-        cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
-
-        vector<float> q = Converter::toQuaternion(Rwc);
-
-        ftrack << setprecision(6) << *lT << " " <<  setprecision(9) << twc.at<float>(0) << " " << twc.at<float>(1) << " " << twc.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
+        ftrack.close();
     }
-
-
-    ftrack.close();
     // ----------------- Save Keyframe trajectory only ---------------------
 
     f.open(outdir + "keyframes.txt");
@@ -829,13 +831,15 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
     auto vpMOs = mpMap->GetAllMapObjects();
 
     fobj.open(outdir + "objects.txt");
-    fobj << "# label tx ty tz qx qy qz qw sx/2 sy/2 sz/2" << std::endl;
+    fobj << "# id label tx ty tz qx qy qz qw sx/2 sy/2 sz/2" << std::endl;
     fobj << fixed;
 
     for (auto& pMO : vpMOs){
+        if (! pMO->IsReady())
+            continue;
         Eigen::Vector10d c = pMO->GetCuboidPtr()->toVector();
 
-        fobj << pMO->mLabel << setprecision(6);
+        fobj << pMO->mnId << pMO->mLabel << setprecision(6);
         for (int i=0; i < 10; i++)
             fobj << " " << c[i];
 

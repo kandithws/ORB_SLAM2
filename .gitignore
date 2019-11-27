@@ -28,3 +28,4 @@ lib/
 *.swp
 .idea
 cmake-build-debug
+scripts/.vscode

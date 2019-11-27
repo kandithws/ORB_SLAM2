@@ -1740,18 +1740,30 @@ void Tracking::CreateNewKeyFrame() {
                 QueueDetectionThread(pKF,
                                      mImColor.clone(),
                                      Config::getInstance().ObjectDetectionParams().allow_skip);
-                SPDLOG_INFO("RGB Image Clone time {}", utils::time::time_diff_from_now_second(start_time2));
+                //SPDLOG_INFO("RGB Image Clone time {}", utils::time::time_diff_from_now_second(start_time2));
             }
         }
 
         // Note that eval logic should be used on mbUseObject==true only!
         if (Config::getInstance().EvalParams().enable){
-            if (mCurrentNumSaveKFImages <= Config::getInstance().EvalParams().num_save_kf_images) {
+            auto eval_params = Config::getInstance().EvalParams();
+
+            if (mCurrentNumSaveKFImages < eval_params.num_initial_skip){
+                mCurrentNumSaveKFImages++;
+            }
+
+            if  ((mCurrentNumSaveKFImages >= eval_params.num_initial_skip)
+                && (mCurrentNumSaveKFImages <= eval_params.num_save_kf_images + eval_params.num_initial_skip)) {
                 auto tmp_img = mImColor.clone();
-                char outfile[50];
+                char outfile[100];
                 auto nowstamp = utils::time::time_now().time_since_epoch().count();
                 sprintf(outfile, "%s/kf-%ld-%ld.png", mImageLogDir.c_str(), pKF->mnId, nowstamp);
                 cv::imwrite(outfile, tmp_img);
+                mCurrentNumSaveKFImages++;
+            }
+
+            if (mCurrentNumSaveKFImages <= eval_params.num_save_kf_images + eval_params.num_initial_skip + 1) {
+                SPDLOG_INFO("Evaluation Image Saving Done!!!!!!!!!!!!!!!!!!!!!!");
                 mCurrentNumSaveKFImages++;
             }
         }

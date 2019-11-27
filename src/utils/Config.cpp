@@ -168,10 +168,12 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_CONFIG(Runtime, double, discard_time)
             ORB_SLAM2_PARSE_BOOL_CONFIG(Runtime, multiply_g)
             ORB_SLAM2_PARSE_BOOL_CONFIG(Runtime, pre_rectify_images)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(Runtime, track_time)
         }
 
         ORB_SLAM2_PARSE_CONFIG_SCOPE("eval") {
             ORB_SLAM2_PARSE_CONFIG(Eval, int, num_save_kf_images)
+            ORB_SLAM2_PARSE_CONFIG(Eval, int, num_initial_skip)
             ORB_SLAM2_PARSE_BOOL_CONFIG(Eval, enable)
         }
 
