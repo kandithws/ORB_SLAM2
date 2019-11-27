@@ -809,7 +809,8 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
     f.open(outdir + "keyframes.txt");
     f_with_id.open(outdir + "keyframes_with_id.txt");
     f << fixed;
-
+    f_with_id << "#id stamp x y z qx qy qz qw" << std::endl;
+    f_with_id << fixed;
     for(size_t i=0; i<vpKFs.size(); i++)
     {
         KeyFrame* pKF = vpKFs[i];
@@ -824,7 +825,7 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
         cv::Mat t = pKF->GetCameraCenter();
         f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
           << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
-        f_with_id << pKF->mnId << setprecision(6)
+        f_with_id << pKF->mnId << " " << setprecision(6)
                   << pKF->mTimeStamp << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
                   << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
     }
@@ -835,7 +836,7 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
     auto vpMOs = mpMap->GetAllMapObjects();
 
     fobj.open(outdir + "objects.txt");
-    fobj << "# id label tx ty tz qx qy qz qw sx/2 sy/2 sz/2" << std::endl;
+    fobj << "#id label x y z qx qy qz qw sx/2 sy/2 sz/2" << std::endl;
     fobj << fixed;
 
     for (auto& pMO : vpMOs){
@@ -843,7 +844,7 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
             continue;
         Eigen::Vector10d c = pMO->GetCuboidPtr()->toVector();
 
-        fobj << pMO->mnId << pMO->mLabel << setprecision(6);
+        fobj << pMO->mnId << " " << pMO->mLabel << setprecision(6);
         for (int i=0; i < 10; i++)
             fobj << " " << c[i];
 
