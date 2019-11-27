@@ -311,6 +311,8 @@ class Tracking {
     std::mutex mMutexDetectionThreads;
 
     std::mutex mMutexImColor;
+    std::string mImageLogDir;
+    int mCurrentNumSaveKFImages = 0;
 };
 
 } //namespace ORB_SLAM

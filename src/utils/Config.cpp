@@ -169,6 +169,12 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_BOOL_CONFIG(Runtime, multiply_g)
             ORB_SLAM2_PARSE_BOOL_CONFIG(Runtime, pre_rectify_images)
         }
+
+        ORB_SLAM2_PARSE_CONFIG_SCOPE("eval") {
+            ORB_SLAM2_PARSE_CONFIG(Eval, int, num_save_kf_images)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(Eval, enable)
+        }
+
         SPDLOG_INFO("\n-------Config Summary------\n"
                     "System:\n"
                     "\tuse_object: {}\n"

@@ -101,6 +101,12 @@ typedef struct imu {
     friend ORB_SLAM2::Config;
 } IMU;
 
+typedef struct eval {
+  public:
+    bool enable = false;
+    int num_save_kf_images = 10;
+} Eval;
+
 // For "main"
 typedef struct {
     double image_delay_to_imu = 0.0;
@@ -136,6 +142,7 @@ class Config {
     ORB_SLAM2_DEFINE_CONFIG_PARAM(System);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(LocalMapping);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(IMU);
+    ORB_SLAM2_DEFINE_CONFIG_PARAM(Eval);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(Runtime);
 
     cv::Mat getCamMatrix();

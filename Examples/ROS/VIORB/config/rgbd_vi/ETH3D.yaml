@@ -16,6 +16,10 @@ system:
   use_imu: 1
   real_time: 0
 
+eval:
+  num_save_kf_images: 10
+  enable: 1
+
 
 imu:
   vins_init_time: 10.0

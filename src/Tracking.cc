@@ -21,21 +21,22 @@
 
 #include "Tracking.h"
 
-#include<opencv2/core/core.hpp>
-#include<opencv2/features2d/features2d.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
 
-#include"ORBmatcher.h"
-#include"FrameDrawer.h"
-#include"Converter.h"
-#include"Map.h"
-#include"Initializer.h"
+#include "ORBmatcher.h"
+#include "FrameDrawer.h"
+#include "Converter.h"
+#include "Map.h"
+#include "Initializer.h"
 
-#include"Optimizer.h"
-#include"PnPsolver.h"
+#include "Optimizer.h"
+#include "PnPsolver.h"
 
-#include<iostream>
+#include <iostream>
 
-#include<mutex>
+#include <mutex>
+#include <boost/filesystem.hpp>
 
 #define TRACK_WITH_IMU
 
@@ -672,13 +673,22 @@ Tracking::Tracking(System *pSys,
         : Tracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB, strSettingPath, sensor) {
     mpObjectDetector = pObjectDetector;
     mbUseObject = Config::getInstance().SystemParams().use_object;
-//    if (Config::getInstance().SystemParams().use_imu && Config::getInstance().IMUParams().fast_init){
-//        mpComplementaryFilter = std::make_shared<imu_tools::ComplementaryFilter>();
-//        mpComplementaryFilter->setDoBiasEstimation(true);
-//        mpComplementaryFilter->setDoAdaptiveGain(true);
-//        mpComplementaryFilter->setBiasAlpha(0.01);
-//        mpComplementaryFilter->setGainAcc(0.01);
-//    }
+
+    if (Config::getInstance().EvalParams().enable){
+        auto logp = boost::filesystem::path(Config::getInstance().RuntimeParams().log_file_path);
+        if (!boost::filesystem::exists(logp)){
+            boost::filesystem::create_directory(logp);
+        }
+
+        auto imgdir = logp / boost::filesystem::path("keyframe_images/");
+        if (boost::filesystem::exists(imgdir) && boost::filesystem::is_directory(imgdir)){
+            boost::filesystem::remove_all(imgdir);
+        }
+
+        boost::filesystem::create_directory(imgdir);
+
+        mImageLogDir = imgdir.string();
+    }
 
 }
 
@@ -1125,12 +1135,6 @@ void Tracking::StereoInitialization() {
         // Create KeyFrame
         if (Config::getInstance().SystemParams().use_imu) {
             utils::eigen_aligned_vector<IMUData> vimu;
-//            for (size_t i = 0; i < mvIMUSinceLastKF.size(); i++) {
-//                // TODO -- maybe we can copy, cuz we have only 1 frame ??
-//                IMUData imu = mvIMUSinceLastKF[i];
-//                if (imu._t < mCurrentFrame.mTimeStamp)
-//                    vimu.push_back(imu);
-//            }
             auto it = mvIMUSinceLastKF.begin();
             for (auto end = mvIMUSinceLastKF.end(); it != end; it++){
                 if ( it->_t < mCurrentFrame.mTimeStamp){
@@ -1739,6 +1743,18 @@ void Tracking::CreateNewKeyFrame() {
                 SPDLOG_INFO("RGB Image Clone time {}", utils::time::time_diff_from_now_second(start_time2));
             }
         }
+
+        // Note that eval logic should be used on mbUseObject==true only!
+        if (Config::getInstance().EvalParams().enable){
+            if (mCurrentNumSaveKFImages <= Config::getInstance().EvalParams().num_save_kf_images) {
+                auto tmp_img = mImColor.clone();
+                char outfile[50];
+                auto nowstamp = utils::time::time_now().time_since_epoch().count();
+                sprintf(outfile, "%s/kf-%ld-%ld.png", mImageLogDir.c_str(), pKF->mnId, nowstamp);
+                cv::imwrite(outfile, tmp_img);
+                mCurrentNumSaveKFImages++;
+            }
+        }
     } else {
         if (bUseIMU) {
             pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mpLocalMapper, mvIMUSinceLastKF, mpLastKeyFrame);
@@ -2187,6 +2203,7 @@ void Tracking::Reset() {
 
     KeyFrame::nNextId = 0;
     Frame::nNextId = 0;
+    mCurrentNumSaveKFImages = 0;
     mState = NO_IMAGES_YET;
 
     if (mpInitializer) {
