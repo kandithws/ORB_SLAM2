@@ -757,7 +757,7 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
     // After a loop closure the first keyframe might not be at the origin.
 
 
-    ofstream f, ftrack, fobj;
+    ofstream f, ftrack, fobj, f_with_id;
 
     if (outdir.back() != '/'){
         outdir += '/';
@@ -807,6 +807,7 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
     // ----------------- Save Keyframe trajectory only ---------------------
 
     f.open(outdir + "keyframes.txt");
+    f_with_id.open(outdir + "keyframes_with_id.txt");
     f << fixed;
 
     for(size_t i=0; i<vpKFs.size(); i++)
@@ -823,10 +824,13 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
         cv::Mat t = pKF->GetCameraCenter();
         f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
           << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
-
+        f_with_id << pKF->mnId << setprecision(6)
+                  << pKF->mTimeStamp << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
+                  << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
     }
 
     f.close();
+    f_with_id.close();
 
     auto vpMOs = mpMap->GetAllMapObjects();
 
