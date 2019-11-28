@@ -3,7 +3,7 @@
 runtime:
   image_delay_to_imu: 0.008922152649677474 # Timestamp shift. Timage = Timu + image_delay
   log_file_path: "/home/kandithws/ait_workspace/viorb_log/"
-  bagfile: "/media/backup/thesis_dataset/dinning_room/ds1.bag"
+  bagfile: "/media/backup/thesis_dataset/chair1/ds1.bag"
   imu_topic: "/imu0"
   image_topic: "/cam0/image_raw/compressed"
   image2_topic: "/cam1/image_raw/compressed"
@@ -18,8 +18,8 @@ system:
 
 eval:
   num_save_kf_images: 15
-  num_initial_skip: 20
-  enable: 1
+  num_initial_skip: 5
+  enable: 0
 
 imu:
   vins_init_time: 5.0
@@ -88,7 +88,7 @@ Camera.width: 800
 Camera.height: 448
 
 # Camera frames per second
-Camera.fps: 20.0
+Camera.fps: 15.0
 
 # stereo baseline times fx
 # https://stackoverflow.com/questions/16833267/how-to-estimate-baseline-using-calibration-matrix

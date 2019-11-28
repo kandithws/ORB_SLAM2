@@ -1,0 +1,12 @@
+<launch>
+    <!--arg name="bagfile" value="/media/backup/thesis_dataset/dinning_room/ds.bag"/-->
+    <arg name="realtime" default="false"/>
+    <node pkg="VIORB" type="stereo" name="VIORB"
+          args="$(find VIORB)/../../../Vocabulary/ORBvoc.txt $(find VIORB)/config/stereo_vi/thesis/chair.yaml"
+          cwd="node" output="screen">
+        <param name="realtime_mode" value="$(arg realtime)"/>
+        <param name="sensor_type" value="STEREO"/>
+    </node>
+   
+
+</launch>

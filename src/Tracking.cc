@@ -674,6 +674,12 @@ Tracking::Tracking(System *pSys,
     mpObjectDetector = pObjectDetector;
     mbUseObject = Config::getInstance().SystemParams().use_object;
 
+    if (mbUseObject){
+        for (const auto l : Config::getInstance().ObjectDetectionParams().selected_labels){
+            msSelectedDetectionLabels.insert(l);
+        }
+    }
+
     if (Config::getInstance().EvalParams().enable){
         auto logp = boost::filesystem::path(Config::getInstance().RuntimeParams().log_file_path);
         if (!boost::filesystem::exists(logp)){
@@ -2286,12 +2292,31 @@ void Tracking::InformOnlyTracking(const bool &flag) {
 void Tracking::DetectObjectInKeyFrame(KeyFrame *pKeyFrame, const cv::Mat &ImColor) {
     SPDLOG_DEBUG("START DETECT: DetectionThread Invoked! KeyframeID={}", pKeyFrame->mnId);
     auto time_point = utils::time::time_now();
-    {
+    if (msSelectedDetectionLabels.empty()){
         std::lock_guard<std::mutex> lock(pKeyFrame->mMutexObject);
         mpObjectDetector->detectObject(ImColor, pKeyFrame->mvObjectPrediction, false);
         pKeyFrame->mvpMapObjects.resize(pKeyFrame->mvObjectPrediction.size(), static_cast<MapObject *>(NULL));
         pKeyFrame->mvObjectPredictionCuboidEst.resize(pKeyFrame->mvObjectPrediction.size(),
                 static_cast<Cuboid *>(NULL));
+    }
+    else{
+
+        std::vector<std::shared_ptr<PredictedObject> > detections;
+        mpObjectDetector->detectObject(ImColor, detections, false);
+
+        {
+            std::lock_guard<std::mutex> lock(pKeyFrame->mMutexObject);
+            pKeyFrame->mvObjectPrediction.reserve(detections.size());
+            for (const auto &d : detections ){
+                if (msSelectedDetectionLabels.count(d->_label)){
+                    pKeyFrame->mvObjectPrediction.push_back(d);
+                }
+            }
+            pKeyFrame->mvpMapObjects.resize(pKeyFrame->mvObjectPrediction.size(), static_cast<MapObject *>(NULL));
+            pKeyFrame->mvObjectPredictionCuboidEst.resize(pKeyFrame->mvObjectPrediction.size(),
+                                                          static_cast<Cuboid *>(NULL));
+
+        }
     }
 
     {

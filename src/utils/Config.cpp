@@ -95,6 +95,22 @@ void Config::parseConfig() {
                 }
             }
 
+            // Read Array
+            auto selected_labels_node = node["selected_labels"];
+            if(!selected_labels_node.empty()){
+                assert(selected_labels_node.type() == cv::FileNode::SEQ);
+                cv::FileNodeIterator it = selected_labels_node.begin(), it_end = selected_labels_node.end();
+
+                for(;it != it_end; it++){
+                    mObjectDetectionParam.selected_labels.push_back((int)*it);
+                }
+                std::cout << "SELECTED LABELS: [";
+                for (auto l : mObjectDetectionParam.selected_labels){
+                    std::cout << l << ',';
+                }
+                std::cout << std::endl;
+            }
+
             ORB_SLAM2_PARSE_BOOL_CONFIG(ObjectDetection, apply_nms)
             ORB_SLAM2_PARSE_CONFIG(ObjectDetection, std::string, model_path);
             ORB_SLAM2_PARSE_CONFIG(ObjectDetection, std::string, config_path);

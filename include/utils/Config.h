@@ -54,6 +54,7 @@ typedef struct {
 
 typedef struct {
     std::vector<std::string> label_map;
+    std::vector<int> selected_labels;
     std::string type; // CV, GRPC
     std::string config_path;
     std::string model_path;
