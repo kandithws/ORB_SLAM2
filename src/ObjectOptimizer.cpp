@@ -1677,18 +1677,22 @@ void Optimizer::LocalBundleAdjustmentWithObjects2(KeyFrame *pKF, bool* pbStopFla
                 if (pKFi->isBad())
                     continue;
 
-                auto vObservations = pKFi->GetObjectPredictions();
-                auto vObservationsMap = pKFi->GetMapObjectObservationsMap();
-                auto K = Converter::toMatrix3d(pKFi->mK);
-
-                if (vObservationsMap.find(pMO) == vObservationsMap.end())
+                //auto vObservations = pKFi->GetObjectPredictions();
+                //auto vObservationsMap = pKFi->GetMapObjectObservationsMap();
+                auto obs = pKFi->FindObservation(pMO);
+                if (!obs)
                     continue;
+                auto K = Converter::toMatrix3d(pKFi->mK);
+                //if (vObservationsMap.find(pMO) == vObservationsMap.end())
+                //    continue;
+
+                //auto obs = vObservations[vObservationsMap[pMO]];
 
                 unsigned long landmark_id = maxKFId + 1 + pMO->mnId;
                 auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj(K);
                 edgeSE3CuboidProj->setVertex(0, optimizer.vertex(pKFi->mnId));
                 edgeSE3CuboidProj->setVertex(1, optimizer.vertex(landmark_id));
-                auto obs = vObservations[vObservationsMap[pMO]];
+
                 edgeSE3CuboidProj->setMeasurement(Converter::toVector4d(obs->box()));
                 Eigen::Matrix4d info = Eigen::Matrix4d::Identity() * obs->_confidence * obs->_confidence * info_factor;
                 edgeSE3CuboidProj->setInformation(info);
@@ -2108,18 +2112,22 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool *pbStopFlag
                 if (pKFi->isBad())
                     continue;
 
-                auto vObservations = pKFi->GetObjectPredictions();
-                auto vObservationsMap = pKFi->GetMapObjectObservationsMap();
+                //auto vObservations = pKFi->GetObjectPredictions();
+                //auto vObservationsMap = pKFi->GetMapObjectObservationsMap();
+                auto obs = pKFi->FindObservation(pMO);
+                if (!obs)
+                    continue;
                 auto K = Converter::toMatrix3d(pKFi->mK);
 
-                if (vObservationsMap.find(pMO) == vObservationsMap.end())
-                    continue;
+                //if (vObservationsMap.find(pMO) == vObservationsMap.end())
+                //    continue;
+
 
                 unsigned long landmark_id = maxKFId + 1 + pMO->mnId;
                 auto* edgeSE3CuboidProj = new g2o::EdgeSE3CuboidProj(K);
                 edgeSE3CuboidProj->setVertex(0, optimizer.vertex(pKFi->mnId));
                 edgeSE3CuboidProj->setVertex(1, optimizer.vertex(landmark_id));
-                auto obs = vObservations[vObservationsMap[pMO]];
+                // auto obs = vObservations[vObservationsMap[pMO]];
                 edgeSE3CuboidProj->setMeasurement(Converter::toVector4d(obs->box()));
                 Eigen::Matrix4d info = Eigen::Matrix4d::Identity() * obs->_confidence * obs->_confidence * info_factor;
                 edgeSE3CuboidProj->setInformation(info);

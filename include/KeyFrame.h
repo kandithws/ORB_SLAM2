@@ -226,6 +226,8 @@ class KeyFrame {
 
     std::map<MapObject *, size_t> GetMapObjectObservationsMap();
 
+    std::shared_ptr<PredictedObject> FindObservation(MapObject *pMO);
+
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x, const float &y, const float &r) const;
 

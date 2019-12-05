@@ -1185,4 +1185,14 @@ std::map<MapObject*, size_t> KeyFrame::GetMapObjectObservationsMap() {
     std::lock_guard<std::mutex> lock(mMutexObject);
     return mvpMapObjectsInverse;
 }
+
+std::shared_ptr<PredictedObject> KeyFrame::FindObservation(ORB_SLAM2::MapObject *pMO) {
+    std::lock_guard<std::mutex> lock(mMutexObject);
+    std::shared_ptr<PredictedObject> ret;
+
+    if (mvpMapObjectsInverse.find(pMO) != mvpMapObjectsInverse.end()){
+        ret = mvObjectPrediction[mvpMapObjectsInverse[pMO]];
+    }
+    return ret;
+}
 } //namespace ORB_SLAM
