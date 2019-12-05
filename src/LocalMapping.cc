@@ -2085,8 +2085,19 @@ void LocalMapping::KeyFrameCulling() {
                 }
             }
 
-            if (nRedundantObservations > 0.9 * nMPs)
-                pKF->SetBadFlag();
+            // TODO -- check object!
+            if(mbUseObject){
+                if (nRedundantObservations > 0.9 * nMPs && (pKF->GetCountGoodMapObjectObservation() == 0) )
+                    pKF->SetBadFlag();
+                else {
+                    SPDLOG_WARN("Skip culling for KF {} due to good object", pKF->mnId);
+                }
+            }
+            else {
+                if (nRedundantObservations > 0.9 * nMPs)
+                    pKF->SetBadFlag();
+            }
+
         }
     }
 }

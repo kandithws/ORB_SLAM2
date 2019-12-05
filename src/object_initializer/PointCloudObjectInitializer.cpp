@@ -449,6 +449,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe) {
                         pMO->AddObservations(*vPredictionMPs[min_dist_idx]);
 
                         pKeyframe->AddMapObject(pMO, min_dist_idx); // TODO -- Add map object measurement
+                        pKeyframe->CountGoodMapObjectObservation();
                         mpMap->AddMapObject(pMO);
 
                         if(!pMO->IsReady())
@@ -627,6 +628,7 @@ void PointCloudObjectInitializer::InitializedObjectsWithGravity(ORB_SLAM2::KeyFr
                         pMO->AddObservations(*vPredictionMPs[min_dist_idx]);
 
                         pKeyframe->AddMapObject(pMO, min_dist_idx); // TODO -- Add map object measurement
+                        pKeyframe->CountGoodMapObjectObservation();
                         mpMap->AddMapObject(pMO);
 
                         if(!pMO->IsReady())
@@ -674,7 +676,7 @@ bool PointCloudObjectInitializer::AssociateConstraintSatisfy(ORB_SLAM2::KeyFrame
     if (mAssociateConstraint & 0x01){
         // Temporal constraint
         double diff = pKF->mTimeStamp - pObjectLastKF->mTimeStamp;
-        SPDLOG_DEBUG("[KF {} to {}] Angle diff: {}", pKF->mnId, pObjectLastKF->mnId, diff);
+        SPDLOG_DEBUG("[KF {} to {}] Time diff: {}", pKF->mnId, pObjectLastKF->mnId, diff);
         if (diff > mAssociateTimeDiff)
             ret |= true;
     }
@@ -692,7 +694,7 @@ bool PointCloudObjectInitializer::AssociateConstraintSatisfy(ORB_SLAM2::KeyFrame
         cv::Mat Tc1o = pKF->GetPoseInverse() * Two;
         cv::Mat Tc2o = pObjectLastKF->GetPoseInverse() * Two;
         Rdiff = Tc1o.rowRange(0,3).colRange(0,3) * Tc2o.rowRange(0,3).colRange(0,3).t();
-
+        // Note for rotation matrix, either Rc?o or Roc? is okay! cuz we need to transpose it anyway
         double traceR = Rdiff.at<float>(0,0) +  Rdiff.at<float>(1,1) + Rdiff.at<float>(2,2);
         auto diff = std::acos((traceR - 1.0) / 2.0);
 

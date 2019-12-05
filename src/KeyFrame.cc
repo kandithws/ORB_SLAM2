@@ -1168,6 +1168,14 @@ void KeyFrame::AddMapObject(ORB_SLAM2::MapObject *pMO, const size_t &idx) {
     mvpMapObjectsInverse[pMO] = idx;
 }
 
+void KeyFrame::CountGoodMapObjectObservation() {
+    mGoodMapObjectObservation++;
+}
+
+int KeyFrame::GetCountGoodMapObjectObservation() {
+    return  mGoodMapObjectObservation;
+}
+
 std::vector<MapObject*> KeyFrame::GetMapObjects() {
     std::lock_guard<std::mutex> lock(mMutexObject);
     return mvpMapObjects;
