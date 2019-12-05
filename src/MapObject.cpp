@@ -83,7 +83,7 @@ void MapObject::AddObservation(KeyFrame* pKF, size_t idx)
     mObservations[pKF]=idx;
     nObs++;
 
-
+    mpLastObserveKF = pKF;
 //    if(pKF->mvuRight[idx]>=0)
 //        nObs+=2;
 //    else
@@ -94,6 +94,11 @@ void MapObject::EraseObservation(ORB_SLAM2::KeyFrame *pKF) {
 
     // TODO Implement
     throw std::runtime_error("NOT IMPLEMENTED");
+}
+
+KeyFrame* MapObject::GetLatestKFObservation() {
+    unique_lock<mutex> lock(mMutexObservations);
+    return mpLastObserveKF;
 }
 
 void MapObject::AddObservation(ORB_SLAM2::MapPoint *pMP) {
