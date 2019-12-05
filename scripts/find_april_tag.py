@@ -6,6 +6,7 @@ import glob
 import numpy as np
 import transformations as tf
 import csv
+import os
 
 
 # LAZY TO PARSE FROM ARGS
@@ -38,10 +39,11 @@ def main():
     cam_params = (fx, fy, cx, cy)
     detector = apriltag.Detector(options=detector_options)
     results = []
+    os.mkdir('outimages')
     for img_file in glob.glob(osp.join(args.input_dir, '*.{}'.format(args.imgtype))):
         
         img = np.array(Image.open(img_file).convert('L'))
-        detections = detector.detect(img)
+        detections, img_result = detector.detect(img, True)
         # get keyframe id
         parts = osp.basename(img_file).split('-')
         assert(len(parts) == 3)
@@ -55,6 +57,10 @@ def main():
             q = tf.quaternion_from_matrix(pose)
             t = pose[:3, 3]
             results.append( (keyframe_id, t[0], t[1], t[2], q[1], q[2], q[3], q[0]) )
+        
+        Image.fromarray(img_result).save(osp.join('outimages', 'out_{}.png'.format(keyframe_id)))
+            
+
 
     with open('result.csv', 'w', newline='\n') as f:
         wr = csv.writer(f)
