@@ -61,10 +61,38 @@ void VertexCuboid::oplusImpl(const double *update_){
     }
 
     if (update_scale_){
-        // TODO -- apply some threshold logic
+        // Original
         newcube.mScale = _estimate.mScale + update.tail<3>();
+        // TODO -- apply some threshold logic
+
+        // Logic 0; naive check!, if this update make < 0 do not update
+        if ( (newcube.mScale(0) < epsillon) || (newcube.mScale(2) < epsillon) || (newcube.mScale(3) < epsillon)){
+            newcube.mScale = _estimate.mScale;
+        }
+        std::cout << "[Current scale]=" << newcube.mScale(0) << ',' << newcube.mScale(1)
+        << ',' << newcube.mScale(2)  << std::endl;
+
+
+
+        // Logic update 1: Keep aspect ratio
+        // double ratio = _estimate.mScale.sum();
+
+        // double v_update_per_dim = cbrt(fabs(update.tail<3>().prod()) ); // cubic root
+
+
+        //if (update.tail<3>().sum() < 0){
+        //    v_update_per_dim *= -1.0;
+        // }
+
+        //Eigen::Vector3d v_update = (_estimate.mScale / ratio) * v_update_per_dim;
+
+        //newcube.mScale = _estimate.mScale + v_update;
+        //std::cout << "[Scale] ratio=" << ratio << ", v_update_per_dim=" << v_update_per_dim;
+        // std::cout << "[Scale] new update=" << v_update << ", org update="<< update.tail<3>() << std::endl;
+
     }
     else{
+        // Fix scale from previous
         newcube.mScale = _estimate.mScale;
     }
 

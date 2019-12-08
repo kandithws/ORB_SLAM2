@@ -105,6 +105,7 @@ typedef struct imu {
 typedef struct optimization {
     bool update_scale = true;
     bool update_rollpitch = true;
+
 } Optimization;
 
 typedef struct eval {

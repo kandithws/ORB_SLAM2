@@ -56,6 +56,7 @@ class VertexCuboid : public BaseVertex<9, Cuboid>  // NOTE  this vertex stores o
   private:
     bool update_rollpitch_ = true;
     bool update_scale_=true;
+    double epsillon = 1e-2;
 };
 
 // camera -object 3D error
