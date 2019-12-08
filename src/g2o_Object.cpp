@@ -66,9 +66,13 @@ void VertexCuboid::oplusImpl(const double *update_){
         // TODO -- apply some threshold logic
 
         // Logic 0; naive check!, if this update make < 0 do not update
-        if ( (newcube.mScale(0) < epsillon) || (newcube.mScale(2) < epsillon) || (newcube.mScale(3) < epsillon)){
-            newcube.mScale = _estimate.mScale;
-        }
+//        if ( (newcube.mScale(0) < epsillon) || (newcube.mScale(1) < epsillon) || (newcube.mScale(2) < epsillon)){
+//            newcube.mScale = _estimate.mScale;
+//        }
+
+        newcube.mScale(0) = (newcube.mScale(0) < epsillon) ? _estimate.mScale(0) : newcube.mScale(0);
+        newcube.mScale(1) = (newcube.mScale(1) < epsillon) ? _estimate.mScale(1) : newcube.mScale(1);
+        newcube.mScale(2) = (newcube.mScale(2) < epsillon) ? _estimate.mScale(2) : newcube.mScale(2);
         std::cout << "[Current scale]=" << newcube.mScale(0) << ',' << newcube.mScale(1)
         << ',' << newcube.mScale(2)  << std::endl;
 
