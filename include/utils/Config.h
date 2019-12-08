@@ -31,6 +31,9 @@ typedef struct {
     bool project_2d_outlier = true;
     bool use_mask = true;
     bool associate_centroid_only = true; // On Object association, full BB check or centroid only?
+    int associate_constraint = 1; // 0: NoUse, 1: temporal, 2: spatial, 3: both
+    double associate_time_diff = 0.5;
+    double associate_angle_diff = 0.349066; // 25 deg
 } ObjectInitializer;
 
 typedef struct {

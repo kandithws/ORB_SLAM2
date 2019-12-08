@@ -1168,6 +1168,14 @@ void KeyFrame::AddMapObject(ORB_SLAM2::MapObject *pMO, const size_t &idx) {
     mvpMapObjectsInverse[pMO] = idx;
 }
 
+void KeyFrame::CountGoodMapObjectObservation() {
+    mGoodMapObjectObservation++;
+}
+
+int KeyFrame::GetCountGoodMapObjectObservation() {
+    return  mGoodMapObjectObservation;
+}
+
 std::vector<MapObject*> KeyFrame::GetMapObjects() {
     std::lock_guard<std::mutex> lock(mMutexObject);
     return mvpMapObjects;
@@ -1176,5 +1184,15 @@ std::vector<MapObject*> KeyFrame::GetMapObjects() {
 std::map<MapObject*, size_t> KeyFrame::GetMapObjectObservationsMap() {
     std::lock_guard<std::mutex> lock(mMutexObject);
     return mvpMapObjectsInverse;
+}
+
+std::shared_ptr<PredictedObject> KeyFrame::FindObservation(ORB_SLAM2::MapObject *pMO) {
+    std::lock_guard<std::mutex> lock(mMutexObject);
+    std::shared_ptr<PredictedObject> ret;
+
+    if (mvpMapObjectsInverse.find(pMO) != mvpMapObjectsInverse.end()){
+        ret = mvObjectPrediction[mvpMapObjectsInverse[pMO]];
+    }
+    return ret;
 }
 } //namespace ORB_SLAM

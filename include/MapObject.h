@@ -34,6 +34,8 @@ class MapObject {
     cv::Mat GetPose();
     cv::Mat GetScale();
 
+
+    KeyFrame* GetLatestKFObservation();
     void AddObservation(KeyFrame *pKF, size_t idx);
     void EraseObservation(KeyFrame *pKF);
 
@@ -99,6 +101,9 @@ class MapObject {
 
     KeyFrame* mpRefKeyframe;
     Map *mpMap;
+
+    KeyFrame* mpLastObserveKF;
+
 };
 }
 

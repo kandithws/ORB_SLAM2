@@ -35,6 +35,9 @@ class PointCloudObjectInitializer {
     bool mbAccociateCentroid;
     int mOutlierFilterType;
     double mOutlierFilterThreshold;
+    uint8_t mAssociateConstraint;
+    double mAssociateTimeDiff;
+    double mAssociateAngleDiff;
 
     Eigen::Matrix3f mMatrixRotatePitch90;
 
@@ -58,6 +61,8 @@ class PointCloudObjectInitializer {
     void FilterMapPointsDistFromCentroidNormalized(const std::vector<MapPoint *> &vObjMapPoints,
                                                    std::vector<MapPoint *> &vFilteredMapPoints,
                                                    KeyFrame* pKeyFrame, double std_threshold=0.2);
+
+    bool AssociateConstraintSatisfy(KeyFrame* pKF, MapObject* pMO);
 };
 }
 
