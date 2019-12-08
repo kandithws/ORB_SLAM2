@@ -193,6 +193,11 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_BOOL_CONFIG(Eval, enable)
         }
 
+        ORB_SLAM2_PARSE_CONFIG_SCOPE("optimization") {
+            ORB_SLAM2_PARSE_BOOL_CONFIG(Optimization, update_scale)
+            ORB_SLAM2_PARSE_BOOL_CONFIG(Optimization, update_rollpitch)
+        }
+
         SPDLOG_INFO("\n-------Config Summary------\n"
                     "System:\n"
                     "\tuse_object: {}\n"
@@ -223,6 +228,11 @@ void Config::parseConfig() {
                         mIMUParam.fast_init,
                         mIMUParam.fast_init_num_msgs,
                         mIMUParam.fast_init_inverse_g);
+        }
+
+        if (mSystemParam.use_object){
+            SPDLOG_INFO("Object Optimization Cfg => update_scale: {}, update_rollpitch: {}",
+                        mOptimizationParam.update_scale, mOptimizationParam.update_rollpitch);
         }
 
 

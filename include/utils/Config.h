@@ -102,8 +102,12 @@ typedef struct imu {
     friend ORB_SLAM2::Config;
 } IMU;
 
+typedef struct optimization {
+    bool update_scale = true;
+    bool update_rollpitch = true;
+} Optimization;
+
 typedef struct eval {
-  public:
     bool enable = false;
     int num_save_kf_images = 20;
     int num_initial_skip = 0;
@@ -147,6 +151,7 @@ class Config {
     ORB_SLAM2_DEFINE_CONFIG_PARAM(IMU);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(Eval);
     ORB_SLAM2_DEFINE_CONFIG_PARAM(Runtime);
+    ORB_SLAM2_DEFINE_CONFIG_PARAM(Optimization);
 
     cv::Mat getCamMatrix();
 

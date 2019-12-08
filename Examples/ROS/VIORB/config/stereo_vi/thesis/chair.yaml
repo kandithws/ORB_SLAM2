@@ -69,6 +69,10 @@ local_mapping:
   window_size: 20
   object_detect_timeout: 0.1
 
+optimization:
+  update_rollpitch: 0
+  update_scale: 0
+
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!
 #--------------------------------------------------------------------------------------------

@@ -120,6 +120,7 @@ set(ORBSLAM2_SRC_FILES
         src/Sim3Solver.cc
         src/Initializer.cc
         src/Viewer.cc
+        src/g2o_Object.cpp
         include/MapObject.h src/MapObject.cpp include/Cuboid.h src/Cuboid.cpp src/ObjectOptimizer.cpp)
 
 add_library(${PROJECT_NAME} SHARED
