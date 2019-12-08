@@ -26,6 +26,12 @@ PointCloudObjectInitializer::PointCloudObjectInitializer(Map* pMap) : mpMap(pMap
     mProj.setModelType(pcl::SACMODEL_PLANE);
     mMatrixRotatePitch90 = Eigen::AngleAxisf(M_PI/2.0f, Eigen::Vector3f::UnitY()).toRotationMatrix();
     mbAccociateCentroid = Config::getInstance().ObjectInitializerParams().associate_centroid_only;
+    auto associate = Config::getInstance().ObjectInitializerParams().associate_constraint;
+    if (associate >=0)
+        mAssociateConstraint = (uint8_t)associate;
+
+    mAssociateTimeDiff = Config::getInstance().ObjectInitializerParams().associate_time_diff;
+    mAssociateAngleDiff = Config::getInstance().ObjectInitializerParams().associate_angle_diff;
     //mbUseMask = true;
 }
 
@@ -429,6 +435,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe) {
 
                 // Found match
                 if (min_dist_idx > -1){
+
                     vAssociatedCount[min_dist_idx]++;
                     assert(!vCovisKFAssociatedFound[min_dist_idx]);
                     vCovisKFAssociatedFound[min_dist_idx] = true;
@@ -437,14 +444,17 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe) {
                     //        (*vit_kf)->mnId,
                     //        pMO->mnId);
 
-                    pMO->AddObservation(pKeyframe, min_dist_idx);
-                    pMO->AddObservations(*vPredictionMPs[min_dist_idx]);
+                    if(AssociateConstraintSatisfy(pKeyframe, pMO)){
+                        pMO->AddObservation(pKeyframe, min_dist_idx);
+                        pMO->AddObservations(*vPredictionMPs[min_dist_idx]);
 
-                    pKeyframe->AddMapObject(pMO, min_dist_idx); // TODO -- Add map object measurement
-                    mpMap->AddMapObject(pMO);
+                        pKeyframe->AddMapObject(pMO, min_dist_idx); // TODO -- Add map object measurement
+                        pKeyframe->CountGoodMapObjectObservation();
+                        mpMap->AddMapObject(pMO);
 
-                    if(!pMO->IsReady())
-                        pMO->SetReady();
+                        if(!pMO->IsReady())
+                            pMO->SetReady();
+                    }
                 }
             }
         }
@@ -613,13 +623,17 @@ void PointCloudObjectInitializer::InitializedObjectsWithGravity(ORB_SLAM2::KeyFr
                     //        (*vit_kf)->mnId,
                     //        pMO->mnId);
 
-                    pMO->AddObservation(pKeyframe, min_dist_idx);
-                    pMO->AddObservations(*vPredictionMPs[min_dist_idx]);
-                    pKeyframe->AddMapObject(pMO, min_dist_idx);
-                    mpMap->AddMapObject(pMO);
+                    if(AssociateConstraintSatisfy(pKeyframe, pMO)){
+                        pMO->AddObservation(pKeyframe, min_dist_idx);
+                        pMO->AddObservations(*vPredictionMPs[min_dist_idx]);
 
-                    if(!pMO->IsReady())
-                        pMO->SetReady();
+                        pKeyframe->AddMapObject(pMO, min_dist_idx); // TODO -- Add map object measurement
+                        pKeyframe->CountGoodMapObjectObservation();
+                        mpMap->AddMapObject(pMO);
+
+                        if(!pMO->IsReady())
+                            pMO->SetReady();
+                    }
                 }
             }
         }
@@ -647,6 +661,54 @@ void PointCloudObjectInitializer::InitializedObjectsWithGravity(ORB_SLAM2::KeyFr
         pKeyframe->AddMapObject(pMO, i);
         mpMap->AddMapObject(pMO);
     }
+}
+
+bool PointCloudObjectInitializer::AssociateConstraintSatisfy(ORB_SLAM2::KeyFrame* pKF,
+                                                             ORB_SLAM2::MapObject* pMO) {
+
+    auto pObjectLastKF = pMO->GetLatestKFObservation();
+    if ((mAssociateConstraint == 0) || !pObjectLastKF)
+        return true;
+
+
+    bool ret = false;
+
+    if (mAssociateConstraint & 0x01){
+        // Temporal constraint
+        double diff = pKF->mTimeStamp - pObjectLastKF->mTimeStamp;
+        SPDLOG_DEBUG("[KF {} to {}] Time diff: {}", pKF->mnId, pObjectLastKF->mnId, diff);
+        if (diff > mAssociateTimeDiff)
+            ret |= true;
+    }
+
+    if (mAssociateConstraint & 0x02){
+        // http://www.boris-belousov.net/2016/12/01/quat-dist/
+        // cos(theta) = (trace(R1*R2^{t}) - 1) / 2
+
+        // 1. Calculate estimate relative pose
+        cv::Mat Rdiff;
+        // 1.1 Naive solution: Base on world coordinate
+        // Rdiff = pKF->GetRotation() * pObjectLastKF->GetRotation().t();
+        // 1.2 Ideal solution, base on current tracking pose angle diff to object
+        cv::Mat Two = pMO->GetPose();
+        cv::Mat Tc1o = pKF->GetPoseInverse() * Two;
+        cv::Mat Tc2o = pObjectLastKF->GetPoseInverse() * Two;
+        Rdiff = Tc1o.rowRange(0,3).colRange(0,3) * Tc2o.rowRange(0,3).colRange(0,3).t();
+        // Note for rotation matrix, either Rc?o or Roc? is okay! cuz we need to transpose it anyway
+        double traceR = Rdiff.at<float>(0,0) +  Rdiff.at<float>(1,1) + Rdiff.at<float>(2,2);
+        auto diff = std::acos((traceR - 1.0) / 2.0);
+
+        if (std::isnan(diff)){
+            ret |= true;
+        }
+        else{
+            SPDLOG_DEBUG("[KF {} to {}] Angle diff: {}", pKF->mnId, pObjectLastKF->mnId, diff);
+            if (diff > mAssociateAngleDiff)
+                ret |= true;
+        }
+    }
+
+    return ret;
 }
 
 

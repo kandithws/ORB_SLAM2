@@ -220,9 +220,13 @@ class KeyFrame {
 
     // Object observation functions
     void AddMapObject(MapObject *pMO, const size_t &idx); //idx of Predicted
+    void CountGoodMapObjectObservation();
+    int GetCountGoodMapObjectObservation();
     std::vector<MapObject *> GetMapObjects();
 
     std::map<MapObject *, size_t> GetMapObjectObservationsMap();
+
+    std::shared_ptr<PredictedObject> FindObservation(MapObject *pMO);
 
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x, const float &y, const float &r) const;
@@ -400,6 +404,7 @@ class KeyFrame {
     std::mutex mMutexFeatures;
 
     // Object Stuff
+    int mGoodMapObjectObservation;
 
 
 };

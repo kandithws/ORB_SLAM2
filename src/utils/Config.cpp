@@ -132,6 +132,9 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, int, outlier_filter_type)
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, outlier_threshold)
             ORB_SLAM2_PARSE_BOOL_CONFIG(ObjectInitializer, associate_centroid_only)
+            ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, int, associate_constraint)
+            ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, associate_time_diff)
+            ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, associate_angle_diff)
         }
 
         ORB_SLAM2_PARSE_CONFIG_SCOPE("system") {
