@@ -751,9 +751,9 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
     if (boost::filesystem::exists(logp) && boost::filesystem::is_directory(logp)){
         boost::filesystem::remove_all(logp);
     }
-    else {
-        boost::filesystem::create_directory(logp);
-    }
+
+
+    boost::filesystem::create_directory(logp);
     vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
     sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
 
@@ -857,7 +857,7 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
     std::cout << "Saving pointcloud to folder: " << pcddir << std::endl;
 
     fobj.open(outdir + "objects.txt");
-    fobj << "#id label x y z qx qy qz qw sx/2 sy/2 sz/2" << std::endl;
+    fobj << "#id label x y z qx qy qz qw sx sy sz" << std::endl;
     fobj << fixed;
 
     pcl::PLYWriter writer;
