@@ -1403,7 +1403,7 @@ void LocalMapping::Run() {
                     } else {
                         auto start = utils::time::time_now();
                         if (mbUseObject) {
-                            Optimizer::LocalBundleAdjustmentWithObjects2(mpCurrentKeyFrame, &mbAbortBA, mpMap);
+                            Optimizer::LocalBundleAdjustmentWithObjects(mpCurrentKeyFrame, &mbAbortBA, mpMap);
                         } else {
                             Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap);
                         }

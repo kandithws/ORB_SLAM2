@@ -33,6 +33,7 @@
 
 #include "utils/Config.h"
 #include <boost/filesystem.hpp>
+#include <pcl/io/ply_io.h>
 
 bool has_suffix(const std::string &str, const std::string &suffix) {
     std::size_t index = str.find(suffix, str.size() - suffix.size());
@@ -744,10 +745,15 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
 
 void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
 {
-
+    auto logp = boost::filesystem::path(outdir_str);
     std::string outdir = outdir_str;
     cout << endl << "Saving ObjectSLAM Result to " << outdir << " ..." << endl;
-
+    if (boost::filesystem::exists(logp) && boost::filesystem::is_directory(logp)){
+        boost::filesystem::remove_all(logp);
+    }
+    else {
+        boost::filesystem::create_directory(logp);
+    }
     vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
     sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
 
@@ -834,14 +840,32 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
     f_with_id.close();
 
     auto vpMOs = mpMap->GetAllMapObjects();
+    SPDLOG_INFO("Trajectory saved!, saving object pointclouds .. ");
+
+    if (!boost::filesystem::exists(logp)){
+        boost::filesystem::create_directory(logp);
+    }
+
+    auto pcddir = logp / boost::filesystem::path("object_pointclouds/");
+    if (boost::filesystem::exists(pcddir) && boost::filesystem::is_directory(pcddir)){
+        boost::filesystem::remove_all(pcddir);
+    }
+
+    boost::filesystem::create_directory(pcddir);
+
+    std::string pcddirstr = pcddir.string();
+    std::cout << "Saving pointcloud to folder: " << pcddir << std::endl;
 
     fobj.open(outdir + "objects.txt");
     fobj << "#id label x y z qx qy qz qw sx/2 sy/2 sz/2" << std::endl;
     fobj << fixed;
 
+    pcl::PLYWriter writer;
+
     for (auto& pMO : vpMOs){
         if (! pMO->IsReady())
             continue;
+
         Eigen::Vector10d c = pMO->GetCuboidPtr()->toVector();
 
         fobj << pMO->mnId << " " << pMO->mLabel << setprecision(6);
@@ -849,6 +873,14 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
             fobj << " " << c[i];
 
         fobj << std::endl;
+
+        // Pointclouds
+
+        auto cloud = PCLConverter::toPointCloud(pMO->GetMapPoints());
+        std::stringstream ss;
+        ss << pcddirstr << '/' << pMO->mnId << ".ply";
+        writer.write(ss.str(), *cloud);
+
     }
 
     fobj.close();

@@ -12,6 +12,7 @@
 #include <math.h>
 #include <algorithm>    // std::swap
 #include "../Cuboid.h"
+#include <utils/Config.h>
 
 namespace g2o {
 
@@ -22,14 +23,16 @@ using namespace ORB_SLAM2::utils;
 class VertexCuboid : public BaseVertex<9, Cuboid>  // NOTE  this vertex stores object pose to world
 {
   public:
-    inline VertexCuboid() = default;
+    //VertexCuboid() = default;
+    VertexCuboid(bool update_rollpitch=true, bool update_scale=true);
 
     inline void setToOriginImpl() override { _estimate = Cuboid(); }
 
-    inline void oplusImpl(const double *update_) override {
-        Eigen::Map<const Eigen::Vector9d> update(update_);
-        setEstimate(_estimate.expUpdate(update));
-    }
+//    inline void oplusImpl(const double *update_) override {
+//        Eigen::Map<const Eigen::Vector9d> update(update_);
+//        setEstimate(_estimate.expUpdate(update));
+//    }
+    void oplusImpl(const double *update_);
 
     inline bool read(std::istream &is) override {
         Eigen::Vector9d est;
@@ -50,6 +53,10 @@ class VertexCuboid : public BaseVertex<9, Cuboid>  // NOTE  this vertex stores o
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  private:
+    bool update_rollpitch_ = true;
+    bool update_scale_=true;
+    double epsillon = 1e-2;
 };
 
 // camera -object 3D error
