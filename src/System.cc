@@ -745,10 +745,15 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
 
 void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
 {
-
+    auto logp = boost::filesystem::path(outdir_str);
     std::string outdir = outdir_str;
     cout << endl << "Saving ObjectSLAM Result to " << outdir << " ..." << endl;
-
+    if (boost::filesystem::exists(logp) && boost::filesystem::is_directory(logp)){
+        boost::filesystem::remove_all(logp);
+    }
+    else {
+        boost::filesystem::create_directory(logp);
+    }
     vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
     sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
 
@@ -836,7 +841,7 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
 
     auto vpMOs = mpMap->GetAllMapObjects();
     SPDLOG_INFO("Trajectory saved!, saving object pointclouds .. ");
-    auto logp = boost::filesystem::path(Config::getInstance().RuntimeParams().log_file_path);
+
     if (!boost::filesystem::exists(logp)){
         boost::filesystem::create_directory(logp);
     }
