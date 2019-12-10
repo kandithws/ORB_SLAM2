@@ -33,6 +33,7 @@
 
 #include "utils/Config.h"
 #include <boost/filesystem.hpp>
+#include <pcl/io/ply_io.h>
 
 bool has_suffix(const std::string &str, const std::string &suffix) {
     std::size_t index = str.find(suffix, str.size() - suffix.size());
@@ -834,14 +835,32 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
     f_with_id.close();
 
     auto vpMOs = mpMap->GetAllMapObjects();
+    SPDLOG_INFO("Trajectory saved!, saving object pointclouds .. ");
+    auto logp = boost::filesystem::path(Config::getInstance().RuntimeParams().log_file_path);
+    if (!boost::filesystem::exists(logp)){
+        boost::filesystem::create_directory(logp);
+    }
+
+    auto pcddir = logp / boost::filesystem::path("object_pointclouds/");
+    if (boost::filesystem::exists(pcddir) && boost::filesystem::is_directory(pcddir)){
+        boost::filesystem::remove_all(pcddir);
+    }
+
+    boost::filesystem::create_directory(pcddir);
+
+    std::string pcddirstr = pcddir.string();
+    std::cout << "Saving pointcloud to folder: " << pcddir << std::endl;
 
     fobj.open(outdir + "objects.txt");
     fobj << "#id label x y z qx qy qz qw sx/2 sy/2 sz/2" << std::endl;
     fobj << fixed;
 
+    pcl::PLYWriter writer;
+
     for (auto& pMO : vpMOs){
         if (! pMO->IsReady())
             continue;
+
         Eigen::Vector10d c = pMO->GetCuboidPtr()->toVector();
 
         fobj << pMO->mnId << " " << pMO->mLabel << setprecision(6);
@@ -849,6 +868,14 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
             fobj << " " << c[i];
 
         fobj << std::endl;
+
+        // Pointclouds
+
+        auto cloud = PCLConverter::toPointCloud(pMO->GetMapPoints());
+        std::stringstream ss;
+        ss << pcddirstr << '/' << pMO->mnId << ".ply";
+        writer.write(ss.str(), *cloud);
+
     }
 
     fobj.close();
