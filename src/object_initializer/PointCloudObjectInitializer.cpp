@@ -32,6 +32,7 @@ PointCloudObjectInitializer::PointCloudObjectInitializer(Map* pMap) : mpMap(pMap
 
     mAssociateTimeDiff = Config::getInstance().ObjectInitializerParams().associate_time_diff;
     mAssociateAngleDiff = Config::getInstance().ObjectInitializerParams().associate_angle_diff;
+    mAssociateMax2DDist = Config::getInstance().ObjectInitializerParams().associate_max_2d_dist;
     //mbUseMask = true;
 }
 
@@ -434,7 +435,7 @@ void PointCloudObjectInitializer::InitializeObjects(KeyFrame *pKeyframe) {
                 }
 
                 // Found match
-                if (min_dist_idx > -1){
+                if ((min_dist_idx > -1) && (min_dist < mAssociateMax2DDist)){
 
                     vAssociatedCount[min_dist_idx]++;
                     assert(!vCovisKFAssociatedFound[min_dist_idx]);
@@ -614,7 +615,7 @@ void PointCloudObjectInitializer::InitializedObjectsWithGravity(ORB_SLAM2::KeyFr
                 }
 
                 // Found match
-                if (min_dist_idx > -1){
+                if ((min_dist_idx > -1) && (min_dist < mAssociateMax2DDist)){
                     vAssociatedCount[min_dist_idx]++;
                     assert(!vCovisKFAssociatedFound[min_dist_idx]);
                     vCovisKFAssociatedFound[min_dist_idx] = true;

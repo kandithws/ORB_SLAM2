@@ -34,6 +34,7 @@ typedef struct {
     int associate_constraint = 1; // 0: NoUse, 1: temporal, 2: spatial, 3: both
     double associate_time_diff = 0.5;
     double associate_angle_diff = 0.349066; // 25 deg
+    double associate_max_2d_dist = std::numeric_limits<double>::max();
 } ObjectInitializer;
 
 typedef struct {

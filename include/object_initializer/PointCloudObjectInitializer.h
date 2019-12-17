@@ -38,6 +38,7 @@ class PointCloudObjectInitializer {
     uint8_t mAssociateConstraint;
     double mAssociateTimeDiff;
     double mAssociateAngleDiff;
+    double mAssociateMax2DDist;
 
     Eigen::Matrix3f mMatrixRotatePitch90;
 
