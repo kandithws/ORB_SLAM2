@@ -368,7 +368,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     // Cleaning log dir
     auto logp = boost::filesystem::path(Config::getInstance().RuntimeParams().log_file_path);
-    
+
     if (boost::filesystem::exists(logp) && boost::filesystem::is_directory(logp)){
         boost::filesystem::remove_all(logp);
     }
