@@ -1,13 +1,12 @@
 %YAML:1.0
 
 system:
-  use_object: 1
+  use_object: 0
   use_imu: 0
 
 runtime:
-  image_delay_to_imu: 0.008922152649677474 # Timestamp shift. Timage = Timu + image_delay
+  image_delay_to_imu: 0 # Timestamp shift. Timage = Timu + image_delay
   log_file_path: "/home/kandithws/ait_workspace/viorb_log/"
-  bagfile: "/media/backup/thesis_dataset/chair2/ds3.bag"
   imu_topic: "/imu0"
   image_topic: "/cam0/image_raw/compressed"
   image2_topic: "/cam1/image_raw/compressed"
@@ -20,9 +19,9 @@ runtime:
 #--------------------------------------------------
 object_detection:
   type: CV
-  model_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.weights
-  config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.cfg
-  label_map_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/coco.names
+  model_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet/final/yolov3_papertree/yolov3-papertree-dfanchors_50000.weights
+  config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet/final/yolov3_papertree/yolov3-papertree-dfanchors.cfg
+  label_map_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet/final/names.txt
   input_size: 416
   min_confidence: 0.8
   nms_threshold: 0.4
@@ -95,8 +94,8 @@ LEFT.K: !!opencv-matrix
   cols: 3
   dt: d
   data: [668.39345,   0.     , 417.59834,
-           0.     , 669.42034, 218.42771,
-           0.     ,   0.     ,   1.     ]
+         0.     , 669.42034, 218.42771,
+         0.     ,   0.     ,   1.     ]
 LEFT.R:  !!opencv-matrix
   rows: 3
   cols: 3
@@ -109,8 +108,8 @@ LEFT.P:  !!opencv-matrix
   cols: 4
   dt: d
   data: [748.02142,   0.     , 464.86643,   0.     ,
-           0.     , 748.02142, 221.2312 ,   0.     ,
-           0.     ,   0.     ,   1.     ,   0.     ]
+         0.     , 748.02142, 221.2312 ,   0.     ,
+         0.     ,   0.     ,   1.     ,   0.     ]
 
 RIGHT.height: 448
 RIGHT.width: 800
@@ -124,8 +123,8 @@ RIGHT.K: !!opencv-matrix
   cols: 3
   dt: d
   data: [674.9276 ,   0.     , 398.13464,
-           0.     , 677.93353, 222.32311,
-           0.     ,   0.     ,   1.     ]
+         0.     , 677.93353, 222.32311,
+         0.     ,   0.     ,   1.     ]
 RIGHT.R:  !!opencv-matrix
   rows: 3
   cols: 3
@@ -138,8 +137,8 @@ RIGHT.P:  !!opencv-matrix
   cols: 4
   dt: d
   data: [748.02142,   0.     , 464.86643,  -5.51128,
-           0.     , 748.02142, 221.2312 ,   0.     ,
-           0.     ,   0.     ,   1.     ,   0.     ]
+         0.     , 748.02142, 221.2312 ,   0.     ,
+         0.     ,   0.     ,   1.     ,   0.     ]
 
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
