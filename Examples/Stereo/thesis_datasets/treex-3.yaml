@@ -49,10 +49,11 @@ object_initialization:
 #--------------------------------------------------------------------------------------------
 
 # Camera calibration and distortion parameters (OpenCV)
-Camera.fx: 748.02142
-Camera.fy: 748.02142
-Camera.cx: 464.86643
-Camera.cy: 221.2312
+# This value works with tree2-3, tree3-3
+Camera.fx: 764.83417
+Camera.fy: 764.83417
+Camera.cx: 457.85655
+Camera.cy: 196.39492
 
 Camera.k1: 0.0
 Camera.k2: 0.0
@@ -69,7 +70,7 @@ Camera.fps: 20.0
 # https://stackoverflow.com/questions/16833267/how-to-estimate-baseline-using-calibration-matrix
 #the baseline in fact, dist btw cam centers, camera.bf = P.camera.fx * real-distance btw cam centers (0.15)
 
-Camera.bf: 112.203213
+Camera.bf: 114.7251255
 
 
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
@@ -88,28 +89,28 @@ LEFT.D: !!opencv-matrix
   rows: 1
   cols: 5
   dt: d
-  data: [0.078348, -0.098375, 0.001723, -0.000106, 0.000000]
+  data: [0.078593, -0.158838, -0.013758, -0.002260, 0.000000]
 LEFT.K: !!opencv-matrix
   rows: 3
   cols: 3
   dt: d
-  data: [668.39345,   0.     , 417.59834,
-         0.     , 669.42034, 218.42771,
-         0.     ,   0.     ,   1.     ]
+  data: [665.76544,   0.     , 421.77784,
+           0.     , 666.1268 , 190.74998,
+           0.     ,   0.     ,   1.     ]
 LEFT.R:  !!opencv-matrix
   rows: 3
   cols: 3
   dt: d
-  data: [ 0.9982566 , -0.00466063, -0.05883903,
-          0.00543548,  0.99990052,  0.0130159 ,
-          0.05877251, -0.01331303,  0.99818263]
+  data: [ 0.99895592,  0.00069482, -0.04567913,
+         -0.00006835,  0.99990594,  0.01371486,
+          0.04568437, -0.01369742,  0.99886201]
 LEFT.P:  !!opencv-matrix
   rows: 3
   cols: 4
   dt: d
-  data: [748.02142,   0.     , 464.86643,   0.     ,
-         0.     , 748.02142, 221.2312 ,   0.     ,
-         0.     ,   0.     ,   1.     ,   0.     ]
+  data: [764.83417,   0.     , 457.85655,   0.     ,
+           0.     , 764.83417, 196.39492,   0.     ,
+           0.     ,   0.     ,   1.     ,   0.     ]
 
 RIGHT.height: 448
 RIGHT.width: 800
@@ -117,41 +118,41 @@ RIGHT.D: !!opencv-matrix
   rows: 1
   cols: 5
   dt: d
-  data: [0.123931, -0.249809, 0.000700, -0.001418, 0.000000]
+  data: [0.080934, -0.180805, -0.003920, 0.000746, 0.000000]
 RIGHT.K: !!opencv-matrix
   rows: 3
   cols: 3
   dt: d
-  data: [674.9276 ,   0.     , 398.13464,
-         0.     , 677.93353, 222.32311,
-         0.     ,   0.     ,   1.     ]
+  data: [673.63366,   0.     , 414.33395,
+           0.     , 673.78347, 211.50676,
+           0.     ,   0.     ,   1.     ]
 RIGHT.R:  !!opencv-matrix
   rows: 3
   cols: 3
   dt: d
-  data: [ 0.99759367, -0.01066067, -0.06850708,
-          0.00975695,  0.99986109, -0.01351275,
-          0.06864162,  0.01281181,  0.99755911]
+  data: [ 0.99914005, -0.00729495, -0.04081587,
+          0.00673457,  0.9998814 , -0.01385016,
+          0.04091206,  0.01356337,  0.99907069]
 RIGHT.P:  !!opencv-matrix
   rows: 3
   cols: 4
   dt: d
-  data: [748.02142,   0.     , 464.86643,  -5.51128,
-         0.     , 748.02142, 221.2312 ,   0.     ,
-         0.     ,   0.     ,   1.     ,   0.     ]
+  data: [764.83417,   0.     , 457.85655,  -5.69756,
+           0.     , 764.83417, 196.39492,   0.     ,
+           0.     ,   0.     ,   1.     ,   0.     ]
 
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
 #--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 1000
+ORBextractor.nFeatures: 1200
 
 # ORB Extractor: Scale factor between levels in the scale pyramid
 ORBextractor.scaleFactor: 1.2
 
 # ORB Extractor: Number of levels in the scale pyramid
-ORBextractor.nLevels: 8
+ORBextractor.nLevels: 10
 
 # ORB Extractor: Fast threshold
 # Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.

@@ -1,0 +1,175 @@
+%YAML:1.0
+
+system:
+  use_object: 0
+  use_imu: 0
+
+runtime:
+  image_delay_to_imu: 0 # Timestamp shift. Timage = Timu + image_delay
+  log_file_path: "/home/kandithws/ait_workspace/viorb_log/"
+  imu_topic: "/imu0"
+  image_topic: "/cam0/image_raw/compressed"
+  image2_topic: "/cam1/image_raw/compressed"
+  multiply_g: 0
+  discard_time: 0
+  pre_rectify_images: 1
+
+#--------------------------------------------------
+# Object Detection parameters
+#--------------------------------------------------
+object_detection:
+  type: CV
+  model_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet/final/yolov3_papertree/yolov3-papertree-dfanchors_50000.weights
+  config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet/final/yolov3_papertree/yolov3-papertree-dfanchors.cfg
+  label_map_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet/final/names.txt
+  input_size: 416
+  min_confidence: 0.8
+  nms_threshold: 0.4
+  apply_nms: 1
+  grpc_url: "localhost:50051"
+  allow_skip: 1
+
+#--------------------------------------------------
+# Initialization parameters
+#--------------------------------------------------
+object_initialization:
+  use_stat_rm_outlier: 1
+  mean_k: 8
+  std_dev_mul_th: 0.65
+  project_2d_outlier: 0 # DO NOT USE FOR NOW
+  use_mask: 0
+  outlier_filter_type: 1 # 0: PCL SOR, 1: local dist diff, 2: local std diff
+  outlier_threshold: 0.2 # For type 1(recommend: 0.2), 2(recommend: 0.15)
+  associate_constraint: 2
+  associate_time_diff: 0.5
+  associate_angle_diff: 0.349066
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+
+# Camera calibration and distortion parameters (OpenCV)
+Camera.fx: 766.602389
+Camera.fy: 766.602389
+Camera.cx: 445.24172
+Camera.cy: 208.96724
+
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+
+Camera.width: 800
+Camera.height: 448
+
+# Camera frames per second
+Camera.fps: 20.0
+
+# stereo baseline times fx
+# https://stackoverflow.com/questions/16833267/how-to-estimate-baseline-using-calibration-matrix
+#the baseline in fact, dist btw cam centers, camera.bf = P.camera.fx * real-distance btw cam centers (0.15)
+
+Camera.bf: 112.203213
+
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 0
+
+# Close/Far threshold. Baseline times.
+ThDepth: 35
+
+#--------------------------------------------------------------------------------------------
+# Stereo Rectification. Only if you need to pre-rectify the images.
+# Camera.fx, .fy, etc must be the same as in LEFT.P
+#--------------------------------------------------------------------------------------------
+LEFT.height: 448
+LEFT.width: 800
+LEFT.D: !!opencv-matrix
+  rows: 1
+  cols: 5
+  dt: d
+  data: [0.045735, -0.078674, -0.002025, -0.000793, 0.000000]
+LEFT.K: !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [661.03021,   0.     , 414.2764 ,
+           0.     , 661.8414 , 208.23169,
+           0.     ,   0.     ,   1.     ]
+LEFT.R:  !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [ 0.99907935,  0.00877342, -0.04199381,
+         -0.00750242,  0.99951182,  0.03032871,
+          0.04223939, -0.02998574,  0.99865744]
+LEFT.P:  !!opencv-matrix
+  rows: 3
+  cols: 4
+  dt: d
+  data: [766.602389,   0.     , 445.24172,   0.     ,
+           0.     , 766.602389, 208.96724,   0.     ,
+           0.     ,   0.     ,   1.     ,   0.     ]
+
+RIGHT.height: 448
+RIGHT.width: 800
+RIGHT.D: !!opencv-matrix
+  rows: 1
+  cols: 5
+  dt: d
+  data: [0.067939, -0.118640, -0.001159, -0.003200, 0.000000]
+RIGHT.K: !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [665.83432,   0.     , 395.62328,
+           0.     , 665.97841, 211.68989,
+           0.     ,   0.     ,   1.     ]
+RIGHT.R:  !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [ 0.99871162,  0.00006153, -0.0507454 ,
+         -0.00159269,  0.99954462, -0.03013345,
+          0.05072043,  0.03017545,  0.99825692]
+RIGHT.P:  !!opencv-matrix
+  rows: 3
+  cols: 4
+  dt: d
+  data: [766.602389,   0.     , 445.24172,  -5.712185,
+           0.     , 766.602389, 208.96724,   0.     ,
+           0.     ,   0.     ,   1.     ,   0.     ]
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 1000
+
+# ORB Extractor: Scale factor between levels in the scale pyramid
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid
+ORBextractor.nLevels: 8
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500
