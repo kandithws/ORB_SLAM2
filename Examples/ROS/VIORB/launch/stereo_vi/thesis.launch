@@ -1,14 +1,11 @@
 <launch>
-    <arg name="bagfile" value="/media/backup/thesis_dataset/dinning_room/ds1.bag"/>
-    <arg name="realtime" default="false"/>
+    <arg name="ds" default="tree2"/>
     <node pkg="VIORB" type="stereo" name="VIORB"
-          args="$(find VIORB)/../../../Vocabulary/ORBvoc.txt $(find VIORB)/config/stereo_vi/thesis/dining_room.yaml"
+          args="$(find VIORB)/../../../Vocabulary/ORBvoc.txt $(find VIORB)/config/stereo_vi/thesis/$(arg ds).yaml"
           cwd="node" output="screen">
-        <param name="realtime_mode" value="$(arg realtime)"/>
+        <param name="realtime_mode" value="false"/>
         <param name="sensor_type" value="STEREO"/>
     </node>
-
-
-    <node pkg="rosbag" type="play" name="player" args="--clock $(arg bagfile)" if="$(arg realtime)" />
+   
 
 </launch>

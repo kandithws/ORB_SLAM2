@@ -9,6 +9,6 @@
 
 # TREE Dataset
 # DATASET=/media/backup/thesis_dataset/tree_datasets/tree2/1
-DATASET=/home/kandithws/tree_dataset2/tree2-2/1
-CONFIG=thesis_datasets/tree.yaml
+DATASET=/media/backup/thesis_dataset/tree_datasets/tree3-3/1
+CONFIG=./thesis_datasets/tree.yaml
 ./stereo_tum ../../Vocabulary/ORBvoc.txt ${CONFIG} ${DATASET} ${DATASET}/association.txt

@@ -1,0 +1,208 @@
+%YAML:1.0
+
+runtime:
+  image_delay_to_imu: 0.008922152649677474 # Timestamp shift. Timage = Timu + image_delay
+  log_file_path: "/home/kandithws/ait_workspace/viorb_log/"
+  bagfile: "/media/backup/thesis_dataset/tree_datasets/tree3-3/1.bag"
+  imu_topic: "/imu0"
+  image_topic: "/cam0/image_raw/compressed"
+  image2_topic: "/cam1/image_raw/compressed"
+  multiply_g: 0
+  discard_time: 0
+  pre_rectify_images: 1
+
+system:
+  use_object: 1
+  use_imu: 1
+  real_time: 0
+
+eval:
+  num_save_kf_images: 15
+  num_initial_skip: 5
+  enable: 1
+
+imu:
+  vins_init_time: 5.0
+  fast_init: 1
+  # camera-imu frame transformation, Pi = Tic * Pc
+#  Tbc: [ 0.06874696, 0.66486579, -0.74379254, -0.07,
+#         0.05826041, 0.74160844, 0.66829832, -0.045,
+#         0.99593151, -0.08927713,  0.01224797, -0.0325,
+#         0, 0, 0, 1.]
+#  Tbc: [0.04765112, -0.9633001,   0.26416338, -0.07,
+#        0.33348022,  0.26463197,  0.90485405, -0.045,
+#        -0.94155208,  0.04497596,  0.33385154, -0.0325,
+#        0.,          0.,          0.,          1.]
+#  Tbc: [-0.9999987317275397, 0.0015926529164868287, -0.0, 0.06994815000114198, 0.00015678707401552464, 0.09844384394350442, 0.9951425953135765, 0.04654672974233385, 0.0015849167567464392, # 0.9951413332016286, -0.09844396879727894, -0.03737523594188913, 0.0, 0.0, 0.0, 1.0]
+  Tbc: [-0.999993177464815, -0.0003289869841229068, -0.003679237881317059, 0.07, -0.003693917138085359, 0.08906121260969932, 0.9960193047248969, 0.0325, 0.0, 0.9960261001480103, -0.08906182023710153, -0.05, 0.0, 0.0, 0.0, 1.0]
+
+
+#--------------------------------------------------
+# Object Detection parameters
+#--------------------------------------------------
+object_detection:
+  type: CV
+  model_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet/final/yolov3_treetrunk/yolov3-papertree-dfanchors.weights
+  config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet/final/yolov3_treetrunk/yolov3-papertree-dfanchors.cfg
+  label_map_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet/final/yolov3_treetrunk/names.txt
+  input_size: 416
+  min_confidence: 0.6
+  nms_threshold: 0.4
+  apply_nms: 1
+  grpc_url: "localhost:50051"
+  allow_skip: 1
+
+#--------------------------------------------------
+# Initialization parameters
+#--------------------------------------------------
+object_initialization:
+  use_stat_rm_outlier: 1
+  mean_k: 8
+  std_dev_mul_th: 0.65
+  project_2d_outlier: 0 # DO NOT USE FOR NOW
+  use_mask: 0
+  outlier_filter_type: 0 # 0: PCL SOR, 1: local dist diff, 2: local std diff
+  outlier_threshold: 0.2 # For type 1(recommend: 0.2), 2(recommend: 0.15)
+  associate_constraint: 3
+  associate_time_diff: 1.5
+  associate_angle_diff: 0.25
+  associate_max_2d_dist: 800 # width/2
+#  associate_angle_diff: 0.349066
+
+local_mapping:
+  window_size: 20
+  object_detect_timeout: 0.1
+
+optimization:
+  update_rollpitch: 0
+  update_scale: 0
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+
+# Camera calibration and distortion parameters (OpenCV)
+Camera.fx: 764.83417
+Camera.fy: 764.83417
+Camera.cx: 457.85655
+Camera.cy: 196.39492
+
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+
+Camera.width: 800
+Camera.height: 448
+
+# Camera frames per second
+Camera.fps: 20.0
+
+# stereo baseline times fx
+# https://stackoverflow.com/questions/16833267/how-to-estimate-baseline-using-calibration-matrix
+#the baseline in fact, dist btw cam centers, camera.bf = P.camera.fx * real-distance btw cam centers (0.15)
+
+Camera.bf: 114.7251255
+
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 0
+
+# Close/Far threshold. Baseline times.
+ThDepth: 35
+
+#--------------------------------------------------------------------------------------------
+# Stereo Rectification. Only if you need to pre-rectify the images.
+# Camera.fx, .fy, etc must be the same as in LEFT.P
+#--------------------------------------------------------------------------------------------
+LEFT.height: 448
+LEFT.width: 800
+LEFT.D: !!opencv-matrix
+  rows: 1
+  cols: 5
+  dt: d
+  data: [0.078593, -0.158838, -0.013758, -0.002260, 0.000000]
+LEFT.K: !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [665.76544,   0.     , 421.77784,
+           0.     , 666.1268 , 190.74998,
+           0.     ,   0.     ,   1.     ]
+LEFT.R:  !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [ 0.99895592,  0.00069482, -0.04567913,
+         -0.00006835,  0.99990594,  0.01371486,
+          0.04568437, -0.01369742,  0.99886201]
+LEFT.P:  !!opencv-matrix
+  rows: 3
+  cols: 4
+  dt: d
+  data: [764.83417,   0.     , 457.85655,   0.     ,
+           0.     , 764.83417, 196.39492,   0.     ,
+           0.     ,   0.     ,   1.     ,   0.     ]
+
+RIGHT.height: 448
+RIGHT.width: 800
+RIGHT.D: !!opencv-matrix
+  rows: 1
+  cols: 5
+  dt: d
+  data: [0.080934, -0.180805, -0.003920, 0.000746, 0.000000]
+RIGHT.K: !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [673.63366,   0.     , 414.33395,
+           0.     , 673.78347, 211.50676,
+           0.     ,   0.     ,   1.     ]
+RIGHT.R:  !!opencv-matrix
+  rows: 3
+  cols: 3
+  dt: d
+  data: [ 0.99914005, -0.00729495, -0.04081587,
+          0.00673457,  0.9998814 , -0.01385016,
+          0.04091206,  0.01356337,  0.99907069]
+RIGHT.P:  !!opencv-matrix
+  rows: 3
+  cols: 4
+  dt: d
+  data: [764.83417,   0.     , 457.85655,  -5.69756,
+           0.     , 764.83417, 196.39492,   0.     ,
+           0.     ,   0.     ,   1.     ,   0.     ]
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 1200
+
+# ORB Extractor: Scale factor between levels in the scale pyramid
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid
+ORBextractor.nLevels: 10
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500
