@@ -864,7 +864,7 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
     fobj << "#id label x y z qx qy qz qw sx sy sz" << std::endl;
     fobj << fixed;
 
-    pcl::PLYWriter writer;
+    pcl::PCDWriter writer;
 
     for (auto& pMO : vpMOs){
         if (! pMO->IsReady())
@@ -882,13 +882,31 @@ void System::SaveKeyFrameTrajectoryTUMWithObjects(const string &outdir_str)
 
         auto cloud = PCLConverter::toPointCloud(pMO->GetMapPoints());
         std::stringstream ss;
-        ss << pcddirstr << '/' << pMO->mnId << ".ply";
+        ss << pcddirstr << '/' << pMO->mnId << ".pcd";
         writer.write(ss.str(), *cloud);
 
     }
 
     fobj.close();
 
+    cout << "Saving Final Map Points .." << endl;
+
+    auto vAllMPs = mpMap->GetAllMapPoints();
+    vector<MapPoint*> vMPs;
+    vMPs.reserve(vAllMPs.size());
+
+    for (auto pMP : vAllMPs) {
+        if(pMP) {
+            if (pMP->isBad())
+                continue;
+
+            vMPs.push_back(pMP);
+        }
+    }
+
+    auto map_cloud = PCLConverter::toPointCloud(vMPs);
+
+    writer.write(outdir + "map.pcd", *map_cloud);
 
     cout << endl << "trajectory saved!" << endl;
 }

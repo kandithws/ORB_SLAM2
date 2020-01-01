@@ -67,6 +67,7 @@ object_initialization:
   associate_time_diff: 1.5
   associate_angle_diff: 0.25
   associate_max_2d_dist: 800 # width/2
+  fix_scale: 1.0
 #  associate_angle_diff: 0.349066
 
 local_mapping:

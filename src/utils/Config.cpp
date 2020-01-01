@@ -136,6 +136,7 @@ void Config::parseConfig() {
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, associate_time_diff)
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, associate_angle_diff)
             ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, associate_max_2d_dist)
+            ORB_SLAM2_PARSE_CONFIG(ObjectInitializer, double, fix_scale)
         }
 
         ORB_SLAM2_PARSE_CONFIG_SCOPE("system") {

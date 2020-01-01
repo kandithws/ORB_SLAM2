@@ -16,23 +16,25 @@ namespace ORB_SLAM2 {
 PointCloudObjectInitializer::PointCloudObjectInitializer(Map* pMap) : mpMap(pMap)
 {
     // TODO : Config this
-    mCloudSORFilter.setMeanK(Config::getInstance().ObjectInitializerParams().mean_k);
-    mCloudSORFilter.setStddevMulThresh(Config::getInstance().ObjectInitializerParams().std_dev_mul_th);
-    mbProject2d = Config::getInstance().ObjectInitializerParams().project_2d_outlier;
-    mbUseMask = Config::getInstance().ObjectInitializerParams().use_mask;
-    mbUseStatRemoveOutlier = Config::getInstance().ObjectInitializerParams().use_stat_rm_outlier;
-    mOutlierFilterType = Config::getInstance().ObjectInitializerParams().outlier_filter_type;
-    mOutlierFilterThreshold = Config::getInstance().ObjectInitializerParams().outlier_threshold;
+    auto cfg = Config::getInstance().ObjectInitializerParams();
+    mCloudSORFilter.setMeanK(cfg.mean_k);
+    mCloudSORFilter.setStddevMulThresh(cfg.std_dev_mul_th);
+    mbProject2d = cfg.project_2d_outlier;
+    mbUseMask = cfg.use_mask;
+    mbUseStatRemoveOutlier = cfg.use_stat_rm_outlier;
+    mOutlierFilterType = cfg.outlier_filter_type;
+    mOutlierFilterThreshold = cfg.outlier_threshold;
     mProj.setModelType(pcl::SACMODEL_PLANE);
     mMatrixRotatePitch90 = Eigen::AngleAxisf(M_PI/2.0f, Eigen::Vector3f::UnitY()).toRotationMatrix();
-    mbAccociateCentroid = Config::getInstance().ObjectInitializerParams().associate_centroid_only;
-    auto associate = Config::getInstance().ObjectInitializerParams().associate_constraint;
+    mbAccociateCentroid = cfg.associate_centroid_only;
+    auto associate = cfg.associate_constraint;
     if (associate >=0)
         mAssociateConstraint = (uint8_t)associate;
 
-    mAssociateTimeDiff = Config::getInstance().ObjectInitializerParams().associate_time_diff;
-    mAssociateAngleDiff = Config::getInstance().ObjectInitializerParams().associate_angle_diff;
-    mAssociateMax2DDist = Config::getInstance().ObjectInitializerParams().associate_max_2d_dist;
+    mAssociateTimeDiff = cfg.associate_time_diff;
+    mAssociateAngleDiff = cfg.associate_angle_diff;
+    mAssociateMax2DDist = cfg.associate_max_2d_dist;
+    mFixScale = cfg.fix_scale;
     //mbUseMask = true;
 }
 
@@ -134,10 +136,14 @@ Cuboid* PointCloudObjectInitializer::CuboidFromPointCloudWithGravity(pcl::PointC
     const Eigen::Quaternionf bboxQuaternion(
             eigenVectorsPCA); //Quaternions are a way to do rotations https://www.youtube.com/watch?v=mHVwd8gYLnI
     const Eigen::Vector3f bboxTransform = eigenVectorsPCA * meanDiagonal + pcaCentroid.head<3>();
-    const Eigen::Vector3d scale = {(maxPoint.x - minPoint.x) / 2.0,
+    Eigen::Vector3d scale = {(maxPoint.x - minPoint.x) / 2.0,
                                    (maxPoint.y - minPoint.y) / 2.0,
                                    (maxPoint.z - minPoint.z) / 2.0};
 
+    if (mFixScale > 0) {
+        scale[0] = mFixScale;
+        scale[1] = mFixScale;
+    }
     cuboid->setRotation(bboxQuaternion.cast<double>());
     cuboid->setTranslation(bboxTransform.cast<double>());
     cuboid->setScale(scale);

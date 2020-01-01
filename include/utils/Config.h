@@ -35,6 +35,7 @@ typedef struct {
     double associate_time_diff = 0.5;
     double associate_angle_diff = 0.349066; // 25 deg
     double associate_max_2d_dist = std::numeric_limits<double>::max();
+    double fix_scale = -1.0; // x, y only
 } ObjectInitializer;
 
 typedef struct {
