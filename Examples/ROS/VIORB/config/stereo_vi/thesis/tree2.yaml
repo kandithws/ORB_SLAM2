@@ -75,7 +75,8 @@ local_mapping:
 
 optimization:
   update_rollpitch: 0
-  update_scale: 0
+  update_scale: 1
+  scale_epsillon: 0.025
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!

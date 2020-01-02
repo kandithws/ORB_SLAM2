@@ -26,6 +26,11 @@ class VertexCuboid : public BaseVertex<9, Cuboid>  // NOTE  this vertex stores o
     //VertexCuboid() = default;
     VertexCuboid(bool update_rollpitch=true, bool update_scale=true);
 
+    void setScaleEpsillon(const double& eps);
+    void setInitialCube(const Cuboid &cube); // to maintain X,Y scale aspect ratio
+    Cuboid init_cube_;
+    bool isBad();
+
     inline void setToOriginImpl() override { _estimate = Cuboid(); }
 
 //    inline void oplusImpl(const double *update_) override {
@@ -56,7 +61,10 @@ class VertexCuboid : public BaseVertex<9, Cuboid>  // NOTE  this vertex stores o
   private:
     bool update_rollpitch_ = true;
     bool update_scale_=true;
-    double epsillon = 1e-2;
+    double epsillon_ = 10e-2; // 10 cm
+
+    bool use_init_scale_ = false;
+    bool bad_ = false;
 };
 
 // camera -object 3D error

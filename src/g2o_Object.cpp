@@ -55,44 +55,24 @@ void VertexCuboid::oplusImpl(const double *update_){
     }
     else{
         Eigen::Vector9d update2 = update;
-        update2(0) = 0;
-        update2(1) = 0;
+        //update2(0) = 0;
+        //update2(1) = 0;
         newcube.mPose = _estimate.mPose * exptwist_norollpitch(update2.head<6>());
     }
 
     if (update_scale_){
         // Original
         newcube.mScale = _estimate.mScale + update.tail<3>();
-        // TODO -- apply some threshold logic
-
         // Logic 0; naive check!, if this update make < 0 do not update
-//        if ( (newcube.mScale(0) < epsillon) || (newcube.mScale(1) < epsillon) || (newcube.mScale(2) < epsillon)){
-//            newcube.mScale = _estimate.mScale;
-//        }
 
-        newcube.mScale(0) = (newcube.mScale(0) < epsillon) ? _estimate.mScale(0) : newcube.mScale(0);
-        newcube.mScale(1) = (newcube.mScale(1) < epsillon) ? _estimate.mScale(1) : newcube.mScale(1);
-        newcube.mScale(2) = (newcube.mScale(2) < epsillon) ? _estimate.mScale(2) : newcube.mScale(2);
-        std::cout << "[Current scale]=" << newcube.mScale(0) << ',' << newcube.mScale(1)
-        << ',' << newcube.mScale(2)  << std::endl;
+        if ((newcube.mScale(0) < epsillon_) || (newcube.mScale(1) < epsillon_) || (newcube.mScale(2) < epsillon_)){
+            bad_ = true;
+        }
 
-
-
-        // Logic update 1: Keep aspect ratio
-        // double ratio = _estimate.mScale.sum();
-
-        // double v_update_per_dim = cbrt(fabs(update.tail<3>().prod()) ); // cubic root
-
-
-        //if (update.tail<3>().sum() < 0){
-        //    v_update_per_dim *= -1.0;
-        // }
-
-        //Eigen::Vector3d v_update = (_estimate.mScale / ratio) * v_update_per_dim;
-
-        //newcube.mScale = _estimate.mScale + v_update;
-        //std::cout << "[Scale] ratio=" << ratio << ", v_update_per_dim=" << v_update_per_dim;
-        // std::cout << "[Scale] new update=" << v_update << ", org update="<< update.tail<3>() << std::endl;
+        // Only consider last iteration
+        newcube.mScale(0) = (newcube.mScale(0) < epsillon_) ? _estimate.mScale(0) : newcube.mScale(0);
+        newcube.mScale(1) = (newcube.mScale(1) < epsillon_) ? _estimate.mScale(1) : newcube.mScale(1);
+        newcube.mScale(2) = (newcube.mScale(2) < epsillon_) ? _estimate.mScale(2) : newcube.mScale(2);
 
     }
     else{
@@ -102,6 +82,23 @@ void VertexCuboid::oplusImpl(const double *update_){
 
 
     setEstimate(newcube);
+}
+
+void VertexCuboid::setScaleEpsillon(const double& eps) {
+    assert(eps > 0);
+    epsillon_ = eps;
+}
+
+void VertexCuboid::setInitialCube(const ORB_SLAM2::Cuboid &cube) {
+    init_cube_ = cube;
+    use_init_scale_ = true;
+}
+
+bool VertexCuboid::isBad() {
+    if (use_init_scale_) {
+        return bad_;
+    }
+    return false;
 }
 
 };

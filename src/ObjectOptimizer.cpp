@@ -120,6 +120,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
     // Getting More fixed Keyframes
     bool update_rollpitch = Config::getInstance().OptimizationParams().update_rollpitch;
     bool update_scale = Config::getInstance().OptimizationParams().update_scale;
+    double scale_epsillon = Config::getInstance().OptimizationParams().scale_epsillon;
     for (const auto& pMO : lLocalLandmarks) {
         if(!pMO->IsReady())
             continue;
@@ -130,6 +131,8 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
         vCuboid->setEstimate(pInitCuboidGlobalPose);
         vCuboid->setId(maxKFId + 1 + pMO->mnId);
         vCuboid->setFixed(false);
+        vCuboid->setInitialCube(pInitCuboidGlobalPose);
+        vCuboid->setScaleEpsillon(scale_epsillon);
         optimizer.addVertex(vCuboid);
         if (pMO->mnId > maxLandmarkId)
             maxLandmarkId = pMO->mnId;
@@ -450,7 +453,12 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool* pbStopFlag
     for (const auto& pMO : lLocalLandmarks) {
         auto* vCube = dynamic_cast<g2o::VertexCuboid*>(optimizer.vertex(maxKFId + 1 + pMO->mnId));
         const g2o::Cuboid& cuboid = vCube->estimate();
-        pMO->SetCuboid(cuboid);
+        if (vCube->isBad()){
+            pMO->SetCuboid(vCube->init_cube_);
+            SPDLOG_DEBUG("Reverting object pose for id: {}", pMO->mnId);
+        }else{
+            pMO->SetCuboid(cuboid);
+        }
     }
 
 
@@ -557,7 +565,7 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool *pbStopFlag
 
     bool update_rollpitch = Config::getInstance().OptimizationParams().update_rollpitch;
     bool update_scale = Config::getInstance().OptimizationParams().update_scale;
-
+    double scale_epsillon = Config::getInstance().OptimizationParams().scale_epsillon;
     for (const auto& pMO : lLocalLandmarks) {
         if(!pMO->IsReady())
             continue;
@@ -568,6 +576,8 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool *pbStopFlag
         vCuboid->setEstimate(pInitCuboidGlobalPose);
         vCuboid->setId(maxKFId + 1 + pMO->mnId);
         vCuboid->setFixed(false);
+        vCuboid->setInitialCube(pInitCuboidGlobalPose);
+        vCuboid->setScaleEpsillon(scale_epsillon);
         optimizer.addVertex(vCuboid);
         if (pMO->mnId > maxLandmarkId)
             maxLandmarkId = pMO->mnId;
@@ -895,7 +905,13 @@ void Optimizer::LocalBundleAdjustmentWithObjects(KeyFrame *pKF, bool *pbStopFlag
         auto* vCube = dynamic_cast<g2o::VertexCuboid*>(optimizer.vertex(maxKFId + 1 + pMO->mnId));
         const g2o::Cuboid& cuboid = vCube->estimate();
         // pMO->SetPoseAndDimension(cuboid);
-        pMO->SetCuboid(cuboid);
+        if (vCube->isBad()){
+            pMO->SetCuboid(vCube->init_cube_);
+            SPDLOG_DEBUG("Reverting object pose for id: {}", pMO->mnId);
+        }else{
+            pMO->SetCuboid(cuboid);
+        }
+
     }
 }
 

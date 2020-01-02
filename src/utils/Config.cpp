@@ -201,6 +201,7 @@ void Config::parseConfig() {
         ORB_SLAM2_PARSE_CONFIG_SCOPE("optimization") {
             ORB_SLAM2_PARSE_BOOL_CONFIG(Optimization, update_scale)
             ORB_SLAM2_PARSE_BOOL_CONFIG(Optimization, update_rollpitch)
+            ORB_SLAM2_PARSE_CONFIG(Optimization, double, scale_epsillon)
         }
 
         SPDLOG_INFO("\n-------Config Summary------\n"
