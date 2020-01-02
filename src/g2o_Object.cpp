@@ -55,8 +55,8 @@ void VertexCuboid::oplusImpl(const double *update_){
     }
     else{
         Eigen::Vector9d update2 = update;
-        //update2(0) = 0;
-        //update2(1) = 0;
+        update2(0) = 0;
+        update2(1) = 0;
         newcube.mPose = _estimate.mPose * exptwist_norollpitch(update2.head<6>());
     }
 
