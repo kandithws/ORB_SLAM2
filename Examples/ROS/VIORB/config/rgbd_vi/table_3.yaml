@@ -1,0 +1,131 @@
+%YAML:1.0
+
+runtime:
+  image_delay_to_imu: 0.008922152649677474 # Timestamp shift. Timage = Timu + image_delay
+  log_file_path: "/home/kandithws/ait_workspace/viorb_log/"
+  bagfile: "/media/backup/ETH3D/table_3/table_3.bag"
+  imu_topic: "/imu0"
+  image_topic: "/cam0/image_raw"
+  image2_topic: "/depth/image_raw"
+  multiply_g: 0
+  discard_time: 0
+  pre_rectify_images: 0
+
+system:
+  use_object: 1
+  use_imu: 1
+  real_time: 0
+
+eval:
+  num_save_kf_images: 10
+  enable: 0
+
+
+imu:
+  vins_init_time: 10.0
+  fast_init: 1
+  # camera-imu frame transformation, Pi = Tic * Pc
+  Tbc: [-0.99987545, -0.01531016,  0.00383257,  0.09372005,
+        0.01531,    -0.99988279, -0.00007083,  0.00822336,
+        0.0038332,  -0.00001215,  0.99999265,  0.00122234,
+        0.0, 0.0, 0.0, 1.0]
+
+#--------------------------------------------------
+# Object Detection parameters
+#--------------------------------------------------
+object_detection:
+  type: CV
+  model_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.weights
+  config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/yolov3.cfg
+  label_map_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet-coco/coco.names
+  input_size: 416
+  min_confidence: 0.7
+  nms_threshold: 0.5
+  apply_nms: 1
+  grpc_url: "localhost:50051"
+  allow_skip: 1
+
+
+#--------------------------------------------------
+# Initialization parameters
+#--------------------------------------------------
+object_initialization:
+  use_stat_rm_outlier: 1
+  mean_k: 8
+  std_dev_mul_th: 0.8
+  project_2d_outlier: 0 # DO NOT USE FOR NOW
+  use_mask: 0
+  outlier_filter_type: 2 # 0: PCL SOR, 1: local dist diff, 2: local std diff
+  outlier_threshold: 0.1 # For type 1(recommend: 0.2), 2(recommend: 0.15)
+  associate_centroid_only: 0
+
+local_mapping:
+  window_size: 20
+  object_detect_timeout: 0.5
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+
+# Camera calibration and distortion parameters (OpenCV)
+Camera.fx: 726.28741455078
+Camera.fy: 726.28741455078
+Camera.cx: 354.6496887207
+Camera.cy: 186.46566772461
+
+Camera.k1: 0
+Camera.k2: 0
+Camera.p1: 0
+Camera.p2: 0
+
+Camera.width: 739
+Camera.height: 458
+
+# Camera frames per second
+Camera.fps: 27
+
+# IR projector baseline times fx (aprox.)
+Camera.bf: 40.0
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 0
+
+# Close/Far threshold. Baseline times.
+ThDepth: 40.0
+
+# Deptmap values factor
+DepthMapFactor: 5208.0 # same as RGB-D TUM, according to docs, should be 5000 ???
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 1000
+
+# ORB Extractor: Scale factor between levels in the scale pyramid
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid
+ORBextractor.nLevels: 8
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500
