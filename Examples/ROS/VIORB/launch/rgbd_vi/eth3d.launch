@@ -1,0 +1,9 @@
+<launch>
+    <arg name="ds" default="table_3"/>
+    <node pkg="VIORB" type="stereo" name="VIORB"
+          args="$(find VIORB)/../../../Vocabulary/ORBvoc.txt $(find VIORB)/config/rgbd_vi/$(arg ds).yaml"
+          cwd="node" output="screen">
+        <param name="realtime_mode" value="false"/>
+        <param name="sensor_type" value="RGBD"/>
+    </node>
+</launch>

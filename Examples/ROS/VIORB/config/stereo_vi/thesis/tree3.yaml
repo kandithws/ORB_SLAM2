@@ -19,10 +19,10 @@ system:
 eval:
   num_save_kf_images: 15
   num_initial_skip: 5
-  enable: 1
+  enable: 0
 
 imu:
-  vins_init_time: 5.0
+  vins_init_time: 2.5
   fast_init: 1
   # camera-imu frame transformation, Pi = Tic * Pc
 #  Tbc: [ 0.06874696, 0.66486579, -0.74379254, -0.07,
@@ -46,7 +46,7 @@ object_detection:
   config_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet/final/yolov3_treetrunk/yolov3-papertree-dfanchors.cfg
   label_map_path: /home/kandithws/ait_workspace/thesis_ml_ws/models/darknet/final/yolov3_treetrunk/names.txt
   input_size: 416
-  min_confidence: 0.6
+  min_confidence: 0.8
   nms_threshold: 0.4
   apply_nms: 1
   grpc_url: "localhost:50051"
@@ -58,16 +58,16 @@ object_detection:
 object_initialization:
   use_stat_rm_outlier: 1
   mean_k: 8
-  std_dev_mul_th: 0.65
+  std_dev_mul_th: 0.8
   project_2d_outlier: 0 # DO NOT USE FOR NOW
   use_mask: 0
   outlier_filter_type: 0 # 0: PCL SOR, 1: local dist diff, 2: local std diff
   outlier_threshold: 0.2 # For type 1(recommend: 0.2), 2(recommend: 0.15)
   associate_constraint: 3
-  associate_time_diff: 1.5
+  associate_time_diff: 0.5
   associate_angle_diff: 0.25
   associate_max_2d_dist: 800 # width/2
-  fix_scale: 1.0
+  fix_scale: -1.0
 #  associate_angle_diff: 0.349066
 
 local_mapping:
@@ -76,7 +76,8 @@ local_mapping:
 
 optimization:
   update_rollpitch: 0
-  update_scale: 0
+  update_scale: 1
+  scale_epsillon: 0.025
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!

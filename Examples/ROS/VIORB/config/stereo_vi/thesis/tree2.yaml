@@ -19,7 +19,7 @@ system:
 eval:
   num_save_kf_images: 15
   num_initial_skip: 5
-  enable: 1
+  enable: 0
 
 imu:
   vins_init_time: 5.0
@@ -57,15 +57,15 @@ object_detection:
 #--------------------------------------------------
 object_initialization:
   use_stat_rm_outlier: 1
-  mean_k: 10
+  mean_k: 8
   std_dev_mul_th: 0.65
   project_2d_outlier: 0 # DO NOT USE FOR NOW
   use_mask: 0
   outlier_filter_type: 0 # 0: PCL SOR, 1: local dist diff, 2: local std diff
   outlier_threshold: 0.2 # For type 1(recommend: 0.2), 2(recommend: 0.15)
   associate_constraint: 3
-  associate_time_diff: 1.5
-  associate_angle_diff: 0.25
+  associate_time_diff: 2.0
+  associate_angle_diff: 0.35
   associate_max_2d_dist: 800 # width/2
   fix_scale: -1.0 # DO not use, fix scale at post process instead
 

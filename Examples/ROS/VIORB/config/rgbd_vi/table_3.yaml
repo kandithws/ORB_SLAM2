@@ -12,8 +12,8 @@ runtime:
   pre_rectify_images: 0
 
 system:
-  use_object: 1
-  use_imu: 1
+  use_object: 0
+  use_imu: 0
   real_time: 0
 
 eval:
@@ -23,7 +23,7 @@ eval:
 
 imu:
   vins_init_time: 10.0
-  fast_init: 1
+  fast_init: 0
   # camera-imu frame transformation, Pi = Tic * Pc
   Tbc: [-0.99987545, -0.01531016,  0.00383257,  0.09372005,
         0.01531,    -0.99988279, -0.00007083,  0.00822336,
@@ -44,6 +44,7 @@ object_detection:
   apply_nms: 1
   grpc_url: "localhost:50051"
   allow_skip: 1
+  selected_labels: [56,67,39] # [chair, cell phone, bottle]
 
 
 #--------------------------------------------------
@@ -52,16 +53,26 @@ object_detection:
 object_initialization:
   use_stat_rm_outlier: 1
   mean_k: 8
-  std_dev_mul_th: 0.8
+  std_dev_mul_th: 0.75
   project_2d_outlier: 0 # DO NOT USE FOR NOW
   use_mask: 0
-  outlier_filter_type: 2 # 0: PCL SOR, 1: local dist diff, 2: local std diff
+  outlier_filter_type: 0 # 0: PCL SOR, 1: local dist diff, 2: local std diff
   outlier_threshold: 0.1 # For type 1(recommend: 0.2), 2(recommend: 0.15)
   associate_centroid_only: 0
+  associate_constraint: 3
+  associate_time_diff: 1.5
+  associate_angle_diff: 0.25
+  associate_max_2d_dist: 650 # width/2
+  fix_scale: -1.0 # DO not use, fix scale at post process instead
 
 local_mapping:
   window_size: 20
-  object_detect_timeout: 0.5
+  object_detect_timeout: 0.2
+
+optimization:
+  update_rollpitch: 0
+  update_scale: 1
+  scale_epsillon: 0.025
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!

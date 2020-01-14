@@ -512,7 +512,6 @@ void PointCloudObjectInitializer::InitializedObjectsWithGravity(ORB_SLAM2::KeyFr
     // ------------- Object Association -------------------
     const vector<KeyFrame *> vpNeighKFs = pKeyframe->GetBestCovisibilityKeyFrames(nn);
 
-    SPDLOG_INFO("Associate {}", pKeyframe->mnId);
     std::vector< std::shared_ptr< std::vector<MapPoint*> > > vPredictionMPs(vPredictedObjects.size());
     std::vector<Cuboid*> vPredictionCuboidEst(vPredictedObjects.size(), static_cast<Cuboid*>(NULL));
     // Preprocessing Measurements
@@ -535,7 +534,7 @@ void PointCloudObjectInitializer::InitializedObjectsWithGravity(ORB_SLAM2::KeyFr
                         box);
 
 
-        if (vObjMapPoints.size() < 10) {
+        if (vObjMapPoints.size() < 8) {
             continue; // Too few points for calculation, TODO: Set as parameters
         }
 
